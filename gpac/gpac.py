@@ -7,7 +7,7 @@ TODO: describe how a GPAC works
 """
 from dataclasses import dataclass
 
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Tuple, Sequence
 
 from scipy.integrate._ivp.ivp import OdeResult
 from sympy import symbols, Eq, Function, lambdify, Symbol, Expr
@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
+
 def integrate_odes(
         odes: Dict[Symbol, Expr],
         initial_values: Dict[Symbol, float],
@@ -23,27 +24,41 @@ def integrate_odes(
 ) -> OdeResult:
     """
     Integrate the given ODEs using scipy, returning the same object returned by `solve_ivp` in the
-    pacakge scipy.integrate:
+    package scipy.integrate:
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+    This is a convienence function that wraps the scipy function `solve_ivp`,
+    allowing the user to specify the ODEs using sympy symbols and expressions
+    (instead of a Python function on tuples of floats, which is what `solve_ivp` expects).
+
+    The object `solution` returned by `solve_ivp` has field `solution.y` which is a 2D numpy array,
+    each row of is the trajectory of a value in the ODEs. The order of the rows is the same as the
+    order of the keys in the `odes` dict.
 
     :param odes:
         dict mapping sympy symbols to sympy expressions representing the ODEs
     :param initial_values:
-        dict mapping synmpy symbols to initial values of each symbol
+        dict mapping sympy symbols to initial values of each symbol
     :param times:
         iterable of times at which to evaluate the ODEs
     :return:
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
+    times = tuple(times)
     symbols = tuple(odes.keys())
     ode_funcs = {symbol: lambdify(symbols, ode) for symbol, ode in odes.items()}
+
     def ode_func_vector(t, vals):
         return [ode_func(*vals) for ode_func in ode_funcs.values()]
+
     # sort keys of initial_values according to order of keys in odes,
     # and assume initial value of 0 for any symbol not specified
     initial_values_sorted = [initial_values[symbol] if symbol in initial_values else 0 for symbol in symbols]
     solution = solve_ivp(ode_func_vector, [times[0], times[-1]], y0=initial_values_sorted, t_eval=times)
-    return solution
+
+    # mypy complains about solution not being an OdeResult, but it is
+    return solution  # type:ignore
+
 
 def plot(
         odes: Dict[Symbol, Expr],
@@ -73,6 +88,7 @@ def plot(
 
     plt.legend()
     plt.show()
+
 
 @dataclass
 class GPAC:
