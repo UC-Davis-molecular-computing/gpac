@@ -19,8 +19,22 @@ from matplotlib.pyplot import figure
 def integrate_odes(
         odes: Dict[Symbol, Expr],
         initial_values: Dict[Symbol, float],
-        times: Iterable[float] = np.arange(0, 1, 0.01),
+        times: Iterable[float] = tuple(np.arange(0, 1, 0.01)),
 ) -> OdeResult:
+    """
+    Integrate the given ODEs using scipy, returning the same object returned by `solve_ivp` in the
+    pacakge scipy.integrate:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+    :param odes:
+        dict mapping sympy symbols to sympy expressions representing the ODEs
+    :param initial_values:
+        dict mapping synmpy symbols to initial values of each symbol
+    :param times:
+        iterable of times at which to evaluate the ODEs
+    :return:
+        solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
+    """
     symbols = tuple(odes.keys())
     ode_funcs = {symbol: lambdify(symbols, ode) for symbol, ode in odes.items()}
     def ode_func_vector(t, vals):
@@ -34,7 +48,7 @@ def integrate_odes(
 def plot(
         odes: Dict[Symbol, Expr],
         initial_values: Dict[Symbol, float],
-        times: Iterable[float] = np.arange(0, 1, 0.01),
+        times: Iterable[float] = tuple(np.arange(0, 1, 0.01)),
         figure_size: Tuple[float, float] = (10, 10),
 ) -> None:
     """
@@ -44,9 +58,11 @@ def plot(
     :param odes:
         dict mapping sympy symbols to sympy expressions representing the ODEs
     :param initial_values:
+        dict mapping synmpy symbols to initial values of each symbol
     :param times:
+        iterable of times at which to evaluate the ODEs
     :param figure_size:
-    :return:
+        pair (width, height) of the figure
     """
     sol = integrate_odes(odes, initial_values, times)
 
