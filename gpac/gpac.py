@@ -39,22 +39,34 @@ def integrate_odes(
         dict mapping sympy symbols to sympy expressions representing the ODEs.
         Alternatively, the keys can be strings, and the values can be strings that look like expressions,
         e.g., ``{'a': '-a*b + c*a'}``.
+        If a symbol is referenced in an expression but is not a key in `odes`,
+        a ValueError is raised.
     :param initial_values:
         dict mapping sympy symbols to initial values of each symbol.
         Alternatively, the keys can be strings.
+        Any symbols in the ODEs that are not in the initial values
+        will be assumed to have initial value of 0.
     :param times:
         iterable of times at which to evaluate the ODEs
     :return:
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
+    #TODO: add error-checking code to ensure symbols in strings are valid symbols
     times = tuple(times)
     odes_symbols = {}
+    symbols_found_in_expressions = set()
     for symbol, expr in odes.items():
         if isinstance(symbol, str):
             symbol = sympy.symbols(symbol)
         if isinstance(expr, str):
             expr = sympy.parse_expr(expr)
+        symbols_found_in_expressions.update(expr.free_symbols)
         odes_symbols[symbol] = expr
+
+    symbols_in_expressions_not_in_keys = symbols_found_in_expressions - set(odes_symbols.keys())
+    if len(symbols_in_expressions_not_in_keys) > 0:
+        raise ValueError(f"Found symbols in expressions that are not keys in the odes dict: "
+                         f"{symbols_in_expressions_not_in_keys}")
 
     odes = odes_symbols
 
