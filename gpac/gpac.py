@@ -7,10 +7,10 @@ TODO: describe how a GPAC works
 """
 from dataclasses import dataclass
 
-from typing import Dict, Iterable, Tuple, Sequence
+from typing import Dict, Iterable, Tuple, Union
 
 from scipy.integrate._ivp.ivp import OdeResult
-from sympy import symbols, Eq, Function, lambdify, Symbol, Expr
+import sympy
 from scipy.integrate import solve_ivp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,8 +18,8 @@ from matplotlib.pyplot import figure
 
 
 def integrate_odes(
-        odes: Dict[Symbol, Expr],
-        initial_values: Dict[Symbol, float],
+        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
+        initial_values: Dict[Union[sympy.Symbol, str], float],
         times: Iterable[float] = tuple(np.arange(0, 1, 0.01)),
 ) -> OdeResult:
     """
@@ -36,24 +36,38 @@ def integrate_odes(
     order of the keys in the `odes` dict.
 
     :param odes:
-        dict mapping sympy symbols to sympy expressions representing the ODEs
+        dict mapping sympy symbols to sympy expressions representing the ODEs.
+        Alternatively, the keys can be strings, and the values can be strings that look like expressions,
+        e.g., ``{'a': '-a*b + c*a'}``.
     :param initial_values:
-        dict mapping sympy symbols to initial values of each symbol
+        dict mapping sympy symbols to initial values of each symbol.
+        Alternatively, the keys can be strings.
     :param times:
         iterable of times at which to evaluate the ODEs
     :return:
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
     times = tuple(times)
-    symbols = tuple(odes.keys())
-    ode_funcs = {symbol: lambdify(symbols, ode) for symbol, ode in odes.items()}
+    odes_symbols = {}
+    for symbol, expr in odes.items():
+        if isinstance(symbol, str):
+            symbol = sympy.symbols(symbol)
+        if isinstance(expr, str):
+            expr = sympy.parse_expr(expr)
+        odes_symbols[symbol] = expr
 
-    def ode_func_vector(t, vals):
-        return [ode_func(*vals) for ode_func in ode_funcs.values()]
+    odes = odes_symbols
+
+    all_symbols = tuple(odes.keys())
+    ode_funcs = {symbol: sympy.lambdify(all_symbols, ode) for symbol, ode in odes.items()}
+
+    def ode_func_vector(_, vals):
+        return tuple(ode_func(*vals) for ode_func in ode_funcs.values())
 
     # sort keys of initial_values according to order of keys in odes,
     # and assume initial value of 0 for any symbol not specified
-    initial_values_sorted = [initial_values[symbol] if symbol in initial_values else 0 for symbol in symbols]
+    initial_values_sorted = [initial_values[symbol] if symbol in initial_values else 0
+                             for symbol in all_symbols]
     solution = solve_ivp(ode_func_vector, [times[0], times[-1]], y0=initial_values_sorted, t_eval=times)
 
     # mypy complains about solution not being an OdeResult, but it is
@@ -61,8 +75,8 @@ def integrate_odes(
 
 
 def plot(
-        odes: Dict[Symbol, Expr],
-        initial_values: Dict[Symbol, float],
+        odes: Dict[sympy.Symbol, sympy.Expr],
+        initial_values: Dict[sympy.Symbol, float],
         times: Iterable[float] = tuple(np.arange(0, 1, 0.01)),
         figure_size: Tuple[float, float] = (10, 10),
 ) -> None:
