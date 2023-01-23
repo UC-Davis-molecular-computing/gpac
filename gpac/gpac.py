@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
-
+#TODO: add optional parameters to integrate_odes and plot to customize the call to solve_ivp
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
