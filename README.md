@@ -50,11 +50,11 @@ Finally, you can specify the times at which to solve for the ODEs as an iterable
 Remaining parameters are optional (see below for examples of them).
 
 ```python
-from sympy import symbols
-from gpac import plot
+import sympy
+import gpac
 import numpy as np
 
-a,b,c = symbols('a b c')
+a,b,c = sympy.symbols('a b c')
 
 odes = {
     'a': -a*b + c*a, # keys can be a sympy Symbol or string
@@ -68,7 +68,7 @@ initial_values = {
 }
 times = np.linspace(0, 3, 200)
 
-plot(odes, initial_values, times=times, figure_size=(20,4), symbols_to_plot=[a,c])
+gpac.plot(odes, initial_values, times=times, figure_size=(20,4), symbols_to_plot=[a,c])
 ```
 
 ![](images/rps-a-c.png)
