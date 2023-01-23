@@ -89,7 +89,7 @@ def integrate_odes(
 def plot(
         odes: Dict[sympy.Symbol, sympy.Expr],
         initial_values: Dict[sympy.Symbol, float],
-        times: Iterable[float] = tuple(np.arange(0, 1, 0.01)),
+        times: Iterable[float] = tuple(np.linspace(0, 1, 101)),
         figure_size: Tuple[float, float] = (10, 10),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
 ) -> None:
@@ -123,7 +123,7 @@ def plot(
         symbol_name = str(symbol)
         if symbol_name in symbols_to_plot:
             plt.plot(times, sol.y[idx], label=str(symbol))
-        
+
     plt.legend()
     plt.show()
 
