@@ -20,7 +20,7 @@ from matplotlib.pyplot import figure
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
-        times: Iterable[float] = tuple(np.arange(0, 1, 0.01)),
+        times: Iterable[float] = tuple(np.linspace(0, 1, 101)),
 ) -> OdeResult:
     """
     Integrate the given ODEs using scipy, returning the same object returned by `solve_ivp` in the
@@ -32,7 +32,7 @@ def integrate_odes(
     (instead of a Python function on tuples of floats, which is what `solve_ivp` expects).
 
     The object `solution` returned by `solve_ivp` has field `solution.y` which is a 2D numpy array,
-    each row of is the trajectory of a value in the ODEs. The order of the rows is the same as the
+    each row of which is the trajectory of a value in the ODEs. The order of the rows is the same as the
     order of the keys in the `odes` dict.
 
     Args:
