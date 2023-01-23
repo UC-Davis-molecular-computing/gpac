@@ -74,7 +74,7 @@ See also the Jupyter notebook [notebook.ipynb](notebook.ipynb).
 If you want the data itself from the ODE numerical integration (without plotting it), you can call `gpac.integrate_odes`:
 
 ```python
-# plot solution to rock-paper-scissors (RPS) oscillator described by these chemical reactions:
+# print solution to rock-paper-scissors (RPS) oscillator described by these chemical reactions:
 # A+B -> 2B
 # B+C -> 2C
 # C+A -> 2A
@@ -95,20 +95,21 @@ initial_values = {
     b: 1,
     c: 1,
 }
-times = np.linspace(0, 3, 10)
+times = np.linspace(0, 1, 11)
 
 solution = gpac.integrate_odes(odes, initial_values, times=times)
-print(solution.t)
-print(solution.y)
+print(f'times = {solution.t}')
+print(f'a = {solution.y[0]}')
+print(f'b = {solution.y[1]}')
+print(f'c = {solution.y[2]}')
 ```
 which prints
 ```
-[0.         0.33333333 0.66666667 1.         1.33333333 1.66666667
- 2.         2.33333333 2.66666667 3.        ]
-[[10.          2.56098541  0.29589034  3.07236375  9.94570864  2.10476543
-   0.3055632   3.66876211  9.80940302  1.71991985]
- [ 1.          9.00158443  5.49983224  0.38465869  1.22909424  9.38450638
-   4.77900238  0.34438338  1.50900335  9.67317748]
- [ 1.          0.43743016  6.20427742  8.54297756  0.82519711  0.51072818
-   6.91543442  7.98685451  0.68159364  0.60690267]]
+times = [0.  0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1. ]
+a = [10.          9.08888293  6.46163896  3.37229016  1.40901231  0.58753815
+  0.325435    0.31385821  0.53876259  1.2704187   3.07392998]
+b = [1.         2.46492776 5.24048262 8.26584068 9.86672121 9.63512628
+ 7.58732937 4.44015128 1.97279354 0.79948706 0.38421121]
+c = [1.         0.4461893  0.29787842 0.36186916 0.72426647 1.77733557
+ 4.08723563 7.24599051 9.48844387 9.93009424 8.54185881]
 ```
