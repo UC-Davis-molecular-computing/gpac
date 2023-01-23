@@ -35,20 +35,24 @@ def integrate_odes(
     each row of is the trajectory of a value in the ODEs. The order of the rows is the same as the
     order of the keys in the `odes` dict.
 
-    :param odes:
-        dict mapping sympy symbols to sympy expressions representing the ODEs.
-        Alternatively, the keys can be strings, and the values can be strings that look like expressions,
-        e.g., ``{'a': '-a*b + c*a'}``.
-        If a symbol is referenced in an expression but is not a key in `odes`,
-        a ValueError is raised.
-    :param initial_values:
-        dict mapping sympy symbols to initial values of each symbol.
-        Alternatively, the keys can be strings.
-        Any symbols in the ODEs that are not in the initial values
-        will be assumed to have initial value of 0.
-    :param times:
-        iterable of times at which to evaluate the ODEs
-    :return:
+    Args:
+        odes:
+            dict mapping sympy symbols to sympy expressions representing the ODEs.
+            Alternatively, the keys can be strings, and the values can be strings that look like expressions,
+            e.g., ``{'a': '-a*b + c*a'}``.
+            If a symbol is referenced in an expression but is not a key in `odes`,
+            a ValueError is raised.
+
+        initial_values:
+            dict mapping sympy symbols to initial values of each symbol.
+            Alternatively, the keys can be strings.
+            Any symbols in the ODEs that are not in the initial values
+            will be assumed to have initial value of 0.
+
+        times:
+            iterable of times at which to evaluate the ODEs
+
+    Returns:
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
     times = tuple(times)
@@ -96,16 +100,21 @@ def plot(
     Plot the solution to the given ODEs using matplotlib.
     (Assumes it is being run in a Jupyter notebook.)
 
-    :param odes:
-        dict mapping sympy symbols to sympy expressions representing the ODEs
-    :param initial_values:
-        dict mapping synmpy symbols to initial values of each symbol
-    :param times:
-        iterable of times at which to evaluate the ODEs
-    :param figure_size:
-        pair (width, height) of the figure
-    :param symbols_to_plot:
-        symbols to plot; if empty, then all symbols are plotted
+    Args:
+        odes:
+            dict mapping sympy symbols to sympy expressions representing the ODEs
+
+        initial_values:
+            dict mapping synmpy symbols to initial values of each symbol
+
+        times:
+            iterable of times at which to evaluate the ODEs
+
+        figure_size:
+            pair (width, height) of the figure
+
+        symbols_to_plot:
+            symbols to plot; if empty, then all symbols are plotted
     """
 
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
