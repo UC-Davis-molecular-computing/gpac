@@ -51,15 +51,14 @@ def integrate_odes(
     :return:
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
-    #TODO: add error-checking code to ensure symbols in strings are valid symbols
     times = tuple(times)
     odes_symbols = {}
     symbols_found_in_expressions = set()
     for symbol, expr in odes.items():
         if isinstance(symbol, str):
             symbol = sympy.symbols(symbol)
-        if isinstance(expr, str):
-            expr = sympy.parse_expr(expr)
+        if isinstance(expr, (str, int, float)):
+            expr = sympy.sympify(expr)
         symbols_found_in_expressions.update(expr.free_symbols)
         odes_symbols[symbol] = expr
 
@@ -111,9 +110,8 @@ def plot(
 
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
     if symbols_to_plot is None:
-        symbols_to_plot = frozenset(str(symbol) for symbol in odes.keys())
-    else:
-        symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
+        symbols_to_plot = odes.keys()
+    symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
 
     sol = integrate_odes(odes, initial_values, times)
 
