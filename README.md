@@ -70,3 +70,45 @@ plot(odes, initial_values, times=times, figure_size=(20,4), symbols_to_plot=[a,c
 ![](images/rps-a-c.png)
 
 See also the Jupyter notebook [notebook.ipynb](notebook.ipynb).
+
+If you want the data itself from the ODE numerical integration (without plotting it), you can call `gpac.integrate_odes`:
+
+```python
+# plot solution to rock-paper-scissors (RPS) oscillator described by these chemical reactions:
+# A+B -> 2B
+# B+C -> 2C
+# C+A -> 2A
+
+import sympy
+import gpac
+import numpy as np
+
+a,b,c = sympy.symbols('a b c')
+
+odes = {
+    a: -a*b + c*a,
+    b: -b*c + a*b,
+    c: -c*a + b*c,
+}
+initial_values = {
+    a: 10,
+    b: 1,
+    c: 1,
+}
+times = np.linspace(0, 3, 10)
+
+solution = gpac.integrate_odes(odes, initial_values, times=times)
+print(solution.t)
+print(solution.y)
+```
+which prints
+```
+[0.         0.33333333 0.66666667 1.         1.33333333 1.66666667
+ 2.         2.33333333 2.66666667 3.        ]
+[[10.          2.56098541  0.29589034  3.07236375  9.94570864  2.10476543
+   0.3055632   3.66876211  9.80940302  1.71991985]
+ [ 1.          9.00158443  5.49983224  0.38465869  1.22909424  9.38450638
+   4.77900238  0.34438338  1.50900335  9.67317748]
+ [ 1.          0.43743016  6.20427742  8.54297756  0.82519711  0.51072818
+   6.91543442  7.98685451  0.68159364  0.60690267]]
+```
