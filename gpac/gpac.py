@@ -7,7 +7,7 @@ TODO: describe how a GPAC works
 """
 from dataclasses import dataclass
 
-from typing import Dict, Iterable, Tuple, Union
+from typing import Dict, Iterable, Tuple, Union, Optional
 
 from scipy.integrate._ivp.ivp import OdeResult
 import sympy
@@ -91,6 +91,7 @@ def plot(
         initial_values: Dict[sympy.Symbol, float],
         times: Iterable[float] = tuple(np.arange(0, 1, 0.01)),
         figure_size: Tuple[float, float] = (10, 10),
+        symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
 ) -> None:
     """
     Plot the solution to the given ODEs using matplotlib.
@@ -104,14 +105,25 @@ def plot(
         iterable of times at which to evaluate the ODEs
     :param figure_size:
         pair (width, height) of the figure
+    :param symbols_to_plot:
+        symbols to plot; if empty, then all symbols are plotted
     """
+
+    # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
+    if symbols_to_plot is None:
+        symbols_to_plot = frozenset(str(symbol) for symbol in odes.keys())
+    else:
+        symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
+
     sol = integrate_odes(odes, initial_values, times)
 
     figure(figsize=figure_size)
 
     for idx, symbol in enumerate(odes.keys()):
-        plt.plot(sol.t, sol.y[idx], label=str(symbol))
-
+        symbol_name = str(symbol)
+        if symbol_name in symbols_to_plot:
+            plt.plot(times, sol.y[idx], label=str(symbol))
+        
     plt.legend()
     plt.show()
 
