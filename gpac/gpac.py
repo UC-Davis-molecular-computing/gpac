@@ -20,7 +20,7 @@ from matplotlib.pyplot import figure
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
-        times: Iterable[float] = tuple(np.linspace(0, 1, 101)),
+        times: Iterable[float] = np.linspace(0, 1, 101),
 ) -> OdeResult:
     """
     Integrate the given ODEs using scipy, returning the same object returned by `solve_ivp` in the
@@ -55,6 +55,7 @@ def integrate_odes(
     Returns:
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
+    if not isinstance(times, tuple):
     times = tuple(times)
     odes_symbols = {}
     symbols_found_in_expressions = set()
@@ -92,7 +93,7 @@ def integrate_odes(
 def plot(
         odes: Dict[sympy.Symbol, sympy.Expr],
         initial_values: Dict[sympy.Symbol, float],
-        times: Iterable[float] = tuple(np.linspace(0, 1, 101)),
+        times: Iterable[float] = np.linspace(0, 1, 101),
         figure_size: Tuple[float, float] = (10, 10),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
 ) -> None:
