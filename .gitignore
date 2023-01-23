@@ -1,3 +1,5 @@
+main.py
+private-notebook.ipynb
 *.DS_Store
 *.pyc
 __pyache__/*

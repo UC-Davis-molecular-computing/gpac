@@ -138,7 +138,8 @@ def plot(
     for idx, symbol in enumerate(odes.keys()):
         symbol_name = str(symbol)
         if symbol_name in symbols_to_plot:
-            plt.plot(times, sol.y[idx], label=str(symbol))
+            y = sol.y[idx]
+            plt.plot(sol.t, y, label=str(symbol))
 
     plt.legend()
     plt.show()
