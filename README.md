@@ -13,6 +13,8 @@
 This will eventually be a package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. So far it's just a front-end to scipy and sympy making it easier to numerically integrate systems of ODEs and plot their solutions.
 
 ## Installation
+Python 3.7 or above is required.
+
 1. Install the dependencies by typing  
    ```
    pip install numpy scipy matplotlib sympy
