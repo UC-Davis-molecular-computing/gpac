@@ -54,7 +54,7 @@ a,b,c = symbols('a b c')
 
 odes = {
     'a': -a*b + c*a, # keys can be a sympy Symbol or string
-    b: '-b*c + a*b', # values can be a symbol Expr or string
+    b: '-b*c + a*b', # values can be a symbol Expr, string, or (if constant) an int or float
     c: -c*a + b*c,
 }
 initial_values = {
