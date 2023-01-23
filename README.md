@@ -35,6 +35,8 @@ This will eventually be a package for simulating General-Purpose Analog Computer
     ```
 
 ## Example
+See more examples in the Jupyter notebook [notebook.ipynb](notebook.ipynb).
+
 The following is an example of what can be done currently, which is simply to numerically integrate and plot a system of ODEs (ordinary differential equations).
 
 The ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`). Every symbol that appears in any of the expressions must also be a key in this dict.
@@ -68,8 +70,6 @@ plot(odes, initial_values, times=times, figure_size=(20,4), symbols_to_plot=[a,c
 ```
 
 ![](images/rps-a-c.png)
-
-See also the Jupyter notebook [notebook.ipynb](notebook.ipynb).
 
 If you want the data itself from the ODE numerical integration (without plotting it), you can call `gpac.integrate_odes` (replace the call to `plot` above with the following code).
 
