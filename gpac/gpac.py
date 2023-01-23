@@ -33,7 +33,7 @@ def integrate_odes(
 
     The object `solution` returned by `solve_ivp` has field `solution.y` which is a 2D numpy array,
     each row of which is the trajectory of a value in the ODEs. The order of the rows is the same as the
-    order of the keys in the `odes` dict.
+    iteration order of the keys in the `odes` dict.
 
     Args:
         odes:
@@ -55,7 +55,6 @@ def integrate_odes(
     Returns:
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
-    if not isinstance(times, tuple):
     times = tuple(times)
     odes_symbols = {}
     symbols_found_in_expressions = set()
