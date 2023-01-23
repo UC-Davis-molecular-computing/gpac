@@ -16,7 +16,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
-#TODO: add optional parameters to integrate_odes and plot to customize the call to solve_ivp
+
+# TODO: add optional parameters to integrate_odes and plot to customize the call to solve_ivp
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
@@ -56,6 +57,12 @@ def integrate_odes(
         solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
     """
     times = tuple(times)
+
+    # normalize initial values dict to use symbols as keys
+    initial_values = {sympy.Symbol(symbol) if isinstance(symbol, str) else symbol: value
+                      for symbol, value in initial_values.items()}
+
+    # normalize odes dict to use symbols as keys
     odes_symbols = {}
     symbols_found_in_expressions = set()
     for symbol, expr in odes.items():
@@ -66,10 +73,12 @@ def integrate_odes(
         symbols_found_in_expressions.update(expr.free_symbols)
         odes_symbols[symbol] = expr
 
+    # ensure all symbols in expressions are keys in the odes dict
     symbols_in_expressions_not_in_keys = symbols_found_in_expressions - set(odes_symbols.keys())
     if len(symbols_in_expressions_not_in_keys) > 0:
         raise ValueError(f"Found symbols in expressions that are not keys in the odes dict: "
-                         f"{symbols_in_expressions_not_in_keys}")
+                         f"{symbols_in_expressions_not_in_keys}\n"
+                         f"The keys in the odes dict are: {odes_symbols.keys()}")
 
     odes = odes_symbols
 
