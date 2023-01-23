@@ -62,4 +62,4 @@ plot(odes, initial_values, times=times, figure_size=(20,4), symbols_to_plot=[a,c
 
 ![](images/rps-a-c.png)
 
-See also the Jupyter notebook notebook.ipynb.
+See also the Jupyter notebook [notebook.ipynb](notebook.ipynb).
