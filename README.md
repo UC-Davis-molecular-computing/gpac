@@ -37,7 +37,7 @@ This will eventually be a package for simulating General-Purpose Analog Computer
 ## Example
 The following is an example of what can be done currently, which is simply to numerically integrate and plot a system of ODEs (ordinary differential equations).
 
-The ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or again for convenience you can also use Python strings). Every symbol that appears in any of the expressions must also be a key in this dict.
+The ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`). Every symbol that appears in any of the expressions must also be a key in this dict.
 
 The initial values are specified as a Python dict `initial_values` mapping variables (again, sympy symbols or strings) to their initial values (floats). Here, if you leave out a symbol as a key to `initial_values`, it is assumed to have initial value 0.
 
