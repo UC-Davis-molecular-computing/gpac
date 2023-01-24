@@ -47,7 +47,7 @@ Every symbol that appears in any of the expressions *must* also be a key in this
 
 The initial values are specified as a Python dict `initial_values` mapping variables (again, sympy symbols or strings) to their initial values (floats). If you leave out a symbol as a key to `initial_values`, it is assumed to have initial value 0.
 
-Finally, you can specify the times at which to solve for the ODEs as an iterable of floats. (This is optional; if not specified it uses the time values 0.0, 0.01, 0.02, 0.03, ..., 0.98, 0.99, 1.0)
+Finally, you can specify the times at which to solve for the ODEs as an iterable of floats `t_eval`. (This is optional; if not specified it uses the time values 0.0, 0.01, 0.02, 0.03, ..., 0.98, 0.99, 1.0)
 
 Remaining parameters are optional (see below for examples of them). See docstrings of functions
 `integrate_odes` and `plot` in the source code file [gpac.py](gpac/gpac.py) for more details.
