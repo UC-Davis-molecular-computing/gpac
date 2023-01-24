@@ -85,11 +85,14 @@ def integrate_odes(
             will be assumed to have initial value of 0.
 
         t_eval:
-            iterable of times at which to evaluate the ODEs
+            iterable of times at which to evaluate the ODEs.
+            At least one of `t_eval` or `t_span` must be specified.
 
         t_span:
-            pair of (start_time, end_time) for the integration
-            (if not specified, first and last times in `t_eval` are used)
+            pair (start_time, end_time) for the integration.
+            If not specified, first and last times in `t_eval` are used.
+            (This is different from solve_ivp, which requires `t_span` to be specified.)
+            At least one of `t_eval` or `t_span` must be specified.
 
         method:
             See documentation for `solve_ivp` in scipy.integrate:
@@ -193,6 +196,12 @@ def plot(
         t_span: Optional[Tuple[float, float]] = None,
         figure_size: Tuple[float, float] = (10, 10),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
+        method: Union[str, scipy.integrate.OdeSolver] = 'RK45',
+        dense_output: bool = False,
+        events: Optional[Union[Callable, Iterable[Callable]]] = None,
+        vectorized: bool = False,
+        args: Optional[Tuple] = None,
+        **options,
 ) -> None:
     """
     Plot the solution to the given ODEs using matplotlib.
@@ -217,6 +226,33 @@ def plot(
 
         symbols_to_plot:
             symbols to plot; if empty, then all symbols are plotted
+
+                method:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        dense_output:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        events:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        vectorized:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        args:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        options:
+            For solver-specific parameters to `solve_ivp`,
+            see documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+            Also used for keyword options to `plot` in matplotlib.pyplot:
+            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
     """
 
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
