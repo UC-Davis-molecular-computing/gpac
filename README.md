@@ -74,7 +74,7 @@ initial_values = {
 }
 times = np.linspace(0, 3, 200)
 
-gpac.plot(odes, initial_values, times=times, figure_size=(20,4), symbols_to_plot=[a,c])
+gpac.plot(odes, initial_values, t_eval=times, figure_size=(20,4), symbols_to_plot=[a,c])
 ```
 
 ![](images/rps-a-c.png)
@@ -84,7 +84,7 @@ If you want the data itself from the ODE numerical integration (without plotting
 ```python
 times = np.linspace(0, 1, 5)
 
-solution = gpac.integrate_odes(odes, initial_values, times=times)
+solution = gpac.integrate_odes(odes, initial_values, t_eval=times)
 print(f'times = {solution.t}')
 print(f'a = {solution.y[0]}')
 print(f'b = {solution.y[1]}')
