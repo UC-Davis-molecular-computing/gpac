@@ -41,9 +41,11 @@ See more examples in the Jupyter notebook [notebook.ipynb](notebook.ipynb).
 
 The following is an example of what can be done currently, which is simply to numerically integrate and plot a system of ODEs (ordinary differential equations).
 
-The ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`). Every symbol that appears in any of the expressions must also be a key in this dict.
+The ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`).
 
-The initial values are specified as a Python dict `initial_values` mapping variables (again, sympy symbols or strings) to their initial values (floats). Here, if you leave out a symbol as a key to `initial_values`, it is assumed to have initial value 0.
+Every symbol that appears in any of the expressions *must* also be a key in this dict.
+
+The initial values are specified as a Python dict `initial_values` mapping variables (again, sympy symbols or strings) to their initial values (floats). If you leave out a symbol as a key to `initial_values`, it is assumed to have initial value 0.
 
 Finally, you can specify the times at which to solve for the ODEs as an iterable of floats. (This is optional; if not specified it uses the time values 0.0, 0.01, 0.02, 0.03, ..., 0.98, 0.99, 1.0)
 
@@ -57,10 +59,13 @@ import numpy as np
 
 a,b,c = sympy.symbols('a b c')
 
+# ODEs specified as dict mapping each variable to expression describing its derivative
+# key representing variable can be a sympy Symbol or string
+# value representing derivative can be a sympy Expr, string, or (if constant) an int or float
 odes = {
-    'a': -a*b + c*a, # keys can be a sympy Symbol or string
-    b: '-b*c + a*b', # values can be a sympy Expr, string, or (if constant) an int or float
-    c: -c*a + b*c,
+    a: -a*b + c*a, 
+    b: -b*c + a*b,
+    'c': '-c*a + b*c', 
 }
 initial_values = {
     a: 10,
