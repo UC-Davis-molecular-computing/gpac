@@ -204,7 +204,7 @@ def plot(
         **options,
 ) -> None:
     """
-    Plot the solution to the given ODEs using matplotlib.
+    Numerically integrate the given ODEs, then plot the trajectories using matplotlib.
     (Assumes it is being run in a Jupyter notebook.)
 
     Args:
@@ -265,6 +265,12 @@ def plot(
         initial_values=initial_values,
         t_span=t_span,
         t_eval=t_eval,
+        method=method,
+        dense_output=dense_output,
+        events=events,
+        vectorized=vectorized,
+        args=args,
+        **options,
     )
 
     figure(figsize=figure_size)
@@ -275,6 +281,7 @@ def plot(
             y = sol.y[idx]
             plt.plot(sol.t, y, label=str(symbol))
 
+    plt.xlabel('time')
     plt.legend()
     plt.show()
 
@@ -285,6 +292,9 @@ class GPAC:
     A GPAC class for numerically simulating a general-purpose analog computer (GPAC),
     defined by Claude Shannon in 1941 as an abstract model of programmable analog computational devices
     such as the differential analyzer created by Vannevar Bush and Harold Locke Hazen in the 1920s.
+
+    TODO: maybe this class isn't needed; it seems that symp expressions are probably the
+          simplest way to specify the GPAC circuit
     """
 
     def __init__(self) -> None:
