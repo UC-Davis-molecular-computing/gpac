@@ -7,8 +7,9 @@ TODO: describe how a GPAC works
 """
 from dataclasses import dataclass
 
-from typing import Dict, Iterable, Tuple, Union, Optional
+from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Sequence
 
+import scipy.integrate
 from scipy.integrate._ivp.ivp import OdeResult
 import sympy
 from scipy.integrate import solve_ivp
@@ -21,7 +22,31 @@ from matplotlib.pyplot import figure
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
-        times: Iterable[float] = np.linspace(0, 1, 101),
+        t_eval: Optional[Iterable[float]] = None,
+        t_span: Optional[Tuple[float, float]] = None,
+        method: Union[str, scipy.integrate.OdeSolver] = 'RK45',
+        dense_output: bool = False,
+        events: Optional[Union[Callable, Iterable[Callable]]] = None,
+        vectorized: bool = False,
+        args: Optional[Tuple] = None,
+        **options,
+        ########################################################################################
+        # XXX: the following are all the options that can be passed to solve_ivp,
+        # but some are only for certain solvers, and we get a warning if we pass
+        # some of them in (rather than using them as keyword arguments in **options).
+        # So despite the fact that I prefer strongly-typed and explicity named parameters
+        # instead of just keyword arguments in **options, leaving these out avoids
+        # triggering the warning from solve-ivp.
+        ########################################################################################
+        # first_step: Optional[float] = None,
+        # max_step: float = np.inf,
+        # rtol: float = 1e-3,
+        # atol: float = 1e-6,
+        # jac: Optional[Union[Callable, np.ndarray, Sequence]] = None,
+        # jac_sparsity: Optional[np.ndarray] = None,
+        # lband: Optional[int] = None,
+        # uband: Optional[int] = None,
+        # min_step: float = 0.0,
 ) -> OdeResult:
     """
     Integrate the given ODEs using scipy, returning the same object returned by `solve_ivp` in the
@@ -35,6 +60,15 @@ def integrate_odes(
     The object `solution` returned by `solve_ivp` has field `solution.y` which is a 2D numpy array,
     each row of which is the trajectory of a value in the ODEs. The order of the rows is the same as the
     iteration order of the keys in the `odes` dict.
+
+    Besides the parameters described below,
+    all other parameters are simply passed along to `solve_ivp` in scipy.integrate.
+    As with that function, the following are explicitly named parameters:
+    `method`, `dense_output`, `events`, `vectorized`, `args`, and
+    all other keyword arguments are passed in through `**options`; see the
+    documentation for solve_ivp for a description of these parameters:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
 
     Args:
         odes:
@@ -50,13 +84,47 @@ def integrate_odes(
             Any symbols in the ODEs that are not in the initial values
             will be assumed to have initial value of 0.
 
-        times:
+        t_eval:
             iterable of times at which to evaluate the ODEs
 
+        t_span:
+            pair of (start_time, end_time) for the integration
+            (if not specified, first and last times in `t_eval` are used)
+
+        method:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        dense_output:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        events:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        vectorized:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        args:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        options:
+            For solver-specific parameters, see documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
     Returns:
-        solution to the ODEs (same as object returned by `solve_ivp` in scipy.integrate)
+        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
     """
-    times = tuple(times)
+    if t_eval is not None:
+        t_eval = np.array(t_eval)
+
+    if t_eval is None and t_span is None:
+        raise ValueError("Must specify either t_eval or t_span")
+    elif t_eval is not None and t_span is None:
+        t_span = (t_eval[0], t_eval[-1])
 
     # normalize initial values dict to use symbols as keys
     initial_values = {sympy.Symbol(symbol) if isinstance(symbol, str) else symbol: value
@@ -92,7 +160,27 @@ def integrate_odes(
     # and assume initial value of 0 for any symbol not specified
     initial_values_sorted = [initial_values[symbol] if symbol in initial_values else 0
                              for symbol in all_symbols]
-    solution = solve_ivp(ode_func_vector, [times[0], times[-1]], y0=initial_values_sorted, t_eval=times)
+    solution = solve_ivp(
+        fun=ode_func_vector,
+        t_span=t_span,
+        y0=initial_values_sorted,
+        t_eval=t_eval,
+        method=method,
+        dense_output=dense_output,
+        events=events,
+        vectorized=vectorized,
+        args=args,
+        **options,
+        # first_step=first_step,
+        # max_step=max_step,
+        # rtol=rtol,
+        # atol=atol,
+        # jac=jac,
+        # jac_sparsity=jac_sparsity,
+        # lband=lband,
+        # uband=uband,
+        # min_step=min_step,
+    )
 
     # mypy complains about solution not being an OdeResult, but it is
     return solution  # type:ignore
@@ -101,7 +189,8 @@ def integrate_odes(
 def plot(
         odes: Dict[sympy.Symbol, sympy.Expr],
         initial_values: Dict[sympy.Symbol, float],
-        times: Iterable[float] = np.linspace(0, 1, 101),
+        t_eval: Optional[Iterable[float]] = None,
+        t_span: Optional[Tuple[float, float]] = None,
         figure_size: Tuple[float, float] = (10, 10),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
 ) -> None:
@@ -116,8 +205,12 @@ def plot(
         initial_values:
             dict mapping synmpy symbols to initial values of each symbol
 
-        times:
+        t_eval:
             iterable of times at which to evaluate the ODEs
+
+        t_span:
+            pair of (start_time, end_time) for the integration
+            (if not specified, first and last times in `t_eval` are used)
 
         figure_size:
             pair (width, height) of the figure
@@ -131,7 +224,12 @@ def plot(
         symbols_to_plot = odes.keys()
     symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
 
-    sol = integrate_odes(odes, initial_values, times)
+    sol = integrate_odes(
+        odes=odes,
+        initial_values=initial_values,
+        t_span=t_span,
+        t_eval=t_eval,
+    )
 
     figure(figsize=figure_size)
 
