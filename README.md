@@ -59,9 +59,9 @@ import numpy as np
 
 a,b,c = sympy.symbols('a b c')
 
-# ODEs specified as dict mapping each variable to expression describing its derivative
-# key representing variable can be a sympy Symbol or string
-# value representing derivative can be a sympy Expr, string, or (if constant) an int or float
+# ODEs specified as dict mapping each variable to expression describing its derivative.
+# key representing variable can be a sympy Symbol or string.
+# value representing derivative can be a sympy Expr, string, or (if constant) int or float.
 odes = {
     a: -a*b + c*a, 
     b: -b*c + a*b,
