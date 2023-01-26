@@ -110,6 +110,9 @@ See [notebook.ipynb](notebook.ipynb) for examples.
 Reactions are constructed using operations on `Specie` objects:
 
 ```python
+# plot solution to ODEs of this CRN that computes f(x) = x^2, using the gpac.crn module
+# 2X -> 2X+Y
+# Y -> nothing
 x,y = gpac.species('X Y')
 rxns = [
     x+x >> x+x+y,
