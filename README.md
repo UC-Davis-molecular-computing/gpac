@@ -6,7 +6,7 @@
 
 * [Overview](#overview)
 * [Installation](#installation)
-* [Example](#example)
+* [Examples](#examples)
 
 
 ## Overview
@@ -36,9 +36,10 @@ Python 3.7 or above is required.
     >>>
     ```
 
-## Example
+## Examples
 See more examples in the Jupyter notebook [notebook.ipynb](notebook.ipynb).
 
+### Plotting ODEs
 The following is an example of what can be done currently, which is simply to numerically integrate and plot a system of ODEs (ordinary differential equations).
 
 The ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`).
@@ -79,6 +80,7 @@ gpac.plot(odes, initial_values, t_eval=t_eval, figure_size=(20,4), symbols_to_pl
 
 ![](images/rps-a-c.png)
 
+### Getting trajectory data of ODEs
 If you want the data itself from the ODE numerical integration (without plotting it), you can call `gpac.integrate_odes` (replace the call to `plot` above with the following code).
 
 ```python
@@ -98,3 +100,26 @@ b = [1.         6.84903338 9.63512628 3.03634559 0.38421121]
 c = [1.         0.3039504  1.77733557 8.57599698 8.54185881]
 ```
 The value `solution` returned by `gpac.integrate_odes` is the same object returned from [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
+
+
+### Plotting trajectories of species concentrations from chemical reaction networks
+There are also functions `integrate_crn_odes` and `plot_crn`, which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function `crn_to_odes`, which converts a chemical reactions into ODEs.
+
+See [notebook.ipynb](notebook.ipynb) for examples.
+
+Reactions are constructed using operations on `Specie` objects:
+
+```python
+x,y = gpac.species('X Y')
+rxns = [
+    x+x >> x+x+y,
+    y >> gpac.empty,
+]
+initial_values = {x:5}
+t_eval = np.linspace(0, 5, 100)
+
+# plot trajectory of concentrations
+gpac.plot_crn(rxns, initial_values, t_eval=t_eval, figure_size=(20,4))
+```
+
+Although they appear similar, a `Specie` object is different from a `sympy.Symbol` object. However, any of the follow objects can be a key in the `initial_values` parameter to `plot_crn` and `integrate_crn_odes`: `Specie`, `sympy.Symbol`, or `str`. They will be normalized to `sympy.Symbol` objects in the ODEs.

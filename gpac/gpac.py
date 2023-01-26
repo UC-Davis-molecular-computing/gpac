@@ -5,9 +5,10 @@ such as the differential analyzer created by Vannevar Bush and Harold Locke Haze
 
 TODO: describe how a GPAC works
 """
+from collections import defaultdict
 from dataclasses import dataclass
 
-from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Sequence
+from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Sequence, Any
 
 import scipy.integrate
 from scipy.integrate._ivp.ivp import OdeResult
@@ -69,6 +70,25 @@ def integrate_odes(
     documentation for solve_ivp for a description of these parameters:
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
+    >>> import sympy, gpac, numpy as np
+    >>> a,b,c = sympy.symbols('a b c')
+    >>> odes = { a: -a*b + c*a,   b: -b*c + a*b,   c: -c*a + b*c }
+    >>> initial_values = { a: 10, b: 1, c: 1}
+    >>> t_eval = np.linspace(0, 3, 200)
+    >>> gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
+          message: 'The solver successfully reached the end of the integration interval.'
+         nfev: 62
+         njev: 0
+          nlu: 0
+          sol: None
+       status: 0
+      success: True
+            t: array([0.  , 0.25, 0.5 , 0.75, 1.  ])
+     t_events: None
+            y: array([[10.        ,  4.84701622,  0.58753815,  0.38765743,  3.07392998],
+           [ 1.        ,  6.84903338,  9.63512628,  3.03634559,  0.38421121],
+           [ 1.        ,  0.3039504 ,  1.77733557,  8.57599698,  8.54185881]])
+     y_events: None
 
     Args:
         odes:
@@ -121,6 +141,7 @@ def integrate_odes(
     Returns:
         solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
     """
+    #TODO: warn if `initial_values` contains keys that are not in `odes`
     if t_eval is not None:
         t_eval = np.array(t_eval)
 
@@ -143,6 +164,14 @@ def integrate_odes(
             expr = sympy.sympify(expr)
         symbols_found_in_expressions.update(expr.free_symbols)
         odes_symbols[symbol] = expr
+
+    # ensure that all symbols that are keys in `initial_values` are also keys in `odes`
+    initial_values_keys = set(initial_values.keys())
+    odes_keys = set(odes_symbols.keys())
+    diff = initial_values_keys - odes_keys
+    if len(diff) > 0:
+        raise ValueError(f"\nInitial_values contains symbols that are not in odes: {comma_separated(diff)}"
+                         f"\nHere are the symbols of the ODES:                     {comma_separated(odes_keys)}")
 
     # ensure all symbols in expressions are keys in the odes dict
     symbols_in_expressions_not_in_keys = symbols_found_in_expressions - set(odes_symbols.keys())
@@ -254,11 +283,17 @@ def plot(
             Also used for keyword options to `plot` in matplotlib.pyplot:
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
     """
-
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
     if symbols_to_plot is None:
         symbols_to_plot = odes.keys()
     symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
+
+    # check that symbols all appear as keys in odes
+    symbols_of_odes = frozenset(str(symbol) for symbol in odes.keys())
+    diff = symbols_to_plot - symbols_of_odes
+    if len(diff) > 0:
+        raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes: {comma_separated(diff)}"
+                         f"\nSymbols in ODEs:                                       {comma_separated(symbols_of_odes)}")
 
     sol = integrate_odes(
         odes=odes,
@@ -285,6 +320,8 @@ def plot(
     plt.legend()
     plt.show()
 
+def comma_separated(elts: Iterable[Any]) -> str:
+    return ', '.join(str(elt) for elt in elts)
 
 @dataclass
 class GPAC:
