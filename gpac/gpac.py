@@ -173,11 +173,11 @@ def integrate_odes(
                          f"\nHere are the symbols of the ODES:                     {comma_separated(odes_keys)}")
 
     # ensure all symbols in expressions are keys in the odes dict
-    symbols_in_expressions_not_in_keys = symbols_found_in_expressions - set(odes_symbols.keys())
+    symbols_in_expressions_not_in_keys = symbols_found_in_expressions - odes_keys
     if len(symbols_in_expressions_not_in_keys) > 0:
         raise ValueError(f"Found symbols in expressions that are not keys in the odes dict: "
                          f"{symbols_in_expressions_not_in_keys}\n"
-                         f"The keys in the odes dict are: {odes_symbols.keys()}")
+                         f"The keys in the odes dict are: {odes_keys}")
 
     odes = odes_symbols
 
