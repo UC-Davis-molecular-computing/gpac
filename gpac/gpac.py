@@ -36,7 +36,7 @@ def integrate_odes(
         # some of them in (rather than using them as keyword arguments in **options).
         # So despite the fact that I prefer strongly-typed and explicity named parameters
         # instead of just keyword arguments in **options, leaving these out avoids
-        # triggering the warning from solve-ivp.
+        # triggering the warning from solve_ivp.
         ########################################################################################
         # first_step: Optional[float] = None,
         # max_step: float = np.inf,
