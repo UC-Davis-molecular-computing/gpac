@@ -7,6 +7,9 @@
 * [Overview](#overview)
 * [Installation](#installation)
 * [Examples](#examples)
+  - [Plotting ODEs](#plotting-odes)
+  - [Getting trajectory data of ODEs](#getting-trajectory-data-of-odes)
+  - [Chemical reaction networks](#chemical-reaction-networks)
 
 
 ## Overview
@@ -102,7 +105,7 @@ c = [1.         0.3039504  1.77733557 8.57599698 8.54185881]
 The value `solution` returned by `gpac.integrate_odes` is the same object returned from [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
 
 
-### Plotting trajectories of species concentrations from chemical reaction networks
+### Chemical reaction networks
 There are also functions `integrate_crn_odes` and `plot_crn`, which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function `crn_to_odes`, which converts a chemical reactions into ODEs.
 
 See [notebook.ipynb](notebook.ipynb) for examples.
