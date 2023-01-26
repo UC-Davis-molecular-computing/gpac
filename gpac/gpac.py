@@ -5,7 +5,7 @@ such as the differential analyzer created by Vannevar Bush and Harold Locke Haze
 
 TODO: describe how a GPAC works
 """
-from collections import defaultdict
+
 from dataclasses import dataclass
 
 from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Sequence, Any
@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
 
-# TODO: add optional parameters to integrate_odes and plot to customize the call to solve_ivp
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
@@ -141,7 +140,7 @@ def integrate_odes(
     Returns:
         solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
     """
-    #TODO: warn if `initial_values` contains keys that are not in `odes`
+
     if t_eval is not None:
         t_eval = np.array(t_eval)
 
