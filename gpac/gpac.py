@@ -138,7 +138,8 @@ def integrate_odes(
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
     Returns:
-        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
+        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
     """
 
     if t_eval is not None:
