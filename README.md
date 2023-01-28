@@ -5,6 +5,7 @@
 ## Table of contents
 
 * [Overview](#overview)
+* [API](#api)
 * [Installation](#installation)
 * [Examples](#examples)
   - [Plotting ODEs](#plotting-odes)
@@ -14,6 +15,9 @@
 
 ## Overview
 This will eventually be a package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. So far it's just a front-end to scipy and sympy making it easier to numerically integrate systems of ODEs and plot their solutions.
+
+## API
+The API for the package is here: https://gpac.readthedocs.io/en/latest/
 
 ## Installation
 Python 3.7 or above is required.

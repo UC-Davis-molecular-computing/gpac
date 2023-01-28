@@ -2,20 +2,34 @@
 Module for expressing CRNs and deriving their ODEs. Ideas and much code taken from
 https://github.com/enricozb/python-crn.
 
-The general syntax is
+For example, to specify the "approximate majority" reactions
+
+    A+B → 2U
+
+    A+U → 2A
+
+    B+U → 2B
+
+we can write
 
 .. code-block:: python
 
     a, b, u = species('A B U')
-    approx_majority = [
+    rxns = [
         a + b >> 2 * u,
         a + u >> 2 * a,
         b + u >> 2 * b,
     ]
     n = 10 ** 5
     init_config = {a: 0.51 * n, b: 0.49 * n}
-    TODO: make this example relevant to gpac package
+    t_eval = np.linspace(0, 10, 100)
+    gpac.plot_crn(rxns, init_config, t_eval)
 
+which will plot the concentrations of A, B, and U over time.
+
+See functions :func:`crn.crn_to_odes` to convert reactions to ODEs (ordinary differential equations),
+:func:`crn.integrate_crn_odes` to get the trajectories of integrating these ODEs over time, and
+:func:`crn.plot_crn` to plot the trajectories.
 """
 
 from __future__ import annotations  # needed for forward references in type hints

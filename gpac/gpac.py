@@ -4,13 +4,13 @@ defined by Claude Shannon in 1941 as an abstract model of programmable analog co
 such as the differential analyzer created by Vannevar Bush and Harold Locke Hazen in the 1920s.
 See here for a description of GPACs:
 
-    https://en.wikipedia.org/wiki/General_purpose_analog_computer
-    https://arxiv.org/abs/1805.05729
+    - https://en.wikipedia.org/wiki/General_purpose_analog_computer
+    - https://arxiv.org/abs/1805.05729
 
 GPACs are typically defined by a circuit with gates that can add, multiply, introduce constants, and
-integrate an input with respect to time.
-The most elegant way to specify a GPAC is by defining a set of ordinary differential equations (ODEs)
-corresponding to the output wires of integrator gates in the GPAC circuit.
+integrate an input with respect to time. The most elegant way to specify a GPAC is by defining a set of
+ordinary differential equations (ODEs) corresponding to the output wires of integrator gates in the GPAC
+circuit.
 
 So really this package makes it easy to write down such ODEs and numerically integrate them and plot them.
 """
@@ -58,7 +58,8 @@ def integrate_odes(
     """
     Integrate the given ODEs using scipy, returning the same object returned by `solve_ivp` in the
     package scipy.integrate:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
     This is a convienence function that wraps the scipy function `solve_ivp`,
     allowing the user to specify the ODEs using sympy symbols and expressions
@@ -273,7 +274,7 @@ def plot(
         symbols_to_plot:
             symbols to plot; if empty, then all symbols are plotted
 
-                method:
+        method:
             See documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
@@ -304,6 +305,7 @@ def plot(
             Also used for keyword options to `plot` in matplotlib.pyplot:
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
     """
+
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
     if symbols_to_plot is None:
         symbols_to_plot = odes.keys()
