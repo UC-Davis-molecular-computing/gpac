@@ -76,12 +76,19 @@ def integrate_odes(
     documentation for solve_ivp for a description of these parameters:
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
-    >>> import sympy, gpac, numpy as np
-    >>> a,b,c = sympy.symbols('a b c')
-    >>> odes = { a: -a*b + c*a,   b: -b*c + a*b,   c: -c*a + b*c }
-    >>> initial_values = { a: 10, b: 1, c: 1}
-    >>> t_eval = np.linspace(0, 3, 200)
-    >>> gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
+    .. code-block:: python
+
+        import sympy, gpac, numpy as np
+        a,b,c = sympy.symbols('a b c')
+        odes = { a: -a*b + c*a,   b: -b*c + a*b,   c: -c*a + b*c }
+        initial_values = { a: 10, b: 1, c: 1}
+        t_eval = np.linspace(0, 3, 200)
+        gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
+
+    This outputs
+
+    .. code-block::
+
           message: 'The solver successfully reached the end of the integration interval.'
          nfev: 62
          njev: 0
@@ -95,6 +102,7 @@ def integrate_odes(
            [ 1.        ,  6.84903338,  9.63512628,  3.03634559,  0.38421121],
            [ 1.        ,  0.3039504 ,  1.77733557,  8.57599698,  8.54185881]])
      y_events: None
+
 
     Args:
         odes:
@@ -145,7 +153,7 @@ def integrate_odes(
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
     Returns:
-        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate:
+        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
     """
 
