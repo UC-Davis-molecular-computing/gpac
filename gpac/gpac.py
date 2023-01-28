@@ -2,16 +2,23 @@
 GPAC is a Python package for numerically simulating a general-purpose analog computer (GPAC),
 defined by Claude Shannon in 1941 as an abstract model of programmable analog computational devices
 such as the differential analyzer created by Vannevar Bush and Harold Locke Hazen in the 1920s.
+See here for a description of GPACs:
 
-TODO: describe how a GPAC works
+    https://en.wikipedia.org/wiki/General_purpose_analog_computer
+    https://arxiv.org/abs/1805.05729
+
+GPACs are typically defined by a circuit with gates that can add, multiply, introduce constants, and
+integrate an input with respect to time.
+The most elegant way to specify a GPAC is by defining a set of ordinary differential equations (ODEs)
+corresponding to the output wires of integrator gates in the GPAC circuit.
+
+So really this package makes it easy to write down such ODEs and numerically integrate them and plot them.
 """
 
-from dataclasses import dataclass
-
-from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Sequence, Any
+from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any
 
 import scipy.integrate
-from scipy.integrate._ivp.ivp import OdeResult
+from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
 from scipy.integrate import solve_ivp
 import numpy as np
@@ -170,14 +177,16 @@ def integrate_odes(
     odes_keys = set(odes_symbols.keys())
     diff = initial_values_keys - odes_keys
     if len(diff) > 0:
-        raise ValueError(f"\nInitial_values contains symbols that are not in odes: {comma_separated(diff)}"
-                         f"\nHere are the symbols of the ODES:                     {comma_separated(odes_keys)}")
+        raise ValueError(f"\nInitial_values contains symbols that are not in odes: "
+                         f"{comma_separated(diff)}"
+                         f"\nHere are the symbols of the ODES:                     "
+                         f"{comma_separated(odes_keys)}")
 
     # ensure all symbols in expressions are keys in the odes dict
-    symbols_in_expressions_not_in_keys = symbols_found_in_expressions - odes_keys
-    if len(symbols_in_expressions_not_in_keys) > 0:
+    symbols_in_expressions_not_in_odes_keys = symbols_found_in_expressions - odes_keys
+    if len(symbols_in_expressions_not_in_odes_keys) > 0:
         raise ValueError(f"Found symbols in expressions that are not keys in the odes dict: "
-                         f"{symbols_in_expressions_not_in_keys}\n"
+                         f"{symbols_in_expressions_not_in_odes_keys}\n"
                          f"The keys in the odes dict are: {odes_keys}")
 
     odes = odes_symbols
@@ -260,6 +269,10 @@ def plot(
             See documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
+        method:
+            See documentation for `solve_ivp` in scipy.integrate:
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
         dense_output:
             See documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
@@ -292,8 +305,10 @@ def plot(
     symbols_of_odes = frozenset(str(symbol) for symbol in odes.keys())
     diff = symbols_to_plot - symbols_of_odes
     if len(diff) > 0:
-        raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes: {comma_separated(diff)}"
-                         f"\nSymbols in ODEs:                                       {comma_separated(symbols_of_odes)}")
+        raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes: "
+                         f"{comma_separated(diff)}"
+                         f"\nSymbols in ODEs:                                       "
+                         f"{comma_separated(symbols_of_odes)}")
 
     sol = integrate_odes(
         odes=odes,
@@ -320,21 +335,6 @@ def plot(
     plt.legend()
     plt.show()
 
+
 def comma_separated(elts: Iterable[Any]) -> str:
     return ', '.join(str(elt) for elt in elts)
-
-@dataclass
-class GPAC:
-    """
-    A GPAC class for numerically simulating a general-purpose analog computer (GPAC),
-    defined by Claude Shannon in 1941 as an abstract model of programmable analog computational devices
-    such as the differential analyzer created by Vannevar Bush and Harold Locke Hazen in the 1920s.
-
-    TODO: maybe this class isn't needed; it seems that symp expressions are probably the
-          simplest way to specify the GPAC circuit
-    """
-
-    def __init__(self) -> None:
-        """
-        TODO:
-        """
