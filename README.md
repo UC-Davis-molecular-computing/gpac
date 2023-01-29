@@ -64,8 +64,7 @@ The initial values are specified as a Python dict `initial_values` mapping varia
 
 Finally, you can specify the times at which to solve for the ODEs as an iterable of floats `t_eval`. (This is optional; if not specified it uses the time values 0.0, 0.01, 0.02, 0.03, ..., 0.98, 0.99, 1.0)
 
-Remaining parameters are optional (see below for examples of them). See docstrings of functions
-`integrate_odes` and `plot` in the source code file [gpac.py](gpac/gpac.py) for more details.
+Remaining parameters are optional (see below for examples of them). See API documentation for [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#gpac.integrate_odes) and [`plot`](https://gpac.readthedocs.io/en/latest/#gpac.plot) for more details.
 
 ```python
 import sympy
