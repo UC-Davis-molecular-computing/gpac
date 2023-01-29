@@ -1,5 +1,5 @@
 """
-GPAC is a Python package for numerically simulating a general-purpose analog computer (GPAC),
+gpac is a Python package for numerically simulating a general-purpose analog computer (GPAC),
 defined by Claude Shannon in 1941 as an abstract model of programmable analog computational devices
 such as the differential analyzer created by Vannevar Bush and Harold Locke Hazen in the 1920s.
 See here for a description of GPACs:
