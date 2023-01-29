@@ -116,7 +116,7 @@ def integrate_odes(
         initial_values:
             dict mapping sympy symbols to initial values of each symbol.
             Alternatively, the keys can be strings.
-            Any symbols in the ODEs that are not in the initial values
+            Any symbols in the ODEs that are not keys in `initial_values`
             will be assumed to have initial value of 0.
 
         t_eval:
@@ -256,17 +256,27 @@ def plot(
 
     Args:
         odes:
-            dict mapping sympy symbols to sympy expressions representing the ODEs
+            dict mapping sympy symbols to sympy expressions representing the ODEs.
+            Alternatively, the keys can be strings, and the values can be strings that look like expressions,
+            e.g., ``{'a': '-a*b + c*a'}``.
+            If a symbol is referenced in an expression but is not a key in `odes`,
+            a ValueError is raised.
 
         initial_values:
-            dict mapping synmpy symbols to initial values of each symbol
+            dict mapping sympy symbols to initial values of each symbol.
+            Alternatively, the keys can be strings.
+            Any symbols in the ODEs that are not keys in `initial_values`
+            will be assumed to have initial value of 0.
 
         t_eval:
-            iterable of times at which to evaluate the ODEs
+            iterable of times at which to evaluate the ODEs.
+            At least one of `t_eval` or `t_span` must be specified.
 
         t_span:
-            pair of (start_time, end_time) for the integration
-            (if not specified, first and last times in `t_eval` are used)
+            pair (start_time, end_time) for the integration.
+            If not specified, first and last times in `t_eval` are used.
+            (This is different from solve_ivp, which requires `t_span` to be specified.)
+            At least one of `t_eval` or `t_span` must be specified.
 
         figure_size:
             pair (width, height) of the figure
