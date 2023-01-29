@@ -77,7 +77,7 @@ a,b,c = sympy.symbols('a b c')
 # ODEs specified as dict mapping each variable to expression describing its derivative.
 # key representing variable can be a sympy Symbol or string.
 # value representing derivative can be a sympy Expr, string, or (if constant) int or float.
-odes = { # represents ODEs:
+odes = {               # represents ODEs:
     a: -a*b + c*a,     # d/dt a(t) = -a(t)*b(t) + c(t)*a(t)
     b: -b*c + a*b,     # d/dt b(t) = -b(t)*c(t) + a(t)*b(t)
     'c': '-c*a + b*c', # d/dt c(t) = -c(t)*a(t) + b(t)*c(t)
