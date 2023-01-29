@@ -24,26 +24,31 @@ The API for the package is here: https://gpac.readthedocs.io/
 ## Installation
 Python 3.7 or above is required.
 
-1. Install the dependencies by typing  
+A. **pip** The easiest option is to install via `pip` by typing the following at the command line:
    ```
-   pip install numpy scipy matplotlib sympy
+   pip install gpac
    ```
-   at the command line.
 
-2. Clone this repo by typing 
-   ```
-   git clone https://github.com/UC-Davis-molecular-computing/gpac.git
-   ```
-   at the command line. You may need to install `git` first: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+B. The other option is to clone the git repo. You may need to install `git` first: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
-3. Add the directory into which you cloned it to your PYTHONPATH environment variable. See https://www.geeksforgeeks.org/pythonpath-environment-variable-in-python/ for example if you don't know how to do this. After doing this you should be able to import the gpac package in your Python scripts/Jupyter notebooks with `import gpac`. Try testing this out in the Python interpreter:
-    ```python
-    $ python
-    Python 3.9.12 (main, Apr  4 2022, 05:22:27) [MSC v.1916 64 bit (AMD64)] :: Anaconda, Inc. on win32
-    Type "help", "copyright", "credits" or "license" for more information.
-    >>> import gpac
-    >>>
-    ```
+   1. Install the dependencies by typing the following at the command line:
+      ```
+      pip install numpy scipy matplotlib sympy
+      ```
+
+   2. Clone this repo by typing the following at the command line:
+      ```
+      git clone https://github.com/UC-Davis-molecular-computing/gpac.git
+      ```
+
+   3. Add the directory into which you cloned the repo (it should be the `gpac` subdirectory under your working directory where the `git clone` above was executed) to your PYTHONPATH environment variable. See https://www.geeksforgeeks.org/pythonpath-environment-variable-in-python/ for example if you don't know how to alter PYTHONPATH. After doing this you should be able to import the gpac package in your Python scripts/Jupyter notebooks with `import gpac`. Try testing this out in the Python interpreter:
+       ```python
+       $ python
+       Python 3.9.12 (main, Apr  4 2022, 05:22:27) [MSC v.1916 64 bit (AMD64)] :: Anaconda, Inc. on win32
+       Type "help", "copyright", "credits" or "license" for more information.
+       >>> import gpac
+       >>>
+       ```
 
 ## Examples
 See more examples in the Jupyter notebook [notebook.ipynb](notebook.ipynb).
