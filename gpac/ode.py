@@ -274,7 +274,7 @@ def plot(
         initial_values: Dict[sympy.Symbol, float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
-        figure_size: Tuple[float, float] = (8, 8),
+        figure_size: Tuple[float, float] = (10, 4),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
         method: Union[str, scipy.integrate.OdeSolver] = 'RK45',
         dense_output: bool = False,
