@@ -17,7 +17,7 @@
 This will eventually be a package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. So far it's just a front-end to scipy and sympy making it easier to numerically integrate systems of ODEs and plot their solutions.
 
 ## API
-The API for the package is here: https://gpac.readthedocs.io/en/latest/
+The API for the package is here: https://gpac.readthedocs.io/
 
 ## Installation
 Python 3.7 or above is required.
