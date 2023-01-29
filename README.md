@@ -24,12 +24,12 @@ The API for the package is here: https://gpac.readthedocs.io/
 ## Installation
 Python 3.7 or above is required.
 
-A. **pip** The easiest option is to install via `pip` by typing the following at the command line:
+A. **pip:** The easiest option is to install via `pip` by typing the following at the command line:
    ```
    pip install gpac
    ```
 
-B. The other option is to clone the git repo. You may need to install `git` first: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
+B. **git:** The other option is to clone the git repo. You may need to install `git` first: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
    1. Install the dependencies by typing the following at the command line:
       ```
