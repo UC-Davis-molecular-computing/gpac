@@ -3,10 +3,15 @@ from os import path
 
 # how to upload to PyPI:
 # https://medium.com/@joel.barmettler/how-to-upload-your-python-package-to-pypi-65edc5fe9c56
-# briefly, first install twice (pip install twine), then to upload to PyPI:
-#   [bump version number in file gpac/__version__.py]
-#   python setup.py sdist
-#   twine upload dist/*
+# briefly, first
+# 1. install twice (pip install twine),
+# 2. pip install importlib-metadata==4.13.0 (to avoid error
+#    "AttributeError: 'EntryPoints' object has no attribute 'get'" with versions after 5.0)
+#
+# Then to upload to PyPI:
+# 1. [bump version number in file gpac/__version__.py]
+# 2. python setup.py sdist
+# 3. twine upload dist/*
 
 
 # this is ugly, but appears to be standard practice:
