@@ -74,7 +74,7 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     where :math:`k_1`, :math:`k_2` are the rate constants of the two reactions,
     corresponds to ODEs (following the convention of lowercase letter `x` for concentration of species `X`):
 
-        | :math:`x' = -2 k_1 x^2 - k2 c x`
+        | :math:`x' = -2 k_1 x^2 - k_2 c x`
         | :math:`c' = k_1 x^2`
         | :math:`y' = k_2 c x`
 
