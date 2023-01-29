@@ -82,8 +82,8 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     Returns:
         Dictionary mapping each species (represented as a sympy Symbol object, rather than a :any:`Specie`
         object) to its corresponding ODE (represented as a sympy Expression).
-        This object can be given to the functions :func:`gpac.integrate_odes` or :func:`gpac.plot`
-        to integrate/plot the ODEs.
+        This object can be given as the parameter `odes` to the functions :func:`gpac.integrate_odes`
+        and :func:`gpac.plot` to integrate/plot the ODEs.
     """
     # map each symbol to list of reactions in which it appears
     specie_to_rxn = defaultdict(list)
