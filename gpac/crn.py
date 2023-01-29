@@ -78,6 +78,28 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
         | :math:`c' = k_1 x^2`
         | :math:`y' = k_2 c x`
 
+    In the package, this can be implemented (for example setting :math:`k_1 = 1.5` and :math:`k_2 = 0.2`)
+    via:
+
+    .. code-block:: python
+
+        x, y, c = species('X Y C')
+        rxns = [
+            (x+x >> c).k(1.5),
+            (c+x >> c+y).k(0.2),
+        ]
+        odes = crn_to_odes(rxns)
+        for symbol, ode in odes.items():
+            print(f"{symbol}' = {ode}")
+
+    which prints
+
+    .. code-block:: none
+
+        X' = -0.2*C*X - 3.0*X**2
+        C' = 1.5*X**2
+        Y' = 0.2*C*X
+
     Args:
         rxns: list of :any:`Reaction`'s comprising the chemical reaction network.
               See documentation for :any:`Reaction` for details on how to specify reactions.
