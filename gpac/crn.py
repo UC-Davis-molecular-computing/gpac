@@ -199,7 +199,10 @@ def plot_crn(
     (https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
     as well as to
     scipy.integrate.solve_ivp
-    (https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
+    (https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
+    and as with :func:`gpac.plot`, keyword arguments not recognized by scipy.integrate.solve_ivp
+    (such as those intended for matplotlib.pyplot.plot) cause `solve_ivp` to print a warning that it
+    does not recognize the argument.
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
