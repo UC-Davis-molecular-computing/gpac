@@ -29,9 +29,9 @@ by using the ``|`` operator instead of ``>>`` (e.g., ``a+b | 2*u``) and rate con
 ``k`` (for forward rate constants) and ``r`` (for reverse rate constants),
 e.g., ``(a+b | 2*u).k(1.5).r(0.5)``.
 
-See functions :func:`crn.crn_to_odes` to convert reactions to ODEs (ordinary differential equations),
-:func:`crn.integrate_crn_odes` to get the trajectories of integrating these ODEs over time, and
-:func:`crn.plot_crn` to plot the trajectories. The documentation for :func:`crn.crn_to_odes` explains
+See functions :func:`crn_to_odes` to convert reactions to ODEs (ordinary differential equations),
+:func:`integrate_crn_odes` to get the trajectories of integrating these ODEs over time, and
+:func:`plot_crn` to plot the trajectories. The documentation for :func:`crn_to_odes` explains
 how reactions are converted into ODEs by each of these functions.
 """
 
@@ -193,8 +193,8 @@ def plot_crn(
     This calls :func:`ode.plot` with the ODEs derived from the given reactions via
     :func:`crn_to_odes`.
 
-    See :func:`ode.integrate_odes` for description of parameters. As with :func:`ode.plot`,
-    the keyword arguments in `options` are passed to
+    See :func:`ode.integrate_odes` and :func:`ode.plot` for description of parameters.
+    As with :func:`ode.plot`, the keyword arguments in `options` are passed to
     matplotlib.pyplot.plot
     (https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
     as well as to
