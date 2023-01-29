@@ -397,7 +397,8 @@ class Expression:
 
 empty = Expression([])
 """
-Used for chemical reactions with empty reactant or product lists, e.g., 
+Used for chemical reactions with empty reactant or product lists, e.g., to implement the exponential
+decay reaction :math:`X \\to \\emptyset`:
 
 .. code-block:: python
     
