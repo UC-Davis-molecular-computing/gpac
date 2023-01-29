@@ -121,7 +121,7 @@ There are also functions `integrate_crn_odes` and `plot_crn`, which take as inpu
 
 See [notebook.ipynb](notebook.ipynb) for examples.
 
-Reactions are constructed using operations on `Specie` objects:
+Reactions are constructed using operations on `Specie` objects returned from the function [`gpac.species`](https://gpac.readthedocs.io/en/latest/#crn.species):
 
 ```python
 # plot solution to ODEs of this CRN that computes f(x) = x^2, using the gpac.crn module
