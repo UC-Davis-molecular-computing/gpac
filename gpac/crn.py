@@ -622,16 +622,13 @@ class Reaction:
         Changes the reverse reactionn reaction rate constant to `coeff` and returns `self`.
 
         This is useful for including the rate constant during the construction
-        of a reaction. For example
+        of a reaction. For example, the following defines a reversible reaction
+        :math:`X + Y \\rightleftharpoons Z` with forward rate constant 2.5 and reverse rate constant 1.5.
 
         .. code-block:: python
 
             x, y, z = species("X Y Z")
-            rxns = [
-                (x + y >> z).k(2.5),
-                (z >> x).k(1.5),
-                (z >> y).k(0.5)),
-            ]
+            rxns = [ (x + y | z).k(2.5).r(1.5) ]
 
         args:
             coeff: float
