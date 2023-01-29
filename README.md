@@ -14,7 +14,9 @@
 
 
 ## Overview
-This will eventually be a package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. So far it's just a front-end to scipy and sympy making it easier to numerically integrate systems of ODEs and plot their solutions.
+This is a package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. It's primarily a front-end to scipy and sympy making it easier to numerically integrate systems of ODEs and plot their solutions.
+
+**Note:** Some of the relative links below are intended to be used only on the GitHub page for this project: https://github.com/UC-Davis-molecular-computing/gpac#readme  They will not work if you are reading this document on PyPI, for example.
 
 ## API
 The API for the package is here: https://gpac.readthedocs.io/
