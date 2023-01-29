@@ -10,9 +10,9 @@ gpac documentation
    :maxdepth: 3
    :caption: Contents:
 
-gpac.gpac
+gpac.ode
 =====================
-.. automodule:: gpac
+.. automodule:: ode
    :members:
 
 gpac.crn

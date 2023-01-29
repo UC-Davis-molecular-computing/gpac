@@ -107,8 +107,8 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     Returns:
         Dictionary mapping each species (represented as a sympy Symbol object, rather than a :any:`Specie`
         object) to its corresponding ODE (represented as a sympy Expression).
-        This object can be given as the parameter `odes` to the functions :func:`gpac.integrate_odes`
-        and :func:`gpac.plot` to integrate/plot the ODEs.
+        This object can be given as the parameter `odes` to the functions :func:`ode.integrate_odes`
+        and :func:`ode.plot` to integrate/plot the ODEs.
         (which is essentially all the functions :func:`integrate_crn_odes` and :func:`plot_crn` do).
     """
     # map each symbol to list of reactions in which it appears
@@ -154,9 +154,9 @@ def integrate_crn_odes(
 ) -> OdeResult:
     """
     Integrate the ODEs derived from to the given set of chemical reactions.
-    This calls :func:`gpac.integrate_odes` with the ODEs derived from the given reactions via
+    This calls :func:`ode.integrate_odes` with the ODEs derived from the given reactions via
     :func:`crn_to_odes`.
-    See :func:`gpac.integrate_odes` for description of parameters.
+    See :func:`ode.integrate_odes` for description of parameters.
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
@@ -190,17 +190,17 @@ def plot_crn(
 ) -> None:
     """
     Plot the ODEs derived from to the given set of chemical reactions.
-    This calls :func:`gpac.plot` with the ODEs derived from the given reactions via
+    This calls :func:`ode.plot` with the ODEs derived from the given reactions via
     :func:`crn_to_odes`.
 
-    See :func:`gpac.integrate_odes` for description of parameters. As with :func:`gpac.plot`,
+    See :func:`ode.integrate_odes` for description of parameters. As with :func:`ode.plot`,
     the keyword arguments in `options` are passed to
     matplotlib.pyplot.plot
     (https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
     as well as to
     scipy.integrate.solve_ivp
     (https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
-    and as with :func:`gpac.plot`, keyword arguments not recognized by scipy.integrate.solve_ivp
+    and as with :func:`ode.plot`, keyword arguments not recognized by scipy.integrate.solve_ivp
     (such as those intended for matplotlib.pyplot.plot) cause `solve_ivp` to print a warning that it
     does not recognize the argument.
     """
@@ -269,7 +269,8 @@ def replace_reversible_rxns(rxns: Iterable[Reaction]) -> List[Reaction]:
     Args:
         rxns: list of :any:`Reaction`'s
 
-    Returns: list of :any:`Reaction`'s, where every reversible reaction in `rxns` has been replaced by
+    Returns:
+        list of :any:`Reaction`'s, where every reversible reaction in `rxns` has been replaced by
         two irreversible reactions, and all others have been left as they are
     """
     new_rxns: List[Reaction] = []

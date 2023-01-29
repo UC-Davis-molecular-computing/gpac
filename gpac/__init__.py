@@ -1,2 +1,2 @@
-from gpac.gpac import *
+from gpac.ode import *
 from gpac.crn import *
