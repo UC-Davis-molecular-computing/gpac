@@ -229,7 +229,7 @@ def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
 
     args:
         sp:
-            An string or Iterable of strings representing the names of the species being created.
+            A string or Iterable of strings representing the names of the species being created.
             If a single string, species names are interpreted as space-separated.
 
     Examples:
