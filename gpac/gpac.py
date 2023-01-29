@@ -251,7 +251,8 @@ def plot(
         **options,
 ) -> None:
     """
-    Numerically integrate the given ODEs, then plot the trajectories using matplotlib.
+    Numerically integrate the given ODEs using the function :func:`integrate_odes`,
+    then plot the trajectories using matplotlib.
     (Assumes it is being run in a Jupyter notebook.)
 
     Args:
@@ -288,10 +289,6 @@ def plot(
             See documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
-        method:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-
         dense_output:
             See documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
@@ -312,8 +309,11 @@ def plot(
             For solver-specific parameters to `solve_ivp`,
             see documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+
             Also used for keyword options to `plot` in matplotlib.pyplot:
-            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
+            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html.
+            However, note that using such arguments here will cause solve_ivp to print a warning
+            that it does not recognize the keyword argument.
     """
 
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
@@ -349,7 +349,7 @@ def plot(
         symbol_name = str(symbol)
         if symbol_name in symbols_to_plot:
             y = sol.y[idx]
-            plt.plot(sol.t, y, label=str(symbol))
+            plt.plot(sol.t, y, label=str(symbol), **options)
 
     plt.xlabel('time')
     plt.legend()

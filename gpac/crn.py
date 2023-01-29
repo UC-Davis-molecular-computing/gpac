@@ -3,12 +3,11 @@ Module for expressing CRNs and deriving their ODEs. Ideas and much code taken fr
 https://github.com/enricozb/python-crn.
 
 For example, to specify the "approximate majority" reactions
+(see https://doi.org/10.1007/978-3-540-75142-7_5 or https://doi.org/10.1126/science.aal2052)
 
-    A+B → 2U
-
-    A+U → 2A
-
-    B+U → 2B
+    | A+B → 2U
+    | A+U → 2A
+    | B+U → 2B
 
 we can write
 
@@ -29,7 +28,8 @@ which will plot the concentrations of A, B, and U over time.
 
 See functions :func:`crn.crn_to_odes` to convert reactions to ODEs (ordinary differential equations),
 :func:`crn.integrate_crn_odes` to get the trajectories of integrating these ODEs over time, and
-:func:`crn.plot_crn` to plot the trajectories.
+:func:`crn.plot_crn` to plot the trajectories. The documentation for :func:`crn.crn_to_odes` explains
+how reactions are converted into ODEs by each of these functions.
 """
 
 from __future__ import annotations  # needed for forward references in type hints
@@ -46,12 +46,44 @@ import scipy.integrate
 from scipy.integrate._ivp.ivp import OdeResult
 import sympy
 
+#         | X+X →\ :sup:`k1` C
+#         | C+X →\ :sup:`k2` C+Y
+#         | x' = -2 k1 x\ :sup:`2` - k2 c x
+#         | c' = k1 x\ :sup:`2`
+#         | y' = k2 c x
 
 def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     """
     Given a set of chemical reactions, return the corresponding ODEs.
 
-    TODO: add examples of how reactions determine ODEs
+    Each reaction contributes one term to the ODEs for each species produced or consumed in it.
+    The term from a reaction appearing in the ODE for species `X` is the product of:
+    the rate constant,
+    the reactant concentrations,
+    and the net stoichiometry of species `X` in the reaction
+    (i.e., the net amount of `X` produced by the reaction, negative if consumed).
+    For example, the CRN
+
+        | :math:`X+X \\xrightarrow{k_1} C`
+        | :math:`C+X \\xrightarrow{k_2} C+Y`
+
+
+    where :math:`k_1`, :math:`k_2` are the rate constants of the two reactions,
+    corresponds to ODEs (following the convention of lowercase letter `x` for concentration of species `X`):
+
+        | :math:`x' = -2 k_1 x^2 - k2 c x`
+        | :math:`c' = k_1 x^2`
+        | :math:`y' = k_2 c x`
+
+    Args:
+        rxns: list of :any:`Reaction`'s comprising the chemical reaction network.
+              See documentation for :any:`Reaction` for details on how to specify reactions.
+
+    Returns:
+        Dictionary mapping each species (represented as a sympy Symbol object, rather than a :any:`Specie`
+        object) to its corresponding ODE (represented as a sympy Expression).
+        This object can be given to the functions :func:`gpac.integrate_odes` or :func:`gpac.plot`
+        to integrate/plot the ODEs.
     """
     # map each symbol to list of reactions in which it appears
     specie_to_rxn = defaultdict(list)
@@ -134,7 +166,14 @@ def plot_crn(
     Plot the ODEs derived from to the given set of chemical reactions.
     This calls :func:`gpac.plot` with the ODEs derived from the given reactions via
     :func:`crn_to_odes`.
-    See :func:`gpac.integrate_odes` for description of parameters.
+
+    See :func:`gpac.integrate_odes` for description of parameters. As with :func:`gpac.plot`,
+    the keyword arguments in `options` are passed to
+    matplotlib.pyplot.plot
+    (https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
+    as well as to
+    scipy.integrate.solve_ivp
+    (https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
@@ -150,7 +189,7 @@ def plot_crn(
         events=events,
         vectorized=vectorized,
         args=args,
-        **options
+        **options,
     )
 
 
@@ -358,6 +397,19 @@ class Reaction:
     """
     Representation of a stoichiometric reaction using a pair of Expressions,
     one for the reactants and one for the products.
+
+    Reactions are constructed by creating objects of type :any:`Specie` and using the operators
+    ``>>`` (for irreversible reactions) and ``|`` (for reversible reactions), as well as the ``+`` and
+    ``*`` operators to specify the stoichiometric coefficients of the reactants and products. For example,
+    the following code creates a reaction that represents the irreversible reaction
+    :math:`A + B \\rightarrow C`:
+
+    .. code-block:: python
+
+        A = species('A')
+        B = species('B')
+        C = species('C')
+        rxn = A + B >> C
     """
 
     reactants: Expression
