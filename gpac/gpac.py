@@ -81,8 +81,16 @@ def integrate_odes(
 
         import sympy, gpac, numpy as np
         a,b,c = sympy.symbols('a b c')
-        odes = { a: -a*b + c*a,   b: -b*c + a*b,   c: -c*a + b*c }
-        initial_values = { a: 10, b: 1, c: 1}
+        odes = {
+            a: -a*b + c*a,
+            b: -b*c + a*b,
+            c: -c*a + b*c,
+        }
+        initial_values = {
+            a: 10,
+            b: 1,
+            c: 1,
+        }
         t_eval = np.linspace(0, 3, 200)
         gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
 
@@ -104,6 +112,31 @@ def integrate_odes(
            [ 1.        ,  0.3039504 ,  1.77733557,  8.57599698,  8.54185881]])
      y_events: None
 
+
+    Although you cannot reference the time variable directly in the ODEs, this can be simulated
+    by introducing a new variable `t` whose derivative is 1 and initial value is the initial time.
+    For example, the following code implements ``a(t) = sin(t)`` (with time derivative ``a'(t) = cos(t)``)
+    and ``b(t) = cos(t)`` (with time derivative ``b'(t) = -sin(t)``):
+
+    .. code-block:: python
+
+        import sympy, gpac, numpy as np
+        from sympy import sin, cos
+        from math import pi
+
+        a,b,t = sympy.symbols('a b t')
+        odes = {
+            a: cos(t),
+            b: -sin(t),
+            t: 1,
+        }
+        initial_values = {
+            a: 0,
+            b: 1,
+            t: 0,
+        }
+        t_eval = np.linspace(0, 3*2*pi, 200)
+        gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
 
     Args:
         odes:
