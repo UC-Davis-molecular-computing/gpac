@@ -116,7 +116,7 @@ The value `solution` returned by `gpac.integrate_odes` is the same object return
 
 
 ### Chemical reaction networks
-There are also functions `integrate_crn_odes` and `plot_crn`, which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function `crn_to_odes`, which converts chemical reactions into ODEs.
+There are also functions [`integrate_crn_odes`](https://gpac.readthedocs.io/en/latest/#crn.integrate_crn_odes) and [`plot_crn`](https://gpac.readthedocs.io/en/latest/#crn.plot_crn), which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function [`crn_to_odes`](https://gpac.readthedocs.io/en/latest/#crn.crn_to_odes), which converts chemical reactions into ODEs.
 
 See [notebook.ipynb](notebook.ipynb) for examples.
 
