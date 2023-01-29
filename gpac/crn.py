@@ -15,16 +15,18 @@ we can write
 
     a, b, u = species('A B U')
     rxns = [
-        a + b >> 2 * u,
-        a + u >> 2 * a,
-        b + u >> 2 * b,
+        a+b >> 2*u,
+        a+u >> 2*a,
+        b+u >> 2*b,
     ]
     n = 10 ** 5
     init_config = {a: 0.51 * n, b: 0.49 * n}
     t_eval = np.linspace(0, 10, 100)
     gpac.plot_crn(rxns, init_config, t_eval)
 
-which will plot the concentrations of A, B, and U over time.
+which will plot the concentrations of A, B, and U over time. One can specify reversible reactions
+by using the `|` operator instead of `>>` (e.g., `a+b | 2*u`) and rate constants using the functions
+`k` (for forward rate constants) and `r` (for reverse rate constants), e.g., `(a+b | 2*u).k(1.5).r(0.5)`.
 
 See functions :func:`crn.crn_to_odes` to convert reactions to ODEs (ordinary differential equations),
 :func:`crn.integrate_crn_odes` to get the trajectories of integrating these ODEs over time, and
