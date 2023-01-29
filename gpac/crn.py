@@ -628,7 +628,7 @@ class Reaction:
         .. code-block:: python
 
             x, y, z = species("X Y Z")
-            rxns = [ (x + y | z).k(2.5).r(1.5) ]
+            rxn = (x + y | z).k(2.5).r(1.5)
 
         args:
             coeff: float

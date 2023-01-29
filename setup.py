@@ -1,6 +1,13 @@
 from setuptools import setup
 from os import path
 
+# how to upload to PyPI:
+# https://medium.com/@joel.barmettler/how-to-upload-your-python-package-to-pypi-65edc5fe9c56
+# briefly, first install twice (pip install twine), then to upload to PyPI:
+#   [bump version number in file gpac/__version__.py]
+#   python setup.py sdist
+#   twine upload dist/*
+
 
 # this is ugly, but appears to be standard practice:
 # https://stackoverflow.com/questions/17583443/what-is-the-correct-way-to-share-package-version-with-setup-py-and-the-package/17626524#17626524
