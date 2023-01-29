@@ -22,7 +22,7 @@ This is a package for simulating General-Purpose Analog Computers as defined and
 The API for the package is here: https://gpac.readthedocs.io/
 
 ## Installation
-Python 3.7 or above is required.
+Python 3.7 or above is required. There are two ways you can install the `gpac` package, pip or git:
 
 A. **pip:** The easiest option is to install via `pip` by typing the following at the command line:
    ```
