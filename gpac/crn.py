@@ -487,7 +487,7 @@ class Reaction:
     """Rate constant of reverse reaction (only used if :py:data:`Reaction.reversible` is true)."""
 
     reversible: bool = False
-    """Whether reaction is reversible, i.e. products &rarr; reactants is a reaction also."""
+    """Whether reaction is reversible, i.e. `products` :math:`\\to` `reactants` is a reaction also."""
 
     def __init__(self, reactants: Union[Specie, Expression], products: Union[Specie, Expression],
                  k: float = 1, r: float = 1,
