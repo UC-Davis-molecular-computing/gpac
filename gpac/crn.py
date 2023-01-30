@@ -535,8 +535,10 @@ class Reaction:
 
         Returns:
             sympy expression for the ODE term for the given :any:`Specie`.
-            For example, if the reaction is A+B &rarr; 2C, then the ODE for A is -k*A*B
-            the ODE for B is -k*A*B, and the ODE for C is 2*k*A*B.
+            For example, if the reaction is :math:`A+B \\to 2C`,
+            then the ODE for :math:`A` is :math:`-k \\cdot A \\cdot B`,
+            the ODE for B is :math:`-k \\cdot A \\cdot B`,
+            and the ODE for C is :math:`2 \\cdot k \\cdot A \\cdot B`.
         """
         if specie not in self.reactants.get_species() and specie not in self.products.get_species():
             return sympy.Integer(0)
