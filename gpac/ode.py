@@ -113,22 +113,24 @@ def integrate_odes(
            [ 1.        ,  0.3039504 ,  1.77733557,  8.57599698,  8.54185881]])
      y_events: None
 
+    All symbols are interpreted as functions of a single variable called "time", and the derivatives
+    are with respective to time.
 
     Although you cannot reference the time variable directly in the ODEs, this can be simulated
     by introducing a new variable `t` whose derivative is 1 and initial value is the initial time.
     For example, the following code implements ``a(t) = sin(t)`` (with time derivative ``a'(t) = cos(t)``)
-    and ``b(t) = cos(t)`` (with time derivative ``b'(t) = -sin(t)``):
+    and ``b(t) = t**3 / pi`` (with time derivative ``b'(t) = 3*t**2 / pi``):
 
     .. code-block:: python
 
-        import sympy, gpac, numpy as np
+        # trick for referencing time variable directly in ODEs
         from sympy import sin, cos
         from math import pi
 
         a,b,t = sympy.symbols('a b t')
         odes = {
             a: cos(t),
-            b: -sin(t),
+            b: 1 - t/2, # derivative of -(t/2 - 1)^2 + 2
             t: 1,
         }
         initial_values = {
@@ -136,8 +138,21 @@ def integrate_odes(
             b: 1,
             t: 0,
         }
-        t_eval = np.linspace(0, 3*2*pi, 200)
-        gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
+        t_eval = np.linspace(0, 2*pi, 5) # [0, pi/2, pi, 3*pi/2, 2*pi]
+        solution = gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
+        print(f'a(pi/2) = {solution.y[0][1]:.2f}')
+        print(f'a(pi)   = {solution.y[0][2]:.2f}')
+        print(f'b(pi/2) = {solution.y[1][1]:.2f}')
+        print(f'b(pi)   = {solution.y[1][2]:.2f}')
+
+    which prints
+
+    .. code-block::
+
+        a(pi/2) = 1.00
+        a(pi)   = 0.00
+        b(pi/2) = 1.95
+        b(pi)   = 1.67
 
     Args:
         odes:
