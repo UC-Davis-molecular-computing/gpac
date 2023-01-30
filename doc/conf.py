@@ -147,3 +147,6 @@ auto.DataDocumenter.add_directive_header = add_directive_header
 
 # https://stackoverflow.com/questions/56336234/build-fail-sphinx-error-contents-rst-not-found
 master_doc = 'index'
+
+# https://stackoverflow.com/questions/70350786/left-align-all-math-blocks-in-sphinx-html-output
+mathjax3_config = {'chtml': {'displayAlign': 'left'}}

@@ -1,13 +1,17 @@
 """
-Module for expressing CRNs and deriving their ODEs. Ideas and much code taken from
+Module for expressing chemical reaction networks and deriving their ODEs. Ideas and much code taken from
 https://github.com/enricozb/python-crn.
 
 For example, to specify the "approximate majority" reactions
 (see https://doi.org/10.1007/978-3-540-75142-7_5 or https://doi.org/10.1126/science.aal2052)
 
-    | A+B → 2U
-    | A+U → 2A
-    | B+U → 2B
+.. math::
+
+    A+B \\to 2U
+
+    A+U \\to 2A
+
+    B+U \\to 2B
 
 we can write
 
@@ -50,12 +54,6 @@ from scipy.integrate._ivp.ivp import OdeResult
 import sympy
 
 
-#         | X+X →\ :sup:`k1` C
-#         | C+X →\ :sup:`k2` C+Y
-#         | x' = -2 k1 x\ :sup:`2` - k2 c x
-#         | c' = k1 x\ :sup:`2`
-#         | y' = k2 c x
-
 def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     """
     Given a set of chemical reactions, return the corresponding ODEs.
@@ -71,8 +69,11 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     For example, consider the following two reactions with respective rate constants
     :math:`k_1` and :math:`k_2`:
 
-        | :math:`X+X \\xrightarrow{k_1} C`
-        | :math:`C+X \\xrightarrow{k_2} C+Y`
+    .. math::
+
+        X+X \\xrightarrow{k_1} C
+
+        C+X \\xrightarrow{k_2} C+Y
 
     The net stoichiometry of `X` in the first reaction is -2, since two copies of `X` are consumed,
     and the net stoichiometry of `C` in that reaction is 1, since one copy of `C` is produced.
@@ -82,9 +83,13 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     This corresponds to ODEs (following the convention of lowercase letter `x`
     for the concentration of species `X`):
 
-        | :math:`x' = -2 k_1 x^2 - k_2 c x`
-        | :math:`c' = k_1 x^2`
-        | :math:`y' = k_2 c x`
+    .. math::
+
+        x' = -2 k_1 x^2 - k_2 c x
+
+        c' = k_1 x^2
+
+        y' = k_2 c x
 
     In the package, this can be implemented (for example setting :math:`k_1 = 1.5` and :math:`k_2 = 0.2`)
     via:
