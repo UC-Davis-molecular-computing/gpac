@@ -76,8 +76,11 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
 
     The net stoichiometry of `X` in the first reaction is -2, since two copies of `X` are consumed,
     and the net stoichiometry of `C` in that reaction is 1, since one copy of `C` is produced.
+    The net stoichiometry of `C` in the *second* reaction is 0, since it is a catalyst
+    (neither produced nor consumed).
 
-    This corresponds to ODEs (following the convention of lowercase letter `x` for concentration of species `X`):
+    This corresponds to ODEs (following the convention of lowercase letter `x`
+    for the concentration of species `X`):
 
         | :math:`x' = -2 k_1 x^2 - k_2 c x`
         | :math:`c' = k_1 x^2`
