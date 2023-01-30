@@ -434,14 +434,17 @@ def concentration_to_count(concentration: float, volume: float) -> int:
 @dataclass
 class Reaction:
     """
-    Representation of a stoichiometric reaction using a pair of Expressions,
+    Representation of a stoichiometric reaction using a pair of :any:`Expression`'s,
     one for the reactants and one for the products.
 
     Reactions are constructed by creating objects of type :any:`Specie` and using the operators
     ``>>`` (for irreversible reactions) and ``|`` (for reversible reactions), as well as the ``+`` and
-    ``*`` operators to specify the stoichiometric coefficients of the reactants and products. For example,
-    the following code creates a reaction that represents the irreversible reaction
-    :math:`A + B \\rightarrow C`:
+    ``*`` operators to specify the stoichiometric coefficients of the reactants and products,
+    and optionally the methods :meth:`Reaction.k` and :meth:`Reaction.r` to specify forward and reverse
+    rate constants.
+
+    For example, the following code creates a reaction that represents the irreversible reaction
+    :math:`A + B \\rightarrow C` (with implicit rate constant 1.0):
 
     .. code-block:: python
 
