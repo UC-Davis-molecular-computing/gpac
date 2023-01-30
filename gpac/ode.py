@@ -304,56 +304,14 @@ def plot(
     Numerically integrate the given ODEs using the function :func:`integrate_odes`,
     then plot the trajectories using matplotlib.
     (Assumes it is being run in a Jupyter notebook.)
+    See :func:`integrate_odes` for description of arguments other than `figure_size` and `symbols_to_plot`.
 
     Args:
-        odes:
-            dict mapping sympy symbols to sympy expressions representing the ODEs.
-            Alternatively, the keys can be strings, and the values can be strings that look like expressions,
-            e.g., ``{'a': '-a*b + c*a'}``.
-            If a symbol is referenced in an expression but is not a key in `odes`,
-            a ValueError is raised.
-
-        initial_values:
-            dict mapping sympy symbols to initial values of each symbol.
-            Alternatively, the keys can be strings.
-            Any symbols in the ODEs that are not keys in `initial_values`
-            will be assumed to have initial value of 0.
-
-        t_eval:
-            iterable of times at which to evaluate the ODEs.
-            At least one of `t_eval` or `t_span` must be specified.
-
-        t_span:
-            pair (start_time, end_time) for the integration.
-            If not specified, first and last times in `t_eval` are used.
-            (This is different from solve_ivp, which requires `t_span` to be specified.)
-            At least one of `t_eval` or `t_span` must be specified.
-
         figure_size:
             pair (width, height) of the figure
 
         symbols_to_plot:
             symbols to plot; if empty, then all symbols are plotted
-
-        method:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-
-        dense_output:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-
-        events:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-
-        vectorized:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-
-        args:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
         options:
             For solver-specific parameters to `solve_ivp`,

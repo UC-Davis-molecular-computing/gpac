@@ -41,17 +41,16 @@ how reactions are converted into ODEs by each of these functions.
 
 from __future__ import annotations  # needed for forward references in type hints
 
+from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List
 from collections import defaultdict
 import copy
-from gpac import integrate_odes, plot
-
 from dataclasses import dataclass
 
-from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List
-
-import scipy.integrate
+from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult
 import sympy
+
+from gpac import integrate_odes, plot
 
 
 def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
@@ -158,7 +157,7 @@ def integrate_crn_odes(
         initial_values: Dict[Specie, float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
-        method: Union[str, scipy.integrate.OdeSolver] = 'RK45',
+        method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
@@ -194,7 +193,7 @@ def plot_crn(
         t_span: Optional[Tuple[float, float]] = None,
         figure_size: Tuple[float, float] = (10, 10),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
-        method: Union[str, scipy.integrate.OdeSolver] = 'RK45',
+        method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
