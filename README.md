@@ -120,7 +120,7 @@ There are also functions [`integrate_crn_odes`](https://gpac.readthedocs.io/en/l
 
 See [notebook.ipynb](notebook.ipynb) for examples.
 
-Reactions are constructed using operations on `Specie` objects returned from the function [`gpac.species`](https://gpac.readthedocs.io/en/latest/#crn.species):
+Reactions are constructed using operations on `Specie` objects returned from the function [`species`](https://gpac.readthedocs.io/en/latest/#crn.species):
 
 ```python
 # plot solution to ODEs of this CRN that computes f(x) = x^2, using the gpac.crn module
@@ -138,4 +138,4 @@ t_eval = np.linspace(0, 5, 100)
 gpac.plot_crn(rxns, initial_values, t_eval=t_eval, figure_size=(20,4))
 ```
 
-Although they appear similar, a `Specie` object (such as `x` and `y` returned from `gpac.species` above) is different from a `sympy.Symbol` object. The `Specie` object is intended to help specify reactions using the notation above with the symbols `+`, `>>`, and `|` (as well as the `k` and `r` functions for specifying non-unit rate constants, see example [notebook](notebook.ipynb)). However, any of the following objects can be a key in the `initial_values` parameter to `plot_crn` and `integrate_crn_odes`: `Specie`, `sympy.Symbol`, or `str`. They will be normalized to `sympy.Symbol` objects in keys of the returned dict representing the ODEs.
+Although they appear similar, a `Specie` object (such as `x` and `y` returned from the `species` function above) is different from a `sympy.Symbol` object. The `Specie` object is intended to help specify reactions using the notation above with the symbols `+`, `>>`, and `|` (as well as the `k` and `r` functions for specifying non-unit rate constants, see example [notebook](notebook.ipynb)). However, any of the following objects can be a key in the `initial_values` parameter to `plot_crn` and `integrate_crn_odes`: `Specie`, `sympy.Symbol`, or `str`. They will be normalized to `sympy.Symbol` objects in keys of the returned dict representing the ODEs.
