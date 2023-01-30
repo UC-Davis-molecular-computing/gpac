@@ -56,9 +56,7 @@ B. **git:** The other option is to clone the git repo. You may need to install `
 See more examples in the Jupyter notebook [notebook.ipynb](notebook.ipynb).
 
 ### Plotting ODEs
-The following is an example of what can be done currently, which is simply to numerically integrate and plot a system of ODEs (ordinary differential equations).
-
-The ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`).
+ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`).
 
 Every symbol that appears in any of the expressions *must* also be a key in this dict.
 
