@@ -63,7 +63,8 @@ def integrate_odes(
 
     This is a convienence function that wraps the scipy function `solve_ivp`,
     allowing the user to specify the ODEs using sympy symbols and expressions
-    (instead of a Python function on tuples of floats, which is what `solve_ivp` expects).
+    (instead of a Python function on tuples of floats, which is what `solve_ivp` expects,
+    but is more awkward to specify than using sympy expressions).
 
     The object `solution` returned by `solve_ivp` has field `solution.y` which is a 2D numpy array,
     each row of which is the trajectory of a value in the ODEs. The order of the rows is the same as the
