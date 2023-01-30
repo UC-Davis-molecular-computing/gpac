@@ -119,7 +119,7 @@ def integrate_odes(
     Although you cannot reference the time variable directly in the ODEs, this can be simulated
     by introducing a new variable `t` whose derivative is 1 and initial value is the initial time.
     For example, the following code implements ``a(t) = sin(t)`` (with time derivative ``a'(t) = cos(t)``)
-    and ``b(t) = t**3 / pi`` (with time derivative ``b'(t) = 3*t**2 / pi``):
+    and ``b(t) = -(t/2 - 1)^2 + 2`` (with time derivative ``b'(t) = 1 - t/2``):
 
     .. code-block:: python
 
