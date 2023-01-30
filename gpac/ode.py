@@ -166,6 +166,8 @@ def integrate_odes(
             Alternatively, the keys can be strings.
             Any symbols in the ODEs that are not keys in `initial_values`
             will be assumed to have initial value of 0.
+            If a symbol appears as a key in `initial_values` but is not a key in `odes`,
+            a ValueError is raised.
 
         t_eval:
             iterable of times at which to evaluate the ODEs.
