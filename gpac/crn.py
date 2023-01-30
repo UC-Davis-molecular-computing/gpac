@@ -445,10 +445,26 @@ class Reaction:
 
     .. code-block:: python
 
-        A = species('A')
-        B = species('B')
-        C = species('C')
-        rxn = A + B >> C
+        a,b,c = species('A B C')
+        rxn = a+b >> c
+
+    To create reactions
+
+    .. math::
+
+        A+B &\\underset{4.1}{\\stackrel{0.6}{\\rightleftharpoons}} 2C
+
+        C   &\\xrightarrow{5.2} D
+
+    use the following code:
+
+    .. code-block:: python
+
+        a,b,c,d = gpac.species('A B C D')
+        rxns = [
+            (a+b | 2*c).k(0.6).r(4.1),
+            (c >> d).k(5.2),
+        ]
     """
 
     reactants: Expression
