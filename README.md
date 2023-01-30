@@ -64,7 +64,7 @@ The initial values are specified as a Python dict `initial_values` mapping varia
 
 Finally, you can specify the times at which to solve for the ODEs as an iterable of floats `t_eval`. (This is optional; if not specified it uses the time values 0.0, 0.01, 0.02, 0.03, ..., 0.98, 0.99, 1.0)
 
-Remaining parameters are optional (see below for examples of them). See API documentation for [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#gpac.integrate_odes) and [`plot`](https://gpac.readthedocs.io/en/latest/#gpac.plot) for more details.
+Remaining parameters are optional (see below for examples of them). See API documentation for [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#ode.integrate_odes) and [`plot`](https://gpac.readthedocs.io/en/latest/#ode.plot) for more details.
 
 ```python
 import sympy
@@ -94,7 +94,7 @@ gpac.plot(odes, initial_values, t_eval=t_eval, figure_size=(20,4), symbols_to_pl
 ![](images/rps-a-c.png)
 
 ### Getting trajectory data of ODEs
-If you want the data itself from the ODE numerical integration (without plotting it), you can call `gpac.integrate_odes` (replace the call to `plot` above with the following code).
+If you want the data itself from the ODE numerical integration (without plotting it), you can call `integrate_odes` (replace the call to `plot` above with the following code).
 
 ```python
 t_eval = np.linspace(0, 1, 5)
@@ -112,7 +112,7 @@ a = [10.          4.84701622  0.58753815  0.38765743  3.07392998]
 b = [1.         6.84903338 9.63512628 3.03634559 0.38421121]
 c = [1.         0.3039504  1.77733557 8.57599698 8.54185881]
 ```
-The value `solution` returned by `gpac.integrate_odes` is the same object returned from [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
+The value `solution` returned by `integrate_odes` is the same object returned from [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
 
 
 ### Chemical reaction networks
