@@ -320,7 +320,7 @@ def plot(
 
             Also used for keyword options to `plot` in matplotlib.pyplot:
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html.
-            However, note that using such arguments here will cause solve_ivp to print a warning
+            However, note that using such arguments here will cause `solve_ivp` to print a warning
             that it does not recognize the keyword argument.
     """
 
