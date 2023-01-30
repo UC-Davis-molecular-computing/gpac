@@ -16,6 +16,8 @@
 ## Overview
 This is a Python package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. It's primarily a front-end to [scipy](https://scipy.org/) and [sympy](https://www.sympy.org/) making it easier to specify systems of ODEs, numerically integrate them, and plot their solutions.
 
+This is ostensibly what [pyodesys](https://github.com/bjodah/pyodesys) does as well, and that package is much more powerful and configurable than gpac. The purpose of this package is primarily to be simpler to use for common cases of ODEs, at the cost of being less expressive.
+
 **Note:** Some of the relative links below are intended to be used only on the GitHub page for this project: https://github.com/UC-Davis-molecular-computing/gpac#readme  They will not work if you are reading this document on PyPI, for example.
 
 ## API
