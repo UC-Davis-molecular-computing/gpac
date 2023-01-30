@@ -62,18 +62,22 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
 
     Each reaction contributes one term to the ODEs for each species produced or consumed in it.
     The term from a reaction appearing in the ODE for species `X` is the product of:
-    the rate constant,
-    the reactant concentrations,
-    and the net stoichiometry of species `X` in the reaction
-    (i.e., the net amount of `X` produced by the reaction, negative if consumed).
-    For example, the CRN
+
+    - the rate constant,
+    - the reactant concentrations, and
+    - the net stoichiometry of species `X` in the reaction
+      (i.e., the net amount of `X` produced by the reaction, negative if consumed).
+
+    For example, consider the following two reactions with respective rate constants
+    :math:`k_1` and :math:`k_2`:
 
         | :math:`X+X \\xrightarrow{k_1} C`
         | :math:`C+X \\xrightarrow{k_2} C+Y`
 
+    The net stoichiometry of `X` in the first reaction is -2, since two copies of `X` are consumed,
+    and the net stoichiometry of `C` in that reaction is 1, since one copy of `C` is produced.
 
-    where :math:`k_1`, :math:`k_2` are the rate constants of the two reactions,
-    corresponds to ODEs (following the convention of lowercase letter `x` for concentration of species `X`):
+    This corresponds to ODEs (following the convention of lowercase letter `x` for concentration of species `X`):
 
         | :math:`x' = -2 k_1 x^2 - k_2 c x`
         | :math:`c' = k_1 x^2`
