@@ -489,6 +489,10 @@ class Reaction:
                  k: float = 1, r: float = 1,
                  reversible: bool = False) -> None:
         """
+        In general this constructor should not be used directly; instead, use the operators ``>>``,
+        ``|``, ``+``, and ``*`` to construct reactions. (See description of :any:`Reaction` for
+        examples.)
+
         Args:
             reactants: left side of species in the reaction
             products: right side of species in the reaction
