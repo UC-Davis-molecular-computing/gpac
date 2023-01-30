@@ -49,6 +49,7 @@ import scipy.integrate
 from scipy.integrate._ivp.ivp import OdeResult
 import sympy
 
+
 #         | X+X →\ :sup:`k1` C
 #         | C+X →\ :sup:`k2` C+Y
 #         | x' = -2 k1 x\ :sup:`2` - k2 c x
@@ -681,49 +682,6 @@ class Reaction:
                 all_species.append(s)
                 all_species_set.add(s)
         return tuple(all_species)
-
-
-# example of StochKit format:
-'''
-<Model>
-   <Description>Epidemic</Description>
-   <NumberOfReactions>1</NumberOfReactions>
-   <NumberOfSpecies>2</NumberOfSpecies>
-   <ParametersList>
-     <Parameter>
-       <Id>c1</Id>
-       <Expression>1.0</Expression>
-     </Parameter>
-   </ParametersList>
-   <ReactionsList>
-     <Reaction>
-       <Id>R2</Id>
-       <Description> A+B -> 2B </Description>
-       <Type>mass-action</Type>
-       <Rate>c1</Rate>
-       <Reactants>
-           <SpeciesReference id="A" stoichiometry="1"/>
-           <SpeciesReference id="B" stoichiometry="1"/>
-       </Reactants>
-       <Products>
-           <SpeciesReference id="B" stoichiometry="2"/>
-       </Products>
-     </Reaction>
-  </ReactionsList>
-  <SpeciesList>
-     <Species>
-       <Id>A</Id>
-       <Description>Species #1</Description>
-       <InitialPopulation>10000</InitialPopulation>
-     </Species>
-     <Species>
-       <Id>B</Id>
-       <Description>Species #2</Description>
-       <InitialPopulation>1</InitialPopulation>
-     </Species>
-  </SpeciesList>
-</Model>
-'''
 
 
 def species_in_rxns(rxns: Iterable[Reaction]) -> List[Specie]:
