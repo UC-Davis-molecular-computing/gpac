@@ -71,9 +71,9 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
 
     .. math::
 
-        X+X \\xrightarrow{k_1} C
+        X+X &\\xrightarrow{k_1} C
 
-        C+X \\xrightarrow{k_2} C+Y
+        C+X &\\xrightarrow{k_2} C+Y
 
     The net stoichiometry of `X` in the first reaction is -2, since two copies of `X` are consumed,
     and the net stoichiometry of `C` in that reaction is 1, since one copy of `C` is produced.
@@ -85,11 +85,11 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
 
     .. math::
 
-        x' = -2 k_1 x^2 - k_2 c x
+        x' &= -2 k_1 x^2 - k_2 c x
 
-        c' = k_1 x^2
+        c' &= k_1 x^2
 
-        y' = k_2 c x
+        y' &= k_2 c x
 
     In the package, this can be implemented (for example setting :math:`k_1 = 1.5` and :math:`k_2 = 0.2`)
     via:

@@ -12,15 +12,14 @@ integrate an input with respect to time. The most elegant way to specify a GPAC 
 ordinary differential equations (ODEs) corresponding to the output wires of integrator gates in the GPAC
 circuit.
 
-So really this package makes it easy to write down such ODEs and numerically integrate them and plot them.
+So essentially, this package makes it easy to write down such ODEs and numerically integrate and plot them.
 """
 
 from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any
 
-import scipy.integrate
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp, OdeSolver
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
@@ -31,7 +30,7 @@ def integrate_odes(
         initial_values: Dict[Union[sympy.Symbol, str], float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
-        method: Union[str, scipy.integrate.OdeSolver] = 'RK45',
+        method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
@@ -292,7 +291,7 @@ def plot(
         t_span: Optional[Tuple[float, float]] = None,
         figure_size: Tuple[float, float] = (10, 4),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
-        method: Union[str, scipy.integrate.OdeSolver] = 'RK45',
+        method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
