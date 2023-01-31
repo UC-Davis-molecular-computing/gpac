@@ -23,10 +23,9 @@ we can write
         a+u >> 2*a,
         b+u >> 2*b,
     ]
-    n = 10 ** 5
-    init_config = {a: 0.51 * n, b: 0.49 * n}
+    initial_values = {a: 0.51, b: 0.49}
     t_eval = np.linspace(0, 10, 100)
-    gpac.plot_crn(rxns, init_config, t_eval)
+    gpac.plot_crn(rxns, initial_values, t_eval)
 
 which will plot the concentrations of A, B, and U over time. One can specify reversible reactions
 by using the ``|`` operator instead of ``>>`` (e.g., ``a+b | 2*u``) and rate constants using the functions
