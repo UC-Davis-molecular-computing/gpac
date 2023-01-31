@@ -86,9 +86,9 @@ initial_values = {
     b: 1,
     c: 1,
 }
-t_eval = np.linspace(0, 3, 200)
+t_eval = np.linspace(0, 5, 200)
 
-gpac.plot(odes, initial_values, t_eval=t_eval, figure_size=(20,4), symbols_to_plot=[a,c])
+gpac.plot(odes, initial_values, t_eval=t_eval, figure_size=(12,3), symbols_to_plot=[a,c])
 ```
 
 ![](images/rps-a-c.png)
