@@ -91,14 +91,14 @@ def integrate_odes(
             b: 1,
             c: 1,
         }
-        t_eval = np.linspace(0, 3, 200)
+        t_eval = np.linspace(0, 1, 5)
         gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
 
     This outputs
 
     .. code-block::
 
-          message: 'The solver successfully reached the end of the integration interval.'
+      message: 'The solver successfully reached the end of the integration interval.'
          nfev: 62
          njev: 0
           nlu: 0
