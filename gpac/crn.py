@@ -215,7 +215,8 @@ def plot_crn(
     This calls :func:`ode.plot` with the ODEs derived from the given reactions via
     :func:`crn_to_odes`.
 
-    See :func:`ode.integrate_odes` and :func:`ode.plot` for description of parameters.
+    See :func:`crn.integrate_crn_odes`, :func:`ode.integrate_odes`, and :func:`ode.plot`
+    for description of parameters.
     As with :func:`ode.plot`, the keyword arguments in `options` are passed to
     matplotlib.pyplot.plot
     (https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
