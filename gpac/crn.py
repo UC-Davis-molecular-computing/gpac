@@ -167,7 +167,18 @@ def integrate_crn_odes(
     Integrate the ODEs derived from to the given set of chemical reactions.
     This calls :func:`ode.integrate_odes` with the ODEs derived from the given reactions via
     :func:`crn_to_odes`.
-    See :func:`ode.integrate_odes` for description of parameters.
+    See :func:`ode.integrate_odes` for description of parameters other than `rxns` and `initial_values`.
+
+    Args:
+        rxns:
+            list of :any:`Reaction`'s comprising the chemical reaction network.
+            See documentation for :any:`Reaction` for details on how to specify reactions.
+
+        initial_values:
+            dict mapping each species to its initial concentration.
+            Note that unlike the parameter `initial_values` in :func:`ode.integrate_odes`,
+            keys in this dict must be :any:`Specie` objects, not strings or sympy symbols.
+
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
