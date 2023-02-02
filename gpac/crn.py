@@ -373,6 +373,9 @@ class Expression:
     species: List[Specie]
     """ordered list of species in expression, e.g, A+A+B is [A,A,B]"""
 
+    def __getitem__(self, idx: int) -> Specie:
+        return self.species[idx]
+
     def __add__(self, other: Union[Expression, Specie]) -> Expression:
         if isinstance(other, Expression):
             species_copy = list(self.species)
