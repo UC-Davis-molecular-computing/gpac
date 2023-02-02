@@ -366,17 +366,34 @@ class Expression:
     """
     Class used for very basic symbolic manipulation of left/right hand
     side of stoichiometric equations. Not very user friendly; users should
-    just use the `species` functions and manipulate those to get their
-    reactions.
+    just use the :func:`species` function and manipulate :any:`Specie` objects
+    with operators ``>>``, ``|``, ``+``, and ``*`` to create reactions
+    (see :any:`Reaction` for examples).
     """
 
     species: List[Specie]
-    """ordered list of species in expression, e.g, A+A+B is [A,A,B]"""
+    """
+    ordered list of species in expression, e.g, A+A+B is [A,A,B]
+    """
 
     def __getitem__(self, idx: int) -> Specie:
+        """
+        Args:
+            idx: index of species to return
+
+        Returns:
+            :any:`Specie` at index `idx` in this :any:`Expression`
+        """
         return self.species[idx]
 
     def __add__(self, other: Union[Expression, Specie]) -> Expression:
+        """
+        Args:
+            other: :any:`Expression` or :any:`Specie` to add to this one
+
+        Returns:
+            :any:`Expression` representing the union of this :any:`Expression` and `other`
+        """
         if isinstance(other, Expression):
             species_copy = list(self.species)
             species_copy.extend(other.species)
@@ -389,6 +406,13 @@ class Expression:
             raise NotImplementedError()
 
     def __rmul__(self, coeff: int) -> Expression:
+        """
+        Args:
+            coeff: coefficient to multiply this :any:`Expression` by
+
+        Returns:
+            :any:`Expression` representing this :any:`Expression` multiplied by `coeff`
+        """
         if isinstance(coeff, int):
             species_copy = []
             for _ in range(coeff):
