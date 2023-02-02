@@ -291,7 +291,7 @@ def plot(
         initial_values: Dict[sympy.Symbol, float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
-        figure_size: Tuple[float, float] = (10, 4),
+        figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,

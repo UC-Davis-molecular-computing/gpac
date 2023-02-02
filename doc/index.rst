@@ -19,7 +19,7 @@ gpac.crn
 =====================
 .. automodule:: crn
    :members:
-   
+
 
 Indices and tables
 ==================
