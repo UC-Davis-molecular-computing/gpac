@@ -287,8 +287,8 @@ def integrate_odes(
 
 
 def plot(
-        odes: Dict[sympy.Symbol, sympy.Expr],
-        initial_values: Dict[sympy.Symbol, float],
+        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
+        initial_values: Dict[Union[sympy.Symbol, str], float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
         figure_size: Tuple[float, float] = (10, 3),
