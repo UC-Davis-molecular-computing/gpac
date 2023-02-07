@@ -323,6 +323,10 @@ def plot(
             However, note that using such arguments here will cause `solve_ivp` to print a warning
             that it does not recognize the keyword argument.
     """
+    from matplotlib.pylab import rcParams
+    if rcParams['figure.dpi'] != 96:
+        print(f"figure.dpi was {rcParams['figure.dpi']}, setting it to 96")
+        rcParams['figure.dpi'] = 96
 
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
     if symbols_to_plot is None:
