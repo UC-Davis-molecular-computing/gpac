@@ -201,7 +201,7 @@ def plot_crn(
         initial_values: Dict[Specie, float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
-        figure_size: Tuple[float, float] = (10, 10),
+        figure_size: Tuple[float, float] = (12, 3),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
