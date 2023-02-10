@@ -560,8 +560,8 @@ class Reaction:
 
         self.reactants = reactants
         self.products = products
-        self.rate_constant = float(k)
-        self.rate_constant_reverse = float(r)
+        self.rate_constant = k
+        self.rate_constant_reverse = r
         self.reversible = reversible
 
     def get_ode(self, specie: Specie) -> sympy.Expr:
@@ -693,12 +693,16 @@ class Reaction:
         return p1.name, p2.name
 
     def __str__(self) -> str:
-        rev_rate_str = f'({self.rate_constant_reverse})<' if self.reversible else ''
-        return f"{self.reactants} {rev_rate_str}-->({self.rate_constant}) {self.products}"
+        for_rate_str = '' if self.rate_constant == 1 else f'({self.rate_constant})'
+        rev_rate_str = '' if not self.reversible or self.rate_constant_reverse == 1 \
+            else f'({self.rate_constant_reverse})<'
+        return f"{self.reactants} {rev_rate_str}-->{for_rate_str} {self.products}"
 
     def __repr__(self) -> str:
         return (f"Reaction({repr(self.reactants)}, {repr(self.products)}, "
-                f"{self.rate_constant})")
+                f"rate_constant={self.rate_constant}, "
+                f"rate_constant_reverse={self.rate_constant_reverse}, "
+                f"reversible={self.reversible})")
 
     def k(self, coeff: float) -> Reaction:
         """
