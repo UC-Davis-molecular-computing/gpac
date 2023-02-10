@@ -26,10 +26,11 @@ from matplotlib.pyplot import figure
 
 
 def integrate_odes(
-        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
+        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str, float]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
+        dependent_symbols: Iterable[Union[sympy.Expr, str]] = (),
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
@@ -179,6 +180,12 @@ def integrate_odes(
             (This is different from solve_ivp, which requires `t_span` to be specified.)
             At least one of `t_eval` or `t_span` must be specified.
 
+        dependent_symbols:
+            iterable of sympy expressions (or strings) representing symbols
+            that are functions of the other symbols that are keys in `odes`.
+            These values are added to the end of the 2D array field `sol.y` in the object `sol`
+            returned by `solve_ivp`, in the order in which they appear in `dependent_variables`.
+
         method:
             See documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
@@ -250,8 +257,8 @@ def integrate_odes(
 
     odes = odes_symbols
 
-    all_symbols = tuple(odes.keys())
-    ode_funcs = {symbol: sympy.lambdify(all_symbols, ode) for symbol, ode in odes.items()}
+    independent_symbols = tuple(odes.keys())
+    ode_funcs = {symbol: sympy.lambdify(independent_symbols, ode) for symbol, ode in odes.items()}
 
     def ode_func_vector(_, vals):
         return tuple(ode_func(*vals) for ode_func in ode_funcs.values())
@@ -259,7 +266,7 @@ def integrate_odes(
     # sort keys of initial_values according to order of keys in odes,
     # and assume initial value of 0 for any symbol not specified
     initial_values_sorted = [initial_values[symbol] if symbol in initial_values else 0
-                             for symbol in all_symbols]
+                             for symbol in independent_symbols]
     solution = solve_ivp(
         fun=ode_func_vector,
         t_span=t_span,
@@ -282,15 +289,31 @@ def integrate_odes(
         # min_step=min_step,
     )
 
+    if dependent_symbols != ():
+        dependent_funcs = [sympy.lambdify(independent_symbols, func)
+                           for func in dependent_symbols]
+        # compute dependent variables and append them to solution.y
+        dep_vals = np.zeros(shape=(len(dependent_symbols), len(solution.t)))  # type: ignore
+        for i, func in enumerate(dependent_funcs):
+            # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
+            # the vectors as separate arguments to the function func
+            indp_vals = list(solution.y)  # type: ignore
+            import inspect
+            print(f'{inspect.getsource(func)=}')
+            dep_vals_row = func(*indp_vals)
+            dep_vals[i] = dep_vals_row
+        solution.y = np.vstack((solution.y, dep_vals))
+
     # mypy complains about solution not being an OdeResult, but it is
     return solution  # type:ignore
 
 
 def plot(
-        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]],
+        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str, float]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
+        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
         method: Union[str, OdeSolver] = 'RK45',
@@ -313,6 +336,10 @@ def plot(
         symbols_to_plot:
             symbols to plot; if empty, then all symbols are plotted
 
+        dependent_symbols:
+            dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
+            that are functions of the other variables that are keys in `odes`.
+
         options:
             For solver-specific parameters to `solve_ivp`,
             see documentation for `solve_ivp` in scipy.integrate:
@@ -329,24 +356,32 @@ def plot(
         rcParams['figure.dpi'] = 96
 
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
+    dependent_symbols_tuple = tuple(dependent_symbols.keys()) if dependent_symbols is not None else ()
     if symbols_to_plot is None:
-        symbols_to_plot = odes.keys()
+        symbols_to_plot = tuple(odes.keys()) + dependent_symbols_tuple
     symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
 
     # check that symbols all appear as keys in odes
     symbols_of_odes = frozenset(str(symbol) for symbol in odes.keys())
-    diff = symbols_to_plot - symbols_of_odes
+    symbols_of_odes_and_dependent_symbols = symbols_of_odes | frozenset(
+        str(symbol) for symbol in dependent_symbols_tuple)
+    diff = symbols_to_plot - symbols_of_odes_and_dependent_symbols
     if len(diff) > 0:
-        raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes: "
+        raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes or dependent symbols: "
                          f"{comma_separated(diff)}"
                          f"\nSymbols in ODEs:                                       "
-                         f"{comma_separated(symbols_of_odes)}")
+                         f"{comma_separated(symbols_of_odes)}"
+                         f"\nDependent symbols:                                     "
+                         f"{comma_separated(dependent_symbols_tuple)}")
+
+    dependent_symbols_expressions = tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
 
     sol = integrate_odes(
         odes=odes,
         initial_values=initial_values,
         t_span=t_span,
         t_eval=t_eval,
+        dependent_symbols=dependent_symbols_expressions,
         method=method,
         dense_output=dense_output,
         events=events,
@@ -357,7 +392,8 @@ def plot(
 
     figure(figsize=figure_size)
 
-    for idx, symbol in enumerate(odes.keys()):
+    all_symbols = tuple(odes.keys()) + dependent_symbols_tuple
+    for idx, symbol in enumerate(all_symbols):
         symbol_name = str(symbol)
         if symbol_name in symbols_to_plot:
             y = sol.y[idx]
