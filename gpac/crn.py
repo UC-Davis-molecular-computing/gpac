@@ -201,6 +201,7 @@ def plot_crn(
         initial_values: Dict[Specie, float],
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
+        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (12, 3),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
         method: Union[str, OdeSolver] = 'RK45',
@@ -226,6 +227,15 @@ def plot_crn(
     and as with :func:`ode.plot`, keyword arguments not recognized by scipy.integrate.solve_ivp
     (such as those intended for matplotlib.pyplot.plot) cause `solve_ivp` to print a warning that it
     does not recognize the argument.
+
+    Args:
+        dependent_symbols:
+            dict mapping each symbol to an expression that defines its value in terms of other symbols.
+            Note that these are not :any:`Specie` objects as in the parameter `rxns`, but sympy symbols.
+            Symbols used in the expressions must have the same name as :any:`Specie` objects in `rxns`.
+            For an example, see the example notebook
+            https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
+
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
@@ -234,6 +244,7 @@ def plot_crn(
         initial_values=initial_values,
         t_eval=t_eval,
         t_span=t_span,
+        dependent_symbols=dependent_symbols,
         figure_size=figure_size,
         symbols_to_plot=symbols_to_plot,
         method=method,

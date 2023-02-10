@@ -341,6 +341,8 @@ def plot(
         dependent_symbols:
             dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
             that are functions of the other variables that are keys in `odes`.
+            For an example, see the example notebook
+            https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
 
         options:
             For solver-specific parameters to `solve_ivp`,
