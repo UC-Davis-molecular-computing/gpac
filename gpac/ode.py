@@ -185,6 +185,8 @@ def integrate_odes(
             that are functions of the other symbols that are keys in `odes`.
             These values are added to the end of the 2D array field `sol.y` in the object `sol`
             returned by `solve_ivp`, in the order in which they appear in `dependent_variables`.
+            For an example, see the example notebook
+            https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
 
         method:
             See documentation for `solve_ivp` in scipy.integrate:
