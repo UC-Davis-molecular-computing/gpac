@@ -202,7 +202,7 @@ def plot_crn(
         t_eval: Optional[Iterable[float]] = None,
         t_span: Optional[Tuple[float, float]] = None,
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
-        figure_size: Tuple[float, float] = (12, 3),
+        figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
