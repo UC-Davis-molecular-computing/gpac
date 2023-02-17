@@ -340,10 +340,10 @@ def plot(
             symbols to plot; if empty, then all symbols are plotted
 
         show:
-            whether to call matplotlib.pyplot.show() after creating the plot;
+            whether to call ``matplotlib.pyplot.show()`` after creating the plot;
             If False, this helps the user to call other functions
-            such as matplotlib.pyplot.legend() or matplotlib.pyplot.grid(), which will not work if
-            matplotlib.pyplot.show() has already been called.
+            such as ``matplotlib.pyplot.legend()`` or ``matplotlib.pyplot.grid()``, which will not work if
+            ``matplotlib.pyplot.show()`` has already been called.
 
         dependent_symbols:
             dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
