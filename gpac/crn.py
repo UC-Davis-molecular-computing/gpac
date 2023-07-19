@@ -123,7 +123,7 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
         (which is essentially all the functions :func:`integrate_crn_odes` and :func:`plot_crn` do).
     """
     # map each symbol to list of reactions in which it appears
-    specie_to_rxn = defaultdict(list)
+    specie_to_rxn: Dict[Specie, List] = defaultdict(list)
     for rxn in rxns:
         for specie in rxn.get_species():
             specie_to_rxn[specie].append(rxn)
@@ -133,6 +133,8 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
         ode = sympy.sympify(0)
         for rxn in rxns:
             ode += rxn.get_ode(specie)
+            if rxn.reversible:
+                ode += rxn.get_ode(specie, reverse=True)
         symbol = sympy.Symbol(specie.name)
         odes[symbol] = ode
 
@@ -577,12 +579,16 @@ class Reaction:
         self.rate_constant_reverse = r
         self.reversible = reversible
 
-    def get_ode(self, specie: Specie) -> sympy.Expr:
+    def get_ode(self, specie: Specie, reverse: bool = False) -> sympy.Expr:
         """
 
         Args:
             specie:
                 A :any:`Specie` that may or may not appear in this :any:`Reaction`.
+
+            reverse:
+                Whether to interpret this reaction in reverse, i.e., treat products as reactants
+                and vice versa. Raises exception if the reaction is not reversible.
 
         Returns:
             sympy expression for the ODE term for the given :any:`Specie`.
@@ -591,20 +597,31 @@ class Reaction:
             the ODE for B is :math:`-k \\cdot A \\cdot B`,
             and the ODE for C is :math:`2 \\cdot k \\cdot A \\cdot B`.
         """
-        if specie not in self.reactants.get_species() and specie not in self.products.get_species():
+        if reverse and not self.reversible:
+            raise ValueError(f'reaction {self} is not reversible, so `reverse` parameter must be False')
+
+        if specie not in self.get_species():
             return sympy.Integer(0)
 
-        reactant_coeff = self.reactants.species.count(specie)
-        product_coeff = self.products.species.count(specie)
+        reactants = self.reactants
+        products = self.products
+        rate_constant = self.rate_constant
+        if reverse:
+            reactants = self.products
+            products = self.reactants
+            rate_constant = self.rate_constant_reverse
+
+        reactant_coeff = reactants.species.count(specie)
+        product_coeff = products.species.count(specie)
         net_produced = product_coeff - reactant_coeff
         reactants_ode = sympy.Integer(1)
-        for reactant in self.reactants.get_species():
-            reactant_term = sympy.Symbol(reactant.name) ** self.reactants.species.count(reactant)
+        for reactant in reactants.get_species():
+            reactant_term = sympy.Symbol(reactant.name) ** reactants.species.count(reactant)
             reactants_ode *= reactant_term
 
         # if rate constant is 1.0, avoid the ugly "1.0*" factor in the output
-        ode = net_produced * reactants_ode if self.rate_constant == 1.0 \
-            else net_produced * self.rate_constant * reactants_ode
+        ode = net_produced * reactants_ode if rate_constant == 1.0 \
+            else net_produced * rate_constant * reactants_ode
         return ode
 
     def is_unimolecular(self) -> bool:
