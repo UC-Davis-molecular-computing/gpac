@@ -707,8 +707,12 @@ class Reaction:
 
     def __str__(self) -> str:
         for_rate_str = '' if self.rate_constant == 1 else f'({self.rate_constant})'
-        rev_rate_str = '' if not self.reversible or self.rate_constant_reverse == 1 \
-            else f'({self.rate_constant_reverse})<'
+        if not self.reversible:
+            rev_rate_str = ''
+        elif self.rate_constant_reverse == 1:
+            rev_rate_str = '<'
+        else:
+            rev_rate_str = f'({self.rate_constant_reverse})<'
         return f"{self.reactants} {rev_rate_str}-->{for_rate_str} {self.products}"
 
     def __repr__(self) -> str:
