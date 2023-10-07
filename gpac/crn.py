@@ -740,6 +740,17 @@ class Reaction:
 
     def k(self, coeff: float) -> Reaction:
         """
+        Same as :meth:`Reaction.f`.
+
+        args:
+            coeff: float
+                The new reaction coefficient
+        """
+        self.rate_constant = coeff
+        return self
+
+    def f(self, coeff: float) -> Reaction:
+        """
         Changes the reaction coefficient to `coeff` and returns `self`.
 
         This is useful for including the rate constant during the construction
@@ -749,14 +760,16 @@ class Reaction:
 
             x, y, z = species("X Y Z")
             rxns = [
-                (x + y >> z).k(2.5),
-                (z >> x).k(1.5),
-                (z >> y).k(0.5)),
+                (x + y >> z).f(2.5),
+                (z >> x).f(1.5),
+                (z >> y).f(0.5)),
             ]
+
+        Note that if this is a reversible reaction, this specifies the *forward* rate constant.
 
         args:
             coeff: float
-                The new reaction coefficient
+                The new (forward) reaction coefficient
         """
         self.rate_constant = coeff
         return self
