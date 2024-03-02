@@ -43,7 +43,7 @@ from __future__ import annotations  # needed for forward references in type hint
 from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List
 from collections import defaultdict
 import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult
@@ -295,7 +295,7 @@ def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
     if len(species_list) != len(set(species_list)):
         raise ValueError(f'species_list {species_list} cannot contain duplicates.')
 
-    return tuple(map(Specie, species_list))
+    return tuple(Specie(specie) for specie in species_list)
 
 
 SpeciePair = Tuple['Specie', 'Specie']  # forward annotations don't seem to work here
@@ -542,6 +542,11 @@ class Reaction:
     reversible: bool = False
     """Whether reaction is reversible, i.e. `products` :math:`\\to` `reactants` is a reaction also."""
 
+    inhibitors: List[Specie] = field(default_factory=list)
+    """Inhibitors of the reaction."""
+
+    inhibitor_constants: List[float] = field(default_factory=list)
+
     def __init__(self, reactants: Union[Specie, Expression], products: Union[Specie, Expression],
                  k: float = 1, r: float = 1,
                  reversible: bool = False) -> None:
@@ -572,12 +577,24 @@ class Reaction:
             reactants = Expression([reactants])
         if isinstance(products, Specie):
             products = Expression([products])
-
         self.reactants = reactants
         self.products = products
         self.rate_constant = k
         self.rate_constant_reverse = r
         self.reversible = reversible
+        self.inhibitors = []
+        self.inhibitor_constants = []
+
+
+    def with_inhibitor(self, inhibitor: Specie, constant: float = 1.0) -> Reaction:
+        """
+        Args:
+            inhibitor: The inhibitor species
+            constant: The inhibitor constant
+        """
+        self.inhibitors.append(inhibitor)
+        self.inhibitor_constants.append(constant)
+        return self
 
     def get_ode(self, specie: Specie, reverse: bool = False) -> sympy.Expr:
         """
@@ -605,6 +622,7 @@ class Reaction:
 
         reactants = self.reactants
         products = self.products
+        inhibitors = self.inhibitors
         rate_constant = self.rate_constant
         if reverse:
             reactants = self.products
@@ -619,9 +637,21 @@ class Reaction:
             reactant_term = sympy.Symbol(reactant.name) ** reactants.species.count(reactant)
             reactants_ode *= reactant_term
 
+        inhibitors_ode = sympy.Integer(1)
+        for inhibitor, inhibitor_constant in zip(inhibitors, self.inhibitor_constants):
+            inhibitor_term = 1 / (1 + inhibitor_constant * sympy.Symbol(inhibitor.name)) \
+                if inhibitor_constant != 1.0 else \
+                1 / (1 + sympy.Symbol(inhibitor.name))
+            inhibitors_ode *= inhibitor_term
+
         # if rate constant is 1.0, avoid the ugly "1.0*" factor in the output
-        ode = net_produced * reactants_ode if rate_constant == 1.0 \
-            else net_produced * rate_constant * reactants_ode
+        if len(inhibitors) == 0:
+            ode = net_produced * reactants_ode if rate_constant == 1.0 \
+                else net_produced * rate_constant * reactants_ode
+        else:
+            ode = net_produced * reactants_ode * inhibitors_ode if rate_constant == 1.0 \
+                else net_produced * rate_constant * reactants_ode * inhibitors_ode
+
         return ode
 
     def is_unimolecular(self) -> bool:
@@ -659,6 +689,12 @@ class Reaction:
         Returns: number of products
         """
         return len(self.products)
+
+    def num_inhibitors(self) -> int:
+        """
+        Returns: number of inhibitors
+        """
+        return len(self.inhibitors)
 
     def is_conservative(self) -> bool:
         """
@@ -730,7 +766,12 @@ class Reaction:
             rev_rate_str = '<'
         else:
             rev_rate_str = f'({self.rate_constant_reverse})<'
-        return f"{self.reactants} {rev_rate_str}-->{for_rate_str} {self.products}"
+        if len(self.inhibitors) > 0:
+            inhibitor_str = '--' + ','.join(f'{inhibitor.name}[{constant}]'
+                                     for inhibitor, constant in zip(self.inhibitors, self.inhibitor_constants))
+        else:
+            inhibitor_str = ''
+        return f"{self.reactants} {rev_rate_str}{inhibitor_str}-->{for_rate_str} {self.products}"
 
     def __repr__(self) -> str:
         return (f"Reaction({repr(self.reactants)}, {repr(self.products)}, "
@@ -796,32 +837,14 @@ class Reaction:
         self.rate_constant_reverse = coeff
         return self
 
-    def get_species(self) -> Tuple[Specie]:
+    def get_species(self) -> Tuple[Specie, ...]:
         """
-        Return: the set of species present in the products and reactants, in the order.
+        Return: the set of species present in the reactants, products, and inhibitors, in the order.
         """
         all_species = []
         all_species_set = set()
-        for s in self.reactants.species + self.products.species:
+        for s in self.reactants.species + self.products.species + self.inhibitors:
             if s not in all_species_set:
                 all_species.append(s)
                 all_species_set.add(s)
         return tuple(all_species)
-
-
-def species_in_rxns(rxns: Iterable[Reaction]) -> List[Specie]:
-    """
-    Args:
-        rxns: iterable of :any:`Reaction`'s
-
-    Returns:
-        list of species (without repetitions) in :any:`Reaction`'s in `rxns`
-    """
-    species_set: Set[Specie] = set()
-    species_list: List[Specie] = []
-    for rxn in rxns:
-        for sp in rxn.reactants.species + rxn.products.species:
-            if sp not in species_set:
-                species_set.add(sp)
-                species_list.append(sp)
-    return species_list
