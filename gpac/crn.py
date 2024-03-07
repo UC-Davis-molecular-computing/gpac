@@ -642,6 +642,11 @@ class Reaction:
             inhibitor_term = 1 / (1 + inhibitor_constant * sympy.Symbol(inhibitor.name)) \
                 if inhibitor_constant != 1.0 else \
                 1 / (1 + sympy.Symbol(inhibitor.name))
+
+            # inhibitor_term = inhibitor_constant * sympy.exp(-sympy.Symbol(inhibitor.name)) \
+            #     if inhibitor_constant != 1.0 else \
+            #     sympy.exp(-sympy.Symbol(inhibitor.name))
+
             inhibitors_ode *= inhibitor_term
 
         # if rate constant is 1.0, avoid the ugly "1.0*" factor in the output
@@ -767,7 +772,9 @@ class Reaction:
         else:
             rev_rate_str = f'({self.rate_constant_reverse})<'
         if len(self.inhibitors) > 0:
-            inhibitor_str = '--' + ','.join(f'{inhibitor.name}[{constant}]'
+            def constant_str(constant: float) -> str:
+                return '' if constant == 1.0 else f'[{constant}]'
+            inhibitor_str = '--' + ','.join(f'{inhibitor.name}{constant_str(constant)}'
                                      for inhibitor, constant in zip(self.inhibitors, self.inhibitor_constants))
         else:
             inhibitor_str = ''

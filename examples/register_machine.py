@@ -102,7 +102,7 @@ class RegisterMachine:
         register_values = list(registers.values())
         return register_values[-1]
 
-    def to_icrn(self, inhibitor_constant: float) -> List[gpac.Reaction]:
+    def to_icrn(self, inhibitor_constant: float, bimolecular_constant: float = 1.0) -> List[gpac.Reaction]:
         predecessors = {line: [] for line in self.instructions.keys()}
         max_line = max(self.instructions.keys())
         for line, instr in self.instructions.items():
@@ -121,6 +121,8 @@ class RegisterMachine:
         b_species = {line: gpac.Specie(f'B{line}') for line in self.instructions.keys()}
         c_species = {line: gpac.Specie(f'C{line}') for line in self.instructions.keys()}
 
+        clock_species = list(a_species.values()) + list(b_species.values()) + list(c_species.values())
+
         register_species = {register: gpac.Specie(register) for register in self.registers}
         for register in self.registers:
             if register in list(a_species.values()) + list(b_species.values()) + list(c_species.values()):
@@ -129,8 +131,7 @@ class RegisterMachine:
 
         rxns = []
         for line, instr in list(self.instructions.items())[:-1]:
-            if instr.instruction_type == InstructionType.halt:
-                continue
+            assert instr.instruction_type != InstructionType.halt
 
             a = a_species[line]
             b = b_species[line]
@@ -143,7 +144,7 @@ class RegisterMachine:
 
             elif instr.instruction_type == InstructionType.dec:
                 r = register_species[instr.register]
-                rxns.append((a + r >> bp1).with_inhibitor(c, inhibitor_constant))
+                rxns.append((a + r >> bp1).k(bimolecular_constant).with_inhibitor(c, inhibitor_constant))
                 b_branch = b_species[instr.branch]
                 rxns.append((a >> b_branch).with_inhibitor(c, inhibitor_constant).with_inhibitor(r, inhibitor_constant))
 
@@ -157,6 +158,13 @@ class RegisterMachine:
                 b_rxn.with_inhibitor(a_pred, inhibitor_constant)
             rxns.append(b_rxn)
             rxns.append((c >> a).with_inhibitor(b, inhibitor_constant))
+
+        halt_b = b_species[max_line]
+        assert self.instructions[max_line].instruction_type == InstructionType.halt
+
+        # for other_clock_species in clock_species:
+        #     if other_clock_species != halt_b:
+        #         rxns.append((halt_b + other_clock_species >> halt_b).with_inhibitor(a_species[1], inhibitor_constant))
 
         return rxns
 
