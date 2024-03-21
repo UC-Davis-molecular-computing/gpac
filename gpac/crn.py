@@ -206,7 +206,7 @@ def plot_crn(
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
-        show: bool = True,
+        show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
@@ -596,6 +596,12 @@ class Reaction:
         self.inhibitor_constants.append(constant)
         return self
 
+    def i(self, inhibitor: Specie, constant: float = 1.0) -> Reaction:
+        """
+        alias for :meth:`Reaction.with_inhibitor`
+        """
+        return self.with_inhibitor(inhibitor, constant)
+
     def get_ode(self, specie: Specie, reverse: bool = False) -> sympy.Expr:
         """
 
@@ -639,13 +645,27 @@ class Reaction:
 
         inhibitors_ode = sympy.Integer(1)
         for inhibitor, inhibitor_constant in zip(inhibitors, self.inhibitor_constants):
-            inhibitor_term = 1 / (1 + inhibitor_constant * sympy.Symbol(inhibitor.name)) \
-                if inhibitor_constant != 1.0 else \
-                1 / (1 + sympy.Symbol(inhibitor.name))
+            inh = sympy.Symbol(inhibitor.name)
 
-            # inhibitor_term = inhibitor_constant * sympy.exp(-sympy.Symbol(inhibitor.name)) \
+            den = 1 + inhibitor_constant * inh if inhibitor_constant != 1.0 else 1 + inh
+            inhibitor_term = 1 / den
+
+            # inhibitor_term = inhibitor_constant * sympy.exp(-inh) \
             #     if inhibitor_constant != 1.0 else \
-            #     sympy.exp(-sympy.Symbol(inhibitor.name))
+            #     sympy.exp(-inh)
+
+            # # if inhibitor close to 0, take down to 0
+            # term = sympy.Piecewise(
+            #     (inh, inh > 0.000000000001),
+            #     (0, True),
+            # )
+            # den = 1 + inhibitor_constant * term
+            # inhibitor_term = 1 / den
+
+            # inhibitor_term = sympy.Piecewise(
+            #     (0, inh > 10**(-3)),
+            #     (1, True),
+            # )
 
             inhibitors_ode *= inhibitor_term
 

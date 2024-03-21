@@ -318,7 +318,7 @@ def plot(
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
-        show: bool = True,
+        show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
@@ -342,8 +342,8 @@ def plot(
         show:
             whether to call ``matplotlib.pyplot.show()`` after creating the plot;
             If False, this helps the user to call other functions
-            such as ``matplotlib.pyplot.legend()`` or ``matplotlib.pyplot.grid()``, which will not work if
-            ``matplotlib.pyplot.show()`` has already been called.
+            such as ``matplotlib.pyplot.legend()`` or ``matplotlib.pyplot.grid()`` after calling this
+            function, which will not work if ``matplotlib.pyplot.show()`` has already been called.
 
         dependent_symbols:
             dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
