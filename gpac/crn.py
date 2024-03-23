@@ -2,7 +2,7 @@
 Module for expressing chemical reaction networks and deriving their ODEs. Ideas and much code taken from
 https://github.com/enricozb/python-crn.
 
-For example, to specify the "approximate majority" reactions
+For example, to specify the "approximate majority" chemical reaction network
 (see https://doi.org/10.1007/978-3-540-75142-7_5 or https://doi.org/10.1126/science.aal2052)
 
 .. math::
