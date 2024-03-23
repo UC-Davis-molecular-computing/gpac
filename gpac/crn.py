@@ -234,13 +234,42 @@ def plot_crn(
     (such as those intended for matplotlib.pyplot.plot) cause `solve_ivp` to print a warning that it
     does not recognize the argument.
 
+    Note that the parameter `dependent_symbols` should use sympy symbols, not :any:`Specie` objects.
+    Here is an example of how to use this parameter. Each species that a dependent symbol depends on
+    should be represented by a sympy symbol with the same name as the corresponding :any:`Specie` object:
+
+    .. code-block:: python
+
+        Xp,Xm,Yp,Ym = gpac.species('Xp Xm Yp Ym')
+        x,y,xp,xm,yp,ym = sympy.symbols('x y Xp Xm Yp Ym')
+
+        # dual-rail CRN implementation of sine/cosine oscillator
+        # x' = -y
+        # y' = x
+        rxns = [
+            Yp >> Yp + Xm,
+            Ym >> Ym + Xp,
+            Xp >> Xp + Yp,
+            Xm >> Xm + Ym,
+            Xp+Xm >> gpac.empty,
+            Yp+Ym >> gpac.empty,
+        ]
+        inits = { Xp: 1, Yp: 0 }
+        from math import pi
+        t_eval = np.linspace(0, 6*pi, 200)
+
+        dependent_symbols = {
+            x: xp - xm,
+            y: yp - ym,
+        }
+
+        gpac.plot_crn(rxns, inits, t_eval, dependent_symbols=dependent_symbols, symbols_to_plot=[x,y])
+
     Args:
         dependent_symbols:
             dict mapping each symbol to an expression that defines its value in terms of other symbols.
             Note that these are not :any:`Specie` objects as in the parameter `rxns`, but sympy symbols.
             Symbols used in the expressions must have the same name as :any:`Specie` objects in `rxns`.
-            For an example, see the example notebook
-            https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
 
     """
     odes = crn_to_odes(rxns)
