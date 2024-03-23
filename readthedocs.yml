@@ -20,8 +20,8 @@ python:
     - method: setuptools
       path: .
 
-# conda:
-#   environment: environment.yml
+conda:
+  environment: environment.yml
 
 build:
   os: "ubuntu-22.04"

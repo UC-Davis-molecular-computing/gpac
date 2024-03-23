@@ -1,0 +1,10 @@
+# name: base
+name: gpac-test
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - pip
+  - pip:
+    - sphinx
+    - sphinx_rtd_theme
