@@ -64,8 +64,8 @@ def integrate_odes(
         # min_step: float = 0.0,
 ) -> OdeResult:
     """
-    Integrate the given ODEs using scipy, returning the same object returned by `solve_ivp` in the
-    package scipy.integrate:
+    Integrate the given ODEs using scipy's `solve_ivp` function in the
+    package scipy.integrate, returning the same object returned by `solve_ivp`:
 
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
