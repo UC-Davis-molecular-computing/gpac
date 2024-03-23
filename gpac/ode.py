@@ -333,7 +333,7 @@ def plot(
     Numerically integrate the given ODEs using the function :func:`integrate_odes`,
     then plot the trajectories using matplotlib.
     (Assumes it is being run in a Jupyter notebook.)
-    See :func:`integrate_odes` for description of parameters other than `figure_size` and `symbols_to_plot`.
+    See :func:`integrate_odes` for description of parameters below that are not documented.
 
     Args:
         figure_size:
