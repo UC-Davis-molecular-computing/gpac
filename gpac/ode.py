@@ -209,7 +209,15 @@ def integrate_odes(
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
         options:
-            For solver-specific parameters, see documentation for `solve_ivp` in scipy.integrate:
+            This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
+            for example you could pass `rtol=1e-6` to set the relative tolerance to 1e-6:
+
+            .. code-block:: python
+
+                plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
+
+            For solver-specific parameters to `solve_ivp`,
+            see documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
     Returns:
@@ -362,6 +370,13 @@ def plot(
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
 
         options:
+            This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
+            for example you could pass `rtol=1e-6` to set the relative tolerance to 1e-6:
+
+            .. code-block:: python
+
+                plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
+
             For solver-specific parameters to `solve_ivp`,
             see documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
