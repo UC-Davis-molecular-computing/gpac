@@ -356,7 +356,7 @@ def plot(
             pair (width, height) of the figure
 
         symbols_to_plot:
-            symbols to plot; if empty, then all symbols are plotted
+            symbols to plot; if not specified, then all symbols are plotted
 
         show:
             whether to call ``matplotlib.pyplot.show()`` after creating the plot;
@@ -405,6 +405,8 @@ def plot(
     if symbols_to_plot is None:
         symbols_to_plot = tuple(odes.keys()) + dependent_symbols_tuple
     symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
+    if len(symbols_to_plot) == 0:
+        raise ValueError("symbols_to_plot cannot be empty")
 
     # check that symbols all appear as keys in odes
     symbols_of_odes = frozenset(str(symbol) for symbol in odes.keys())
