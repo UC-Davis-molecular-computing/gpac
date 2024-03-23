@@ -23,7 +23,7 @@ Although gpac has two submodules ode and crn, you can import all elements from b
 e.g., ``from gpac import plot, plot_crn``.
 """
 
-from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any, Literal
+from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any
 
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
@@ -340,9 +340,7 @@ def plot(
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
         args: Optional[Tuple] = None,
-        loc: Union[Literal['best', 'upper right', 'upper left', 'lower left', 'lower right', 'right',
-        'center left', 'center right', 'lower center', 'upper center', 'center'],
-        Tuple[float, float]] = 'best',
+        loc: Union[str, Tuple[float, float]] = 'best',
         **options,
 ) -> None:
     """

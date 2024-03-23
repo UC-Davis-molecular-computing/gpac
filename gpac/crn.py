@@ -52,7 +52,7 @@ So for the reaction defined above, its rate is :math:`k \cdot [A] \cdot [B] / (1
 
 from __future__ import annotations  # needed for forward references in type hints
 
-from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List, Literal
+from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
@@ -224,9 +224,7 @@ def plot_crn(
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
         args: Optional[Tuple] = None,
-        loc: Union[Literal['best', 'upper right', 'upper left', 'lower left', 'lower right', 'right',
-        'center left', 'center right', 'lower center', 'upper center', 'center'],
-        Tuple[float, float]] = 'best',
+        loc: Union[str, Tuple[float, float]] = 'best',
         **options,
 ) -> None:
     """
