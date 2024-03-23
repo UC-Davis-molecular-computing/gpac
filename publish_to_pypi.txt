@@ -1,0 +1,6 @@
+rem https://medium.com/@joel.barmettler/how-to-upload-your-python-package-to-pypi-65edc5fe9c56
+
+rem !!!change current version number in __version__.py!!!
+python setup.py sdist
+rem twine upload dist/*
+twine upload dist/gpac-0.0.8.tar.gz
