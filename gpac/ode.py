@@ -15,7 +15,7 @@ circuit.
 So essentially, this package makes it easy to write down such ODEs and numerically integrate and plot them.
 """
 
-from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any
+from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any, Literal
 
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
@@ -324,7 +324,9 @@ def plot(
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
         args: Optional[Tuple] = None,
-        loc: str = 'best',
+        loc: Union[Literal['best', 'upper right', 'upper left', 'lower left', 'lower right', 'right',
+        'center left', 'center right', 'lower center', 'upper center', 'center'],
+        Tuple[float, float]] = 'best',
         **options,
 ) -> None:
     """

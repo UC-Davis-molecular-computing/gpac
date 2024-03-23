@@ -40,7 +40,7 @@ how reactions are converted into ODEs by each of these functions.
 
 from __future__ import annotations  # needed for forward references in type hints
 
-from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List
+from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List, Literal
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
@@ -212,7 +212,9 @@ def plot_crn(
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
         args: Optional[Tuple] = None,
-        loc: str = 'best',
+        loc: Union[Literal['best', 'upper right', 'upper left', 'lower left', 'lower right', 'right',
+        'center left', 'center right', 'lower center', 'upper center', 'center'],
+        Tuple[float, float]] = 'best',
         **options,
 ) -> None:
     """
