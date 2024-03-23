@@ -36,6 +36,18 @@ See functions :func:`crn_to_odes` to convert reactions to ODEs (ordinary differe
 :func:`integrate_crn_odes` to get the trajectories of integrating these ODEs over time, and
 :func:`plot_crn` to plot the trajectories. The documentation for :func:`crn_to_odes` explains
 how reactions are converted into ODEs by each of these functions.
+
+Also supported are inhibitors, which can be added to reactions using the method :meth:`Reaction.i`:
+
+.. code-block:: python
+
+    a, b, u, i = species('A B U I')
+    rxn = (a+b | 2*u).i(i, 100)
+
+which represents the reaction :math:`A+B \\to 2U` with inhibitor :math:`I` and inhibitor constant 100.
+Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
+reaction rate is to divide by :math:`1 + k \cdot I`, where :math:`k` is the inhibitor constant.
+So for the reaction defined above, its rate is :math:`k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])`.
 """
 
 from __future__ import annotations  # needed for forward references in type hints
@@ -558,6 +570,18 @@ class Reaction:
             (a+b | 2*c).k(0.6).r(4.1),
             (c >> d).k(5.2),
         ]
+
+    Also supported are inhibitors, which can be added to reactions using the method :meth:`Reaction.i`:
+
+    .. code-block:: python
+
+        a, b, u, i = species('A B U I')
+        rxn = (a+b | 2*u).i(i, 100)
+
+    which represents the reaction :math:`A+B \\to 2U` with inhibitor :math:`I` and inhibitor constant 100.
+    Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
+    reaction rate is to divide by :math:`1 + k \cdot I`, where :math:`k` is the inhibitor constant.
+    So for the reaction defined above, its rate is :math:`k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])`.
     """
 
     reactants: Expression
