@@ -14,7 +14,7 @@
 
 
 ## Overview
-This is a Python package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. It's primarily a front-end to [scipy](https://scipy.org/) and [sympy](https://www.sympy.org/) making it easier to specify systems of ODEs, numerically integrate them, and plot their solutions.
+This is a Python package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. It's primarily a front-end to [scipy](https://scipy.org/) and [sympy](https://www.sympy.org/) making it easier to specify systems of ODEs, numerically integrate them, and plot their solutions. It also has support for a very common model governed by polynomial ODEs, the of continuous mass-action [chemical reaction networks](https://en.wikipedia.org/wiki/Chemical_reaction_network_theory#Overview).
 
 This is ostensibly what [pyodesys](https://github.com/bjodah/pyodesys) does as well, and that package is much more powerful and configurable than gpac. The purpose of gpac is primarily to be simpler to use for common cases of ODEs, at the cost of being less expressive. For example, gpac has some functions ([`plot`](https://gpac.readthedocs.io/en/latest/#ode.plot) and [`plot_crn`](https://gpac.readthedocs.io/en/latest/#crn.plot_crn)) to do plotting in matplotlib, which is easier than manually getting the ODE data through [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#ode.integrate_odes) and passing it along to the matplotlib plot function. This is possible if you want to have more control over how things are plotted than is possible with the gpac plotting functions; however in most cases you can configure what you need in `plot` and `plot_crn` either by passing keyword arguments (which are passed along to the matplotlib plot function), or by calling functions in matplotlib.pyplot (e.g., [`yscale`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.yscale.html)) after calling gpac's `plot` or `pyplot`.
 
@@ -118,8 +118,6 @@ The value `solution` returned by `integrate_odes` is the same object returned fr
 ### Chemical reaction networks
 There are also functions [`integrate_crn_odes`](https://gpac.readthedocs.io/en/latest/#crn.integrate_crn_odes) and [`plot_crn`](https://gpac.readthedocs.io/en/latest/#crn.plot_crn), which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function [`crn_to_odes`](https://gpac.readthedocs.io/en/latest/#crn.crn_to_odes), which converts chemical reactions into ODEs.
 
-See [notebook.ipynb](notebook.ipynb) for examples.
-
 Reactions are constructed using operations on `Specie` objects returned from the function [`species`](https://gpac.readthedocs.io/en/latest/#crn.species):
 
 ```python
@@ -138,4 +136,6 @@ t_eval = np.linspace(0, 5, 100)
 gpac.plot_crn(rxns, initial_values, t_eval=t_eval, figure_size=(20,4))
 ```
 
-Although they appear similar, a `Specie` object (such as `x` and `y` returned from the `species` function above) is different from a `sympy.Symbol` object. The `Specie` object is intended to help specify reactions using the notation above with the symbols `+`, `>>`, and `|` (as well as the `k` and `r` functions for specifying non-unit rate constants, see example [notebook](notebook.ipynb)). However, any of the following objects can be a key in the `initial_values` parameter to `plot_crn` and `integrate_crn_odes`: `Specie`, `sympy.Symbol`, or `str`. They will be normalized to `sympy.Symbol` objects in keys of the returned dict representing the ODEs.
+See [notebook.ipynb](notebook.ipynb) for more examples.
+
+Although they appear similar, a `Specie` object (such as `x` and `y` returned from the `gpac.species` function above) is different from a `sympy.Symbol` object. The `Specie` object is intended to help specify reactions using the notation above with the symbols `+`, `>>`, and `|` (as well as the `k` and `r` functions for specifying non-unit rate constants, see example [notebook](notebook.ipynb)). However, any of the following objects can be a key in the `initial_values` parameter to `plot_crn` and `integrate_crn_odes`: `Specie`, `sympy.Symbol`, or `str`. They will be normalized to `sympy.Symbol` objects in keys of the returned dict representing the ODEs.
