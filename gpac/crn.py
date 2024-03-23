@@ -212,6 +212,7 @@ def plot_crn(
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
         args: Optional[Tuple] = None,
+        loc: str = 'best',
         **options,
 ) -> None:
     """
@@ -256,6 +257,7 @@ def plot_crn(
         events=events,
         vectorized=vectorized,
         args=args,
+        loc=loc,
         **options,
     )
 

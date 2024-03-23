@@ -324,6 +324,7 @@ def plot(
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
         args: Optional[Tuple] = None,
+        loc: str = 'best',
         **options,
 ) -> None:
     """
@@ -353,6 +354,10 @@ def plot(
             that are functions of the other variables that are keys in `odes`.
             For an example, see the example notebook
             https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
+
+        loc:
+            location of the legend; see documentation for `matplotlib.pyplot.legend`:
+            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
 
         options:
             For solver-specific parameters to `solve_ivp`,
@@ -414,7 +419,7 @@ def plot(
             plt.plot(sol.t, y, label=str(symbol), **options)
 
     plt.xlabel('time')
-    plt.legend()
+    plt.legend(loc=loc)
     if show:
         plt.show()
 
