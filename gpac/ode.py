@@ -356,8 +356,9 @@ def plot(
             such as ``matplotlib.pyplot.legend()`` or ``matplotlib.pyplot.grid()`` after calling this
             function, which will not work if ``matplotlib.pyplot.show()`` has already been called.
             However, if you want to display multiple plots from the same cell in a Jupyter notebook,
-            you should either set this to True, or manually call ``matplotlib.pyplot.show()`` after
-            each call to this function.
+            you should either set this to True, or (in case you want to configure each plot by calling
+            other matplotlib.pyplot functions, such as yscale), manually call ``matplotlib.pyplot.show()``
+            after each call to this function.
 
         dependent_symbols:
             dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
