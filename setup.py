@@ -50,7 +50,11 @@ setup(name=package_name,
       packages=[package_name],
       version=version,
       license='MIT',
-      description=f"{package_name} stands for \"General-Purpose Analog Computer\". This package makes it easy to specify ordinary differential equations (ODEs) and view their solutions.",
+      description=f"{package_name} stands for \"General-Purpose Analog Computer\". "
+                  f"This package makes it easy to specify ordinary differential equations (ODEs) "
+                  f"and plot their solutions. "
+                  f"It also contains functions for specifying chemical reaction networks (CRNs) "
+                  f"and simulating their behavior.",
       author="David Doty",
       author_email="doty@ucdavis.edu",
       url=f"https://github.com/UC-Davis-molecular-computing/{package_name}",
