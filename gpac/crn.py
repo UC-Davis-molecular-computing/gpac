@@ -46,8 +46,8 @@ Also supported are inhibitors, which can be added to reactions using the method 
 
 which represents the reaction :math:`A+B \\to 2U` with inhibitor :math:`I` and inhibitor constant 100.
 Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
-reaction rate is to divide by :math:`1 + k \cdot I`, where :math:`k` is the inhibitor constant.
-So for the reaction defined above, its rate is :math:`k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])`.
+reaction rate is to divide by :math:`1 + k \\cdot I`, where :math:`k` is the inhibitor constant.
+So for the reaction defined above, its rate is :math:`k \\cdot [A] \\cdot [B] / (1 + 100 \\cdot [I])`.
 """
 
 from __future__ import annotations  # needed for forward references in type hints
@@ -578,8 +578,8 @@ class Reaction:
 
     which represents the reaction :math:`A+B \\to 2U` with inhibitor :math:`I` and inhibitor constant 100.
     Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
-    reaction rate is to divide by :math:`1 + k \cdot I`, where :math:`k` is the inhibitor constant.
-    So for the reaction defined above, its rate is :math:`k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])`.
+    reaction rate is to divide by :math:`1 + k \\cdot I`, where :math:`k` is the inhibitor constant.
+    So for the reaction defined above, its rate is :math:`k \\cdot [A] \\cdot [B] / (1 + 100 \\cdot [I])`.
     """
 
     reactants: Expression
