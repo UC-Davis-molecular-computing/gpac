@@ -58,7 +58,7 @@ import copy
 from dataclasses import dataclass, field
 
 from scipy.integrate import OdeSolver
-from scipy.integrate._ivp.ivp import OdeResult
+from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
 
 from gpac import integrate_odes, plot
