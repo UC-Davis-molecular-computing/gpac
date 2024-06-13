@@ -640,7 +640,6 @@ class Reaction:
         self.inhibitors = []
         self.inhibitor_constants = []
 
-
     def with_inhibitor(self, inhibitor: Specie, constant: float = 1.0) -> Reaction:
         """
         Args:
@@ -849,8 +848,9 @@ class Reaction:
         if len(self.inhibitors) > 0:
             def constant_str(constant: float) -> str:
                 return '' if constant == 1.0 else f'[{constant}]'
+
             inhibitor_str = '--' + ','.join(f'{inhibitor.name}{constant_str(constant)}'
-                                     for inhibitor, constant in zip(self.inhibitors, self.inhibitor_constants))
+                                            for inhibitor, constant in zip(self.inhibitors, self.inhibitor_constants))
         else:
             inhibitor_str = ''
         return f"{self.reactants} {rev_rate_str}{inhibitor_str}-->{for_rate_str} {self.products}"
