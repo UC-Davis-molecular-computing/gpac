@@ -23,7 +23,7 @@ Although gpac has two submodules ode and crn, you can import all elements from b
 e.g., ``from gpac import plot, plot_crn``.
 """
 
-from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any
+from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any, Literal
 
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
@@ -312,12 +312,10 @@ def integrate_odes(
                            for func in dependent_symbols]
         # compute dependent variables and append them to solution.y
         dep_vals = np.zeros(shape=(len(dependent_symbols), len(solution.t)))  # type: ignore
+        indp_vals = list(solution.y)  # type: ignore
         for i, func in enumerate(dependent_funcs):
             # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
             # the vectors as separate arguments to the function func
-            indp_vals = list(solution.y)  # type: ignore
-            # import inspect
-            # print(f'{inspect.getsource(func)=}')
             dep_vals_row = func(*indp_vals)
             dep_vals[i] = dep_vals_row
         solution.y = np.vstack((solution.y, dep_vals))
@@ -393,32 +391,6 @@ def plot(
             However, note that using such arguments here will cause `solve_ivp` to print a warning
             that it does not recognize the keyword argument.
     """
-    from matplotlib.pylab import rcParams
-    if rcParams['figure.dpi'] != 96:
-        print(f"matplotlib.pylab.rcParams['figure.dpi'] was {rcParams['figure.dpi']}; setting it to 96")
-        rcParams['figure.dpi'] = 96
-
-    # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
-    dependent_symbols_tuple = tuple(dependent_symbols.keys()) if dependent_symbols is not None else ()
-    if symbols_to_plot is None:
-        symbols_to_plot = tuple(odes.keys()) + dependent_symbols_tuple
-    symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
-    if len(symbols_to_plot) == 0:
-        raise ValueError("symbols_to_plot cannot be empty")
-
-    # check that symbols all appear as keys in odes
-    symbols_of_odes = frozenset(str(symbol) for symbol in odes.keys())
-    symbols_of_odes_and_dependent_symbols = symbols_of_odes | frozenset(
-        str(symbol) for symbol in dependent_symbols_tuple)
-    diff = symbols_to_plot - symbols_of_odes_and_dependent_symbols
-    if len(diff) > 0:
-        raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes or dependent symbols: "
-                         f"{comma_separated(diff)}"
-                         f"\nSymbols in ODEs:                                       "
-                         f"{comma_separated(symbols_of_odes)}"
-                         f"\nDependent symbols:                                     "
-                         f"{comma_separated(dependent_symbols_tuple)}")
-
     dependent_symbols_expressions = tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
 
     sol = integrate_odes(
@@ -435,14 +407,72 @@ def plot(
         **options,
     )
 
+    symbols = tuple(odes.keys()) + (() if dependent_symbols is None else tuple(dependent_symbols.keys()))
+    assert len(symbols) == len(sol.y)
+    result = {str(symbol): y for symbol, y in zip(symbols, sol.y)}
+    times = sol.t
+    plot_given_values(
+        times=times,
+        result=result,
+        source='ode',
+        dependent_symbols=dependent_symbols,
+        figure_size=figure_size,
+        symbols_to_plot=symbols_to_plot,
+        show=show,
+        loc=loc,
+        **options,
+    )
+
+
+# This is used to share plotting code between data returned from scipy.integrate.solve_ivp and that
+# returned from gillespy2.Model.run(). This is not intended to be called by the user, but we make it public
+# so it's accessible from the crn module.
+def plot_given_values(
+        times: np.ndarray,
+        result: Dict[str, np.ndarray],
+        source: Literal['ode', 'ssa'],
+        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
+        figure_size: Tuple[float, float] = (10, 3),
+        symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
+        show: bool = False,
+        loc: Union[str, Tuple[float, float]] = 'best',
+        **options,
+) -> None:
+    from matplotlib.pylab import rcParams
+    if rcParams['figure.dpi'] != 96:
+        print(f"matplotlib.pylab.rcParams['figure.dpi'] was {rcParams['figure.dpi']}; setting it to 96")
+        rcParams['figure.dpi'] = 96
+
+    # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
+    dependent_symbols_tuple = tuple(dependent_symbols.keys()) if dependent_symbols is not None else ()
+    if symbols_to_plot is None:
+        symbols_given = tuple(result.keys())
+        symbols_to_plot = tuple(symbols_given) + dependent_symbols_tuple
+    symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
+    if len(symbols_to_plot) == 0:
+        raise ValueError("symbols_to_plot cannot be empty")
+
+    # check that symbols all appear as keys in result
+    symbols_of_results = frozenset(str(symbol) for symbol in result.keys())
+    symbols_of_odes_and_dependent_symbols = symbols_of_results | frozenset(
+        str(symbol) for symbol in dependent_symbols_tuple)
+    diff = symbols_to_plot - symbols_of_odes_and_dependent_symbols
+    if len(diff) > 0:
+        source = 'ODEs' if source == 'ode' else 'reactions'
+        raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes or dependent symbols: "
+                         f"{comma_separated(diff)}"
+                         f"\nSymbols in {source}:                                       "
+                         f"{comma_separated(symbols_of_results)}"
+                         f"\nDependent symbols:                                     "
+                         f"{comma_separated(dependent_symbols_tuple)}")
+
     figure(figsize=figure_size)
 
-    all_symbols = tuple(odes.keys()) + dependent_symbols_tuple
-    for idx, symbol in enumerate(all_symbols):
+    for symbol in symbols_to_plot:
         symbol_name = str(symbol)
-        if symbol_name in symbols_to_plot:
-            y = sol.y[idx]
-            plt.plot(sol.t, y, label=str(symbol), **options)
+        assert symbol_name in result.keys()
+        y = result[symbol_name]
+        plt.plot(times, y, label=str(symbol), **options)
 
     plt.xlabel('time')
     plt.legend(loc=loc)

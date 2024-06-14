@@ -52,7 +52,7 @@ So for the reaction defined above, its rate is :math:`k \\cdot [A] \\cdot [B] / 
 
 from __future__ import annotations  # needed for forward references in type hints
 
-from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List
+from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List, Literal
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
@@ -60,8 +60,9 @@ from dataclasses import dataclass, field
 from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
+import gillespy2 as gp
 
-from gpac import integrate_odes, plot
+from gpac import integrate_odes, plot, plot_given_values
 
 
 def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
@@ -303,6 +304,140 @@ def plot_crn(
     )
 
 
+def find_all_species(rxns: Iterable[Reaction]) -> Tuple[Specie, ...]:
+    all_species = []
+    all_species_set = set()
+    for rxn in rxns:
+        for specie in rxn.get_species():
+            if specie not in all_species_set:
+                all_species.append(specie)
+                all_species_set.add(specie)
+    return tuple(all_species)
+
+
+def gillespie_crn_counts(
+        rxns: Iterable[Reaction],
+        initial_counts: Dict[Specie, int],
+        t_eval: Iterable[float],
+        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
+        seed: Optional[int] = None,
+        solver_class: type = gp.NumPySSASolver,
+        **options,
+) -> gp.Results:
+    """
+    Run the reactions using the GillesPy2 package for discrete simulation using the Gillespie algorithm.
+
+    Any parameters not described here are passed along to the function gillespy2.GillesPySolver.run:
+    https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run
+
+
+    Args:
+        rxns:
+            list of :any:`Reaction`'s comprising the chemical reaction network.
+            See documentation for :any:`Reaction` for details on how to specify reactions.
+
+        initial_counts:
+            dict mapping each species to its initial integer count.
+            Note that unlike the parameter `initial_values` in :func:`ode.integrate_odes`,
+            keys in this dict must be :any:`Specie` objects, not strings or sympy symbols.
+
+    Returns:
+        Same Result object returned by gillespy2.GillesPySolver.run.
+    """
+    if 'solver' in options:
+        raise ValueError('solver should not be passed in options; instead, pass the solver_class parameter')
+    model = gp.Model()
+
+    all_species = find_all_species(rxns)
+    for specie in all_species:
+        val = initial_counts.get(specie, 0)
+        model.add_species(gp.Species(name=specie.name, initial_value=val))
+        if specie.name == 'time':
+            raise ValueError('species cannot be named "time"')
+
+    for rxn in rxns:
+        rxn_name = (''.join([rct.name for rct in rxn.reactants.species]) + 'to'
+                    + ''.join([prd.name for prd in rxn.products.species]))
+        rate_f = gp.Parameter(name=f'{rxn_name}_k', expression=f'{rxn.rate_constant}')
+        model.add_parameter(rate_f)
+        reactant_counts = rxn.reactants.species_counts('str')
+        product_counts = rxn.products.species_counts('str')
+        gp_rxn = gp.Reaction(name=rxn_name, reactants=reactant_counts, products=product_counts, rate=rate_f)
+        model.add_reaction(gp_rxn)
+        if rxn.reversible:
+            rxn_name_r = rxn_name + '_r'
+            rate_r = gp.Parameter(name=f'{rxn_name_r}_f', expression=f'{rxn.rate_constant_reverse}')
+            model.add_parameter(rate_r)
+            gp_rxn_r = gp.Reaction(name=rxn_name_r, reactants=product_counts, products=reactant_counts, rate=rate_r)
+            model.add_reaction(gp_rxn_r)
+
+    tspan = gp.TimeSpan(t_eval)
+    model.timespan(tspan)
+    solver: gp.GillesPySolver = solver_class(model=model)
+    if seed is None:
+        gp_results = model.run(solver=solver, **options)
+    else:
+        gp_results = model.run(solver=solver, seed=seed, **options)
+
+    if dependent_symbols is not None:
+        independent_symbols = [sympy.Symbol(specie.name) for specie in all_species]
+        dependent_funcs = {symbol: sympy.lambdify(independent_symbols, func)
+                           for symbol, func in dependent_symbols.items()}
+
+        indp_vals = []
+        for specie in all_species:
+            indp_vals.append(gp_results[0][specie.name])
+
+        for dependent_symbol, func in dependent_funcs.items():
+            # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
+            # the vectors as separate arguments to the function func
+            dep_vals_row = func(*indp_vals)
+            dependent_symbol_name = dependent_symbol.name if isinstance(dependent_symbol,
+                                                                        sympy.Symbol) else dependent_symbol
+            gp_results[0][dependent_symbol_name] = dep_vals_row
+
+    return gp_results
+
+
+def plot_gillespie(
+        rxns: Iterable[Reaction],
+        initial_counts: Dict[Specie, int],
+        t_eval: Iterable[float],
+        seed: Optional[int] = None,
+        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
+        figure_size: Tuple[float, float] = (10, 3),
+        symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
+        show: bool = False,
+        loc: Union[str, Tuple[float, float]] = 'best',
+        **options,
+) -> None:
+    gp_result = gillespie_crn_counts(
+        rxns=rxns,
+        initial_counts=initial_counts,
+        t_eval=t_eval,
+        seed=seed,
+        dependent_symbols=dependent_symbols,
+        **options,
+    )
+
+    symbols = tuple(name for name in gp_result[0].keys() if name != 'time')
+    assert len(symbols) == len(gp_result[0]) - 1  # -1 for 'time'
+    times = np.array(t_eval)
+    # convert gp_result to Dict[str, np.ndarray] for _plot_given_values
+    result = {symbol: gp_result[0][symbol] for symbol in symbols}
+    plot_given_values(
+        times=times,
+        result=result,
+        source='ssa',
+        dependent_symbols=dependent_symbols,
+        figure_size=figure_size,
+        symbols_to_plot=symbols_to_plot,
+        show=show,
+        loc=loc,
+        **options,
+    )
+
+
 def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
     """
     Create a list of :any:`Specie` (Single species :any:`Expression`'s),
@@ -501,6 +636,17 @@ class Expression:
         coefficients.
         """
         return set(self.species)
+
+    def species_counts(self, key_type: Literal['str', 'Specie'] = 'Specie') -> Dict[Specie, int]:
+        """
+        Returns a dictionary mapping each species in this expression to its
+        coefficient.
+        """
+        species_counts = {}
+        for specie in self.species:
+            key = specie.name if key_type == 'str' else specie
+            species_counts[key] = species_counts.get(key, 0) + 1
+        return species_counts
 
 
 empty = Expression([])
@@ -930,3 +1076,37 @@ class Reaction:
                 all_species.append(s)
                 all_species_set.add(s)
         return tuple(all_species)
+
+
+if __name__ == '__main__':
+    Xp, Xm, Yp, Ym = species('Xp Xm Yp Ym')
+    x, y, xp, xm, yp, ym = sympy.symbols('x y Xp Xm Yp Ym')
+
+    # dual-rail CRN implementation of sine/cosine oscillator
+    # x' = -y
+    # y' = x
+    rxns = [
+        Yp >> Yp + Xm,
+        Ym >> Ym + Xp,
+        Xp >> Xp + Yp,
+        Xm >> Xm + Ym,
+        (Xp + Xm >> empty).k(1 / 2),
+        (Yp + Ym >> empty).k(1 / 2),
+    ]
+    inits = {
+        Xp: 100,
+        Yp: 0,
+    }
+    from math import pi
+    import numpy as np
+
+    t_eval = np.linspace(0, 6 * pi, 200)
+
+    dependent_symbols = {
+        x: xp - xm,
+        y: yp - ym,
+    }
+
+    # result = gillespie_crn_counts(rxns, inits, t_eval, dependent_symbols=dependent_symbols)
+    # print(result)
+    plot_gillespie(rxns, inits, t_eval, dependent_symbols=dependent_symbols, symbols_to_plot=[x, y])
