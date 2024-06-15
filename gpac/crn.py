@@ -426,8 +426,8 @@ def plot_gillespie(
     Args:
         rxns: the reactions of the CRN
         initial_counts: initial (integer) counts of each species
-        t_eval: the times at which to plot the counts, something like numpy.linspace(0, 10, 1001) to have 1001 evenly
-            spaced points from start time 0 to end time 10
+        t_eval: the times at which to plot the counts, something like ``numpy.linspace(0, 10, 1001)`` to have 1001
+            evenly spaced points from start time 0 to end time 10
         seed: seed for random number generator used by GillesPy2 for stochastic simulation
     """
     gp_result = gillespie_crn_counts(
