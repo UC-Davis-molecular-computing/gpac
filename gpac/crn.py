@@ -61,6 +61,7 @@ from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
 import gillespy2 as gp
+import numpy as np
 
 from gpac import integrate_odes, plot, plot_given_values
 
@@ -362,13 +363,15 @@ def gillespie_crn_counts(
         model.add_parameter(rate_f)
         reactant_counts = rxn.reactants.species_counts('str')
         product_counts = rxn.products.species_counts('str')
-        gp_rxn = gp.Reaction(name=rxn_name, reactants=reactant_counts, products=product_counts, rate=rate_f)
+        gp_rxn = gp.Reaction(name=rxn_name, reactants=reactant_counts, products=product_counts,
+                             rate=rate_f)  # type: ignore
         model.add_reaction(gp_rxn)
         if rxn.reversible:
             rxn_name_r = rxn_name + '_r'
             rate_r = gp.Parameter(name=f'{rxn_name_r}_f', expression=f'{rxn.rate_constant_reverse}')
             model.add_parameter(rate_r)
-            gp_rxn_r = gp.Reaction(name=rxn_name_r, reactants=product_counts, products=reactant_counts, rate=rate_r)
+            gp_rxn_r = gp.Reaction(name=rxn_name_r, reactants=product_counts, products=reactant_counts,
+                                   rate=rate_r)  # type: ignore
             model.add_reaction(gp_rxn_r)
 
     tspan = gp.TimeSpan(t_eval)
@@ -1076,37 +1079,3 @@ class Reaction:
                 all_species.append(s)
                 all_species_set.add(s)
         return tuple(all_species)
-
-
-if __name__ == '__main__':
-    Xp, Xm, Yp, Ym = species('Xp Xm Yp Ym')
-    x, y, xp, xm, yp, ym = sympy.symbols('x y Xp Xm Yp Ym')
-
-    # dual-rail CRN implementation of sine/cosine oscillator
-    # x' = -y
-    # y' = x
-    rxns = [
-        Yp >> Yp + Xm,
-        Ym >> Ym + Xp,
-        Xp >> Xp + Yp,
-        Xm >> Xm + Ym,
-        (Xp + Xm >> empty).k(1 / 2),
-        (Yp + Ym >> empty).k(1 / 2),
-    ]
-    inits = {
-        Xp: 100,
-        Yp: 0,
-    }
-    from math import pi
-    import numpy as np
-
-    t_eval = np.linspace(0, 6 * pi, 200)
-
-    dependent_symbols = {
-        x: xp - xm,
-        y: yp - ym,
-    }
-
-    # result = gillespie_crn_counts(rxns, inits, t_eval, dependent_symbols=dependent_symbols)
-    # print(result)
-    plot_gillespie(rxns, inits, t_eval, dependent_symbols=dependent_symbols, symbols_to_plot=[x, y])
