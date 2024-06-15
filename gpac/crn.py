@@ -414,6 +414,22 @@ def plot_gillespie(
         loc: Union[str, Tuple[float, float]] = 'best',
         **options,
 ) -> None:
+    """
+    Similar to :func:`plot_crn`, but uses the GillesPy2 package for discrete simulation using the Gillespie algorithm
+    instead of continuous ODEs.
+
+    Undocumented arguments have the same meaning as with :func:`plot_crn`.
+
+    Similar to :func:`plot_crn`, keyword arguments (specified in `options`) are passed to :func:`gillespie_crn_counts`,
+    and to the function matplotlib.pyplot.plot.
+
+    Args:
+        rxns: the reactions of the CRN
+        initial_counts: initial (integer) counts of each species
+        t_eval: the times at which to plot the counts, something like numpy.linspace(0, 10, 1001) to have 1001 evenly
+            spaced points from start time 0 to end time 10
+        seed: seed for random number generator used by GillesPy2 for stochastic simulation
+    """
     gp_result = gillespie_crn_counts(
         rxns=rxns,
         initial_counts=initial_counts,
