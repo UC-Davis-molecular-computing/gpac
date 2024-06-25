@@ -219,10 +219,10 @@ def plot_crn(
         t_span: Optional[Tuple[float, float]] = None,
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[
-            Union[Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]]]
-        ] = None,
+        symbols_to_plot: Optional[Union[
+            Iterable[Union[sympy.Symbol, str]],
+            Iterable[Iterable[Union[sympy.Symbol, str]]]
+        ]] = None,
         show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
@@ -412,10 +412,10 @@ def plot_gillespie(
         seed: Optional[int] = None,
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[
-            Union[Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]]]
-        ] = None,
+        symbols_to_plot: Optional[Union[
+            Iterable[Union[sympy.Symbol, str]],
+            Iterable[Iterable[Union[sympy.Symbol, str]]]
+        ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
         **options,
