@@ -331,7 +331,10 @@ def plot(
         t_span: Optional[Tuple[float, float]] = None,
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
+        symbols_to_plot: Optional[
+            Union[Iterable[Union[sympy.Symbol, str]],
+            Iterable[Iterable[Union[sympy.Symbol, str]]]]
+        ] = None,
         show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
         dense_output: bool = False,
@@ -352,7 +355,9 @@ def plot(
             pair (width, height) of the figure
 
         symbols_to_plot:
-            symbols to plot; if not specified, then all symbols are plotted
+            symbols to plot; if not specified, then all symbols are plotted.
+            If it is a 2D list (or other Iterable of Iterables of strings or symbols),
+            then each group of symbols is plotted in a separate subplot.
 
         show:
             whether to call ``matplotlib.pyplot.show()`` after creating the plot;
@@ -433,7 +438,10 @@ def plot_given_values(
         source: Literal['ode', 'ssa'],
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[Iterable[Union[sympy.Symbol, str]]] = None,
+        symbols_to_plot: Optional[
+            Union[Iterable[Union[sympy.Symbol, str]],
+            Iterable[Iterable[Union[sympy.Symbol, str]]]]
+        ] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
         **options,
@@ -448,15 +456,37 @@ def plot_given_values(
     if symbols_to_plot is None:
         symbols_given = tuple(result.keys())
         symbols_to_plot = tuple(symbols_given) + dependent_symbols_tuple
-    symbols_to_plot = frozenset(str(symbol) for symbol in symbols_to_plot)
-    if len(symbols_to_plot) == 0:
+
+    empty = True
+    for _ in symbols_to_plot:
+        empty = False
+        break
+    if empty:
         raise ValueError("symbols_to_plot cannot be empty")
+
+    # if symbols_to_plot is an Iterable of Iterables of strings or symbols, make a separate subplot for each
+    multiple_subplots = False
+    for symbol in symbols_to_plot:
+        if not isinstance(symbol, (sympy.Symbol, str)):
+            multiple_subplots = True
+            break
+
+    if multiple_subplots:
+        symbols_to_plot = [frozenset(str(symbol) for symbol in symbol_group) for symbol_group in symbols_to_plot]
+        for symbol_group in symbols_to_plot:
+            if len(symbol_group) == 0:
+                raise ValueError(f"Each group of symbols to plot must be non-empty, "
+                                 f"but symbols_to_plot = {symbols_to_plot}")
+    else:
+        symbols_to_plot = [frozenset(str(symbol) for symbol in symbols_to_plot)]
+
+    all_symbols_to_plot = frozenset(symbol for symbol_group in symbols_to_plot for symbol in symbol_group)
 
     # check that symbols all appear as keys in result
     symbols_of_results = frozenset(str(symbol) for symbol in result.keys())
     symbols_of_odes_and_dependent_symbols = symbols_of_results | frozenset(
         str(symbol) for symbol in dependent_symbols_tuple)
-    diff = symbols_to_plot - symbols_of_odes_and_dependent_symbols
+    diff = all_symbols_to_plot - symbols_of_odes_and_dependent_symbols
     if len(diff) > 0:
         source = 'ODEs' if source == 'ode' else 'reactions'
         raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes or dependent symbols: "
@@ -468,14 +498,23 @@ def plot_given_values(
 
     figure(figsize=figure_size)
 
-    for symbol in symbols_to_plot:
-        symbol_name = str(symbol)
-        assert symbol_name in result.keys()
-        y = result[symbol_name]
-        plt.plot(times, y, label=str(symbol), **options)
+    colors = plt.rcParams["axes.prop_cycle"]()
+    num_subplots = len(symbols_to_plot)
+    for idx, symbol_group in enumerate(symbols_to_plot):
+        if num_subplots > 1:
+            plt.subplot(num_subplots, 1, idx + 1)
+
+        for symbol in symbol_group:
+            symbol_name = str(symbol)
+            assert symbol_name in result.keys()
+            y = result[symbol_name]
+            color = next(colors)["color"]
+            plt.plot(times, y, label=str(symbol), color=color, **options)
+
+        plt.legend(loc=loc)
 
     plt.xlabel('time')
-    plt.legend(loc=loc)
+
     if show:
         plt.show()
 

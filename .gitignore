@@ -16,3 +16,4 @@ tests_outputs/
 dist/
 .mypy_cache/
 gpac-*
+.virtual_documents/notebook.ipynb
