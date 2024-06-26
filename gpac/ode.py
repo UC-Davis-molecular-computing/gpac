@@ -472,27 +472,26 @@ def plot_given_values(
             break
 
     if multiple_subplots:
-        symbols_to_plot = [frozenset(str(symbol) for symbol in symbol_group) for symbol_group in symbols_to_plot]
+        symbols_to_plot = [[str(symbol) for symbol in symbol_group] for symbol_group in symbols_to_plot]
         for symbol_group in symbols_to_plot:
             if len(symbol_group) == 0:
                 raise ValueError(f"Each group of symbols to plot must be non-empty, "
                                  f"but symbols_to_plot = {symbols_to_plot}")
     else:
-        symbols_to_plot = [frozenset(str(symbol) for symbol in symbols_to_plot)]
-
-    all_symbols_to_plot = frozenset(symbol for symbol_group in symbols_to_plot for symbol in symbol_group)
+        symbols_to_plot = [[str(symbol) for symbol in symbols_to_plot]]
 
     # check that symbols all appear as keys in result
-    symbols_of_results = frozenset(str(symbol) for symbol in result.keys())
-    symbols_of_odes_and_dependent_symbols = symbols_of_results | frozenset(
-        str(symbol) for symbol in dependent_symbols_tuple)
-    diff = all_symbols_to_plot - symbols_of_odes_and_dependent_symbols
+    all_symbols_to_plot_set = frozenset(symbol for symbol_group in symbols_to_plot for symbol in symbol_group)
+    symbols_of_results_set = frozenset(str(symbol) for symbol in result.keys())
+    dependent_symbols_set = frozenset(str(symbol) for symbol in dependent_symbols_tuple)
+    symbols_of_odes_and_dependent_symbols = symbols_of_results_set | dependent_symbols_set
+    diff = all_symbols_to_plot_set - symbols_of_odes_and_dependent_symbols
     if len(diff) > 0:
         source = 'ODEs' if source == 'ode' else 'reactions'
         raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes or dependent symbols: "
                          f"{comma_separated(diff)}"
                          f"\nSymbols in {source}:                                       "
-                         f"{comma_separated(symbols_of_results)}"
+                         f"{comma_separated(symbols_of_results_set)}"
                          f"\nDependent symbols:                                     "
                          f"{comma_separated(dependent_symbols_tuple)}")
 
