@@ -507,6 +507,7 @@ def plot_given_values(
             symbol_name = str(symbol)
             assert symbol_name in result.keys()
             y = result[symbol_name]
+            assert len(y) == len(times)
             color = next(colors)["color"]
             plt.plot(times, y, label=str(symbol), color=color, **options)
 
