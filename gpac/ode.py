@@ -22,7 +22,7 @@ So essentially, this package makes it easy to write down such ODEs and numerical
 Although gpac has two submodules ode and crn, you can import all elements from both directly from gpac,
 e.g., ``from gpac import plot, plot_crn``.
 """
-
+import re
 from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any, Literal
 
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
@@ -333,7 +333,9 @@ def plot(
         figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Union[
             Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]]
+            Iterable[Iterable[Union[sympy.Symbol, str]]],
+            str,
+            re.Pattern,
         ]] = None,
         show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
@@ -358,6 +360,7 @@ def plot(
             symbols to plot; if not specified, then all symbols are plotted.
             If it is a 2D list (or other Iterable of Iterables of strings or symbols),
             then each group of symbols is plotted in a separate subplot.
+            If a string or re.Pattern, then only symbols whose names match the string or pattern are plotted.
 
         show:
             whether to call ``matplotlib.pyplot.show()`` after creating the plot;
@@ -412,6 +415,8 @@ def plot(
         **options,
     )
 
+    #TODO: add a check that the symbols in dependent_symbols are in the result
+
     symbols = tuple(odes.keys()) + (() if dependent_symbols is None else tuple(dependent_symbols.keys()))
     assert len(symbols) == len(sol.y)
     result = {str(symbol): y for symbol, y in zip(symbols, sol.y)}
@@ -440,7 +445,9 @@ def plot_given_values(
         figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Union[
             Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]]
+            Iterable[Iterable[Union[sympy.Symbol, str]]],
+            str,
+            re.Pattern,
         ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
@@ -456,6 +463,9 @@ def plot_given_values(
     if symbols_to_plot is None:
         symbols_given = tuple(result.keys())
         symbols_to_plot = tuple(symbols_given) + dependent_symbols_tuple
+    elif isinstance(symbols_to_plot, (str, re.Pattern)):
+        pattern = symbols_to_plot if isinstance(symbols_to_plot, re.Pattern) else re.compile(symbols_to_plot)
+        symbols_to_plot = [symbol for symbol in result.keys() if pattern.match(symbol)]
 
     empty = True
     for _ in symbols_to_plot:

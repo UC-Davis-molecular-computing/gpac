@@ -221,7 +221,9 @@ def plot_crn(
         figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Union[
             Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]]
+            Iterable[Iterable[Union[sympy.Symbol, str]]],
+            str,
+            re.Pattern,
         ]] = None,
         show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
@@ -414,7 +416,9 @@ def plot_gillespie(
         figure_size: Tuple[float, float] = (10, 3),
         symbols_to_plot: Optional[Union[
             Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]]
+            Iterable[Iterable[Union[sympy.Symbol, str]]],
+            str,
+            re.Pattern,
         ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
