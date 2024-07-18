@@ -56,12 +56,14 @@ from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List, 
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
+import re
 
 from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
 import gillespy2 as gp
 import numpy as np
+import rebop as rb
 
 from gpac import integrate_odes, plot, plot_given_values
 
@@ -321,7 +323,7 @@ def find_all_species(rxns: Iterable[Reaction]) -> Tuple[Specie, ...]:
     return tuple(all_species)
 
 
-def gillespie_crn_counts(
+def gillespy2_crn_counts(
         rxns: Iterable[Reaction],
         initial_counts: Dict[Specie, int],
         t_eval: Iterable[float],
@@ -406,11 +408,79 @@ def gillespie_crn_counts(
 
     return gp_results
 
+def rebop_crn_counts(
+        rxns: Iterable[Reaction],
+        initial_counts: Dict[Specie, int],
+        tmax: float,
+        nb_steps: int = 0,
+        volume: float = 1,
+        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
+        seed: Optional[int] = None,
+) -> gp.Results:
+    """
+    Run the reactions using the rebop package for discrete simulation using the Gillespie algorithm.
+
+
+    Args:
+        rxns:
+            list of :any:`Reaction`'s comprising the chemical reaction network.
+            See documentation for :any:`Reaction` for details on how to specify reactions.
+
+        initial_counts:
+            dict mapping each species to its initial integer count.
+            Note that unlike the parameter `initial_values` in :func:`ode.integrate_odes`,
+            keys in this dict must be :any:`Specie` objects, not strings or sympy symbols.
+
+        nb_steps:
+            TODO
+            If not specified, all reaction events are recorded, instead of fixed time points.
+
+        tmax:
+            the maximum time for the simulation.
+
+    Returns:
+        Same Result object returned by rebop.Gillespie.run.
+    """
+
+    crn = rb.Gillespie()
+    for rxn in rxns:
+        reactants = [specie.name for specie in rxn.reactants.species]
+        products = [specie.name for specie in rxn.products.species]
+        rate = rxn.rate_constant / volume**(len(reactants) - 1)
+        crn.add_reaction(rate, reactants, products)
+        if rxn.reversible:
+            rate_rev = rxn.rate_constant_reverse / volume ** (len(products) - 1)
+            crn.add_reaction(rate_rev, products, reactants)
+
+    initial_counts_str = {specie.name: count for specie, count in initial_counts.items()}
+    rb_results = crn.run(init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, seed=seed)
+
+    all_species = find_all_species(rxns)
+    if dependent_symbols is not None:
+        independent_symbols = [sympy.Symbol(specie.name) for specie in all_species]
+        dependent_funcs = {symbol: sympy.lambdify(independent_symbols, func)
+                           for symbol, func in dependent_symbols.items()}
+
+        indp_vals = []
+        for specie in all_species:
+            indp_vals.append(rb_results[specie.name])
+
+        for dependent_symbol, func in dependent_funcs.items():
+            # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
+            # the vectors as separate arguments to the function func
+            dep_vals_row = func(*indp_vals)
+            dependent_symbol_name = dependent_symbol.name if isinstance(dependent_symbol,
+                                                                        sympy.Symbol) else dependent_symbol
+            rb_results[dependent_symbol_name] = dep_vals_row
+
+    return rb_results
+
 
 def plot_gillespie(
         rxns: Iterable[Reaction],
         initial_counts: Dict[Specie, int],
-        t_eval: Iterable[float],
+        tmax: float,
+        nb_steps: int = 0,
         seed: Optional[int] = None,
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
@@ -422,6 +492,8 @@ def plot_gillespie(
         ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
+        volume: float = 1,
+        simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
         **options,
 ) -> None:
     """
@@ -440,20 +512,36 @@ def plot_gillespie(
             evenly spaced points from start time 0 to end time 10
         seed: seed for random number generator used by GillesPy2 for stochastic simulation
     """
-    gp_result = gillespie_crn_counts(
-        rxns=rxns,
-        initial_counts=initial_counts,
-        t_eval=t_eval,
-        seed=seed,
-        dependent_symbols=dependent_symbols,
-        **options,
-    )
+    if simulation_package == 'rebop':
+        rb_result = rebop_crn_counts(
+            rxns=rxns,
+            initial_counts=initial_counts,
+            tmax=tmax,
+            nb_steps=nb_steps,
+            seed=seed,
+            volume=volume,
+            dependent_symbols=dependent_symbols,
+        )
+        times = rb_result['time']
+        result = {name: rb_result[name] for name in rb_result if name != 'time'}
+    elif simulation_package == 'gillespy2':
+        raise NotImplementedError('gillespy2 is not yet supported')
+        # gp_result = gillespie_crn_counts(
+        #     rxns=rxns,
+        #     initial_counts=initial_counts,
+        #     t_eval=t_eval,
+        #     seed=seed,
+        #     dependent_symbols=dependent_symbols,
+        #     **options,
+        # )
+        # symbols = tuple(name for name in gp_result[0].keys() if name != 'time')
+        # assert len(symbols) == len(gp_result[0]) - 1  # -1 for 'time'
+        # times = np.array(t_eval)
+        # # convert gp_result to Dict[str, np.ndarray] for _plot_given_values
+        # result = {symbol: gp_result[0][symbol] for symbol in symbols}
+    else:
+        raise ValueError(f'Unknown simulation_package {simulation_package}')
 
-    symbols = tuple(name for name in gp_result[0].keys() if name != 'time')
-    assert len(symbols) == len(gp_result[0]) - 1  # -1 for 'time'
-    times = np.array(t_eval)
-    # convert gp_result to Dict[str, np.ndarray] for _plot_given_values
-    result = {symbol: gp_result[0][symbol] for symbol in symbols}
     plot_given_values(
         times=times,
         result=result,
