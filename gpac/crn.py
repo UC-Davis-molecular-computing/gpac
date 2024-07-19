@@ -413,7 +413,7 @@ def rebop_crn_counts(
         initial_counts: Dict[Specie, int],
         tmax: float,
         nb_steps: int = 0,
-        volume: float = 1,
+        vol: Optional[float] = None,
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         seed: Optional[int] = None,
 ) -> gp.Results:
@@ -432,24 +432,33 @@ def rebop_crn_counts(
             keys in this dict must be :any:`Specie` objects, not strings or sympy symbols.
 
         nb_steps:
-            TODO
-            If not specified, all reaction events are recorded, instead of fixed time points.
+            Number of evenly-spaced time points at which to record the counts between 0 and `tmax`.
+            If not specified, all reaction events and their exact times are recorded,
+            instead of fixed, evenly-spaced time points.
 
         tmax:
             the maximum time for the simulation.
 
+        vol:
+            the volume of the system. If not specified, the volume is assumed to be the sum of the initial counts.
+            reactions with k total reactants have their rate divided by vol^(k-1) to account for the volume.
+
     Returns:
-        Same Result object returned by rebop.Gillespie.run.
+        Same Result object returned by rebop.Gillespie.run. (an xarray.Dataset object)
+        It can be indexed by species name to get the counts,
+        and by the key `"time"` to get the times at which the counts were recorded.
     """
+    if vol is None:
+        vol = sum(initial_counts.values())
 
     crn = rb.Gillespie()
     for rxn in rxns:
         reactants = [specie.name for specie in rxn.reactants.species]
         products = [specie.name for specie in rxn.products.species]
-        rate = rxn.rate_constant / volume**(len(reactants) - 1)
+        rate = rxn.rate_constant / vol ** (len(reactants) - 1)
         crn.add_reaction(rate, reactants, products)
         if rxn.reversible:
-            rate_rev = rxn.rate_constant_reverse / volume ** (len(products) - 1)
+            rate_rev = rxn.rate_constant_reverse / vol ** (len(products) - 1)
             crn.add_reaction(rate_rev, products, reactants)
 
     initial_counts_str = {specie.name: count for specie, count in initial_counts.items()}
@@ -519,7 +528,7 @@ def plot_gillespie(
             tmax=tmax,
             nb_steps=nb_steps,
             seed=seed,
-            volume=volume,
+            vol=volume,
             dependent_symbols=dependent_symbols,
         )
         times = rb_result['time']
