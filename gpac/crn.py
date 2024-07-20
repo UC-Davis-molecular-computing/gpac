@@ -418,7 +418,8 @@ def rebop_crn_counts(
         seed: Optional[int] = None,
 ) -> gp.Results:
     """
-    Run the reactions using the rebop package for discrete simulation using the Gillespie algorithm.
+    Run the reactions using the rebop package (https://pypi.org/project/rebop/)
+    for discrete simulation using the Gillespie algorithm.
 
 
     Args:
@@ -506,13 +507,13 @@ def plot_gillespie(
         **options,
 ) -> None:
     """
-    Similar to :func:`plot_crn`, but uses the GillesPy2 package for discrete simulation using the Gillespie algorithm
-    instead of continuous ODEs.
+    Similar to :func:`plot_crn`, but uses the rebop package (https://pypi.org/project/rebop/)
+    for discrete simulation using the Gillespie algorithm instead of continuous ODEs.
 
     Undocumented arguments have the same meaning as with :func:`plot_crn`.
 
-    Similar to :func:`plot_crn`, keyword arguments (specified in `options`) are passed to :func:`gillespie_crn_counts`,
-    and to the function matplotlib.pyplot.plot.
+    Similar to :func:`plot_crn`, keyword arguments are passed to :func:`rebop_crn_counts`,
+    and (anything else specified in `**options`) to the function matplotlib.pyplot.plot.
 
     Args:
         rxns: the reactions of the CRN
