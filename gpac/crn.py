@@ -58,6 +58,7 @@ import copy
 from dataclasses import dataclass, field
 import re
 
+import xarray
 from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
@@ -416,7 +417,7 @@ def rebop_crn_counts(
         vol: Optional[float] = None,
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         seed: Optional[int] = None,
-) -> gp.Results:
+) -> xarray.Dataset:
     """
     Run the reactions using the rebop package (https://pypi.org/project/rebop/)
     for discrete simulation using the Gillespie algorithm.

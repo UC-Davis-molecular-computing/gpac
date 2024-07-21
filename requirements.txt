@@ -3,3 +3,5 @@ sympy
 numpy
 matplotlib
 gillespy2
+rebop
+xarray
