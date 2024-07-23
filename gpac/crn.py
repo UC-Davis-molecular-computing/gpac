@@ -513,8 +513,8 @@ def plot_gillespie(
 
     Undocumented arguments have the same meaning as with :func:`plot_crn`.
 
-    Similar to :func:`plot_crn`, keyword arguments are passed to :func:`rebop_crn_counts`,
-    and (anything else specified in `**options`) to the function matplotlib.pyplot.plot.
+    Arguments `tmax`, `nb_steps`, and `seed` are passed to :func:`rebop_crn_counts`.
+    Any custom keyword arguments (specified in `**options`) to the function matplotlib.pyplot.plot.
 
     Args:
         rxns: the reactions of the CRN

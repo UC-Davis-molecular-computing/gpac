@@ -519,7 +519,7 @@ def plot_given_values(
             y = result[symbol_name]
             assert len(y) == len(times)
             color = next(colors)["color"]
-            plt.plot(times, y, label=str(symbol), color=color, **options)
+            plt.plot(times, y, label=symbol_name, color=color, **options)
 
         plt.legend(loc=loc)
 
