@@ -503,7 +503,7 @@ def plot_gillespie(
         ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
-        volume: float = 1,
+        vol: Optional[float] = None,
         simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
         **options,
 ) -> None:
@@ -519,6 +519,7 @@ def plot_gillespie(
     Args:
         rxns: the reactions of the CRN
         initial_counts: initial (integer) counts of each species
+        vol: volume of the system (reactions with k ractants have their rate divided by vol^(k-1))
         t_eval: the times at which to plot the counts, something like ``numpy.linspace(0, 10, 1001)`` to have 1001
             evenly spaced points from start time 0 to end time 10
         seed: seed for random number generator used by GillesPy2 for stochastic simulation
@@ -530,7 +531,7 @@ def plot_gillespie(
             tmax=tmax,
             nb_steps=nb_steps,
             seed=seed,
-            vol=volume,
+            vol=vol,
             dependent_symbols=dependent_symbols,
         )
         times = rb_result['time']

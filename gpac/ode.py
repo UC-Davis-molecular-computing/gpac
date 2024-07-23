@@ -32,7 +32,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
-
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str, float]],
         initial_values: Dict[Union[sympy.Symbol, str], float],
@@ -477,7 +476,8 @@ def plot_given_values(
     # if symbols_to_plot is an Iterable of Iterables of strings or symbols, make a separate subplot for each
     multiple_subplots = False
     for symbol in symbols_to_plot:
-        if not isinstance(symbol, (sympy.Symbol, str)):
+        from gpac import Specie
+        if not isinstance(symbol, (sympy.Symbol, Specie, str)):
             multiple_subplots = True
             break
 
