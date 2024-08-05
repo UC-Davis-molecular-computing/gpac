@@ -63,7 +63,6 @@ from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
 import gillespy2 as gp
-import numpy as np
 import rebop as rb
 
 from gpac import integrate_odes, plot, plot_given_values
@@ -227,6 +226,7 @@ def plot_crn(
             Iterable[Iterable[Union[sympy.Symbol, str]]],
             str,
             re.Pattern,
+            Iterable[re.Pattern],
         ]] = None,
         show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
@@ -502,6 +502,7 @@ def plot_gillespie(
             Iterable[Iterable[Union[sympy.Symbol, str]]],
             str,
             re.Pattern,
+            Iterable[re.Pattern],
         ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
@@ -540,7 +541,7 @@ def plot_gillespie(
             dependent_symbols=dependent_symbols,
         )
         times = rb_result['time']
-        result = {name: rb_result[name] for name in rb_result if name != 'time'}
+        result = {str(name): rb_result[name] for name in rb_result if name != 'time'}
     elif simulation_package == 'gillespy2':
         raise NotImplementedError('gillespy2 is not yet supported')
         # gp_result = gillespie_crn_counts(

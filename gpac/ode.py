@@ -31,6 +31,7 @@ from scipy.integrate import solve_ivp, OdeSolver
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
+import xarray
 
 def integrate_odes(
         odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str, float]],
@@ -335,6 +336,7 @@ def plot(
             Iterable[Iterable[Union[sympy.Symbol, str]]],
             str,
             re.Pattern,
+            Iterable[re.Pattern],
         ]] = None,
         show: bool = False,
         method: Union[str, OdeSolver] = 'RK45',
@@ -442,8 +444,8 @@ def plot(
 # returned from gillespy2.Model.run(). This is not intended to be called by the user, but we make it public
 # so it's accessible from the crn module.
 def plot_given_values(
-        times: np.ndarray,
-        result: Dict[str, np.ndarray],
+        times: Union[np.ndarray, xarray.DataArray],
+        result: Dict[str, Union[np.ndarray, xarray.DataArray]],
         source: Literal['ode', 'ssa'],
         dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
         figure_size: Tuple[float, float] = (10, 3),
@@ -452,6 +454,7 @@ def plot_given_values(
             Iterable[Iterable[Union[sympy.Symbol, str]]],
             str,
             re.Pattern,
+            Iterable[re.Pattern],
         ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
@@ -487,7 +490,20 @@ def plot_given_values(
             break
 
     if multiple_subplots:
-        symbols_to_plot = [[str(symbol) for symbol in symbol_group] for symbol_group in symbols_to_plot]
+        new_symbols_to_plot = []
+        assert not isinstance(symbols_to_plot, (str, re.Pattern))
+        for symbol_group in symbols_to_plot:
+            if isinstance(symbol_group, re.Pattern):
+                symbol_group = [symbol for symbol in result.keys() if symbol_group.match(symbol)]
+            else:
+                try:
+                    _ = iter(symbol_group)
+                except TypeError as te:
+                    raise ValueError(f"expected elements of symbols_to_plot to be iterable, but got "
+                                     f"'{symbol_group}', which is of type {type(symbol_group)}") from te
+                symbol_group = [str(symbol) for symbol in symbol_group]
+            new_symbols_to_plot.append(symbol_group)
+        symbols_to_plot = new_symbols_to_plot
         for symbol_group in symbols_to_plot:
             if len(symbol_group) == 0:
                 raise ValueError(f"Each group of symbols to plot must be non-empty, "
@@ -496,7 +512,7 @@ def plot_given_values(
         symbols_to_plot = [[str(symbol) for symbol in symbols_to_plot]]
 
     # check that symbols all appear as keys in result
-    all_symbols_to_plot_set = frozenset(symbol for symbol_group in symbols_to_plot for symbol in symbol_group)
+    all_symbols_to_plot_set = frozenset(str(symbol) for symbol_group in symbols_to_plot for symbol in symbol_group)
     symbols_of_results_set = frozenset(str(symbol) for symbol in result.keys())
     dependent_symbols_set = frozenset(str(symbol) for symbol in dependent_symbols_tuple)
     symbols_of_odes_and_dependent_symbols = symbols_of_results_set | dependent_symbols_set
