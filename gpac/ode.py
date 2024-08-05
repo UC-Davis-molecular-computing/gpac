@@ -344,7 +344,7 @@ def plot(
         args: Optional[Tuple] = None,
         loc: Union[str, Tuple[float, float]] = 'best',
         **options,
-) -> None:
+) -> OdeResult:
     """
     Numerically integrate the given ODEs using the function :func:`integrate_odes`,
     then plot the trajectories using matplotlib.
@@ -397,6 +397,10 @@ def plot(
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html.
             However, note that using such arguments here will cause `solve_ivp` to print a warning
             that it does not recognize the keyword argument.
+
+    Returns:
+        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
     """
     dependent_symbols_expressions = tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
 
@@ -431,6 +435,7 @@ def plot(
         loc=loc,
         **options,
     )
+    return sol
 
 
 # This is used to share plotting code between data returned from scipy.integrate.solve_ivp and that

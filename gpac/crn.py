@@ -236,7 +236,7 @@ def plot_crn(
         args: Optional[Tuple] = None,
         loc: Union[str, Tuple[float, float]] = 'best',
         **options,
-) -> None:
+) -> OdeResult:
     """
     Plot the ODEs derived from to the given set of chemical reactions.
     This calls :func:`ode.plot` with the ODEs derived from the given reactions via
@@ -291,10 +291,12 @@ def plot_crn(
             Note that these are not :any:`Specie` objects as in the parameter `rxns`, but sympy symbols.
             Symbols used in the expressions must have the same name as :any:`Specie` objects in `rxns`.
 
+    Returns:
+        The result of the integration, which is the same as the result of :func:`ode.integrate_odes`
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
-    plot(
+    return plot(
         odes,
         initial_values=initial_values,
         t_eval=t_eval,
@@ -506,7 +508,7 @@ def plot_gillespie(
         vol: Optional[float] = None,
         simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
         **options,
-) -> None:
+) -> xarray.Dataset:
     """
     Similar to :func:`plot_crn`, but uses the rebop package (https://pypi.org/project/rebop/)
     for discrete simulation using the Gillespie algorithm instead of continuous ODEs.
@@ -523,6 +525,9 @@ def plot_gillespie(
         t_eval: the times at which to plot the counts, something like ``numpy.linspace(0, 10, 1001)`` to have 1001
             evenly spaced points from start time 0 to end time 10
         seed: seed for random number generator used by GillesPy2 for stochastic simulation
+
+    Returns:
+        The result of the simulation, which is the same as the result of :func:`rebop_crn_counts`.
     """
     if simulation_package == 'rebop':
         rb_result = rebop_crn_counts(
@@ -565,6 +570,7 @@ def plot_gillespie(
         loc=loc,
         **options,
     )
+    return rb_result
 
 
 def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
