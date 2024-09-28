@@ -94,7 +94,7 @@ gpac.plot(odes, initial_values, t_eval=t_eval, figure_size=(12,3), symbols_to_pl
 ![](images/rps-a-c.png)
 
 ### Getting trajectory data of ODEs
-If you want the data itself from the ODE numerical integration (without plotting it), you can call [`integrate_odes`](file:///C:/Dropbox/git/gpac/doc/_build/html/index.html#ode.integrate_odes) (replace the call to [`plot`](file:///C:/Dropbox/git/gpac/doc/_build/html/index.html#ode.plot) above with the following code).
+If you want the data itself from the ODE numerical integration (without plotting it), you can call [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#ode.integrate_odes) (replace the call to [`plot`](https://gpac.readthedocs.io/en/latest/#ode.plot) above with the following code).
 
 ```python
 t_eval = np.linspace(0, 1, 5)
