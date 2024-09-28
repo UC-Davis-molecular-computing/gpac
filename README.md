@@ -35,7 +35,7 @@ B. **git:** The other option is to clone the git repo. You may need to install `
 
    1. Install the dependencies by typing the following at the command line:
       ```
-      pip install numpy scipy matplotlib sympy
+      pip install numpy scipy matplotlib sympy gillespy2 rebop xarray
       ```
 
    2. Clone this repo by typing the following at the command line:
