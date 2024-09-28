@@ -1,6 +1,8 @@
-sphinx_rtd_theme
 scipy
 sympy
 numpy
 matplotlib
 gillespy2
+rebop
+xarray
+sphinx_rtd_theme
