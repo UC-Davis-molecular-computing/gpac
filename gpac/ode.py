@@ -343,10 +343,11 @@ def plot(
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
+        return_ode_result: bool = False,
         args: Optional[Tuple] = None,
         loc: Union[str, Tuple[float, float]] = 'best',
         **options,
-) -> OdeResult:
+) -> OdeResult | None:
     """
     Numerically integrate the given ODEs using the function :func:`integrate_odes`,
     then plot the trajectories using matplotlib.
@@ -379,6 +380,14 @@ def plot(
             For an example, see the example notebook
             https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
 
+        return_ode_result:
+            if True, returns solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
+            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html.
+            Otherwise (default) None is returned. The reason the solution is not automatically returned is that
+            it pollutes the output of a Jupyter notebook, so this avoids needing to type something like
+            ``_ = gpac.plot(...)`` to suppress the output.
+            But if you want that solution object, you can set this to True.
+
         loc:
             location of the legend; see documentation for `matplotlib.pyplot.legend`:
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
@@ -401,6 +410,7 @@ def plot(
             that it does not recognize the keyword argument.
 
     Returns:
+        Typically None, but if `return_ode_result` is True, returns the
         solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
     """
@@ -437,7 +447,7 @@ def plot(
         loc=loc,
         **options,
     )
-    return sol
+    return sol if return_ode_result else None
 
 
 # This is used to share plotting code between data returned from scipy.integrate.solve_ivp and that

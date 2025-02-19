@@ -233,6 +233,7 @@ def plot_crn(
         dense_output: bool = False,
         events: Optional[Union[Callable, Iterable[Callable]]] = None,
         vectorized: bool = False,
+        return_ode_result: bool = False,
         args: Optional[Tuple] = None,
         loc: Union[str, Tuple[float, float]] = 'best',
         **options,
@@ -292,7 +293,8 @@ def plot_crn(
             Symbols used in the expressions must have the same name as :any:`Specie` objects in `rxns`.
 
     Returns:
-        The result of the integration, which is the same as the result of :func:`ode.integrate_odes`
+        None, or the result of the integration, which is the same as the result of :func:`ode.integrate_odes`
+        if `return_ode_result` is True. See :func:`ode.integrate_odes` for details about this parameter.
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
@@ -309,6 +311,7 @@ def plot_crn(
         dense_output=dense_output,
         events=events,
         vectorized=vectorized,
+        return_ode_result=return_ode_result,
         args=args,
         loc=loc,
         **options,
