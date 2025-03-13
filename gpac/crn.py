@@ -508,6 +508,7 @@ def plot_gillespie(
             Iterable[re.Pattern],
         ]] = None,
         show: bool = False,
+        return_simulation_result: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
         vol: Optional[float] = None,
         simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
@@ -526,9 +527,17 @@ def plot_gillespie(
         rxns: the reactions of the CRN
         initial_counts: initial (integer) counts of each species
         vol: volume of the system (reactions with k ractants have their rate divided by vol^(k-1))
-        t_eval: the times at which to plot the counts, something like ``numpy.linspace(0, 10, 1001)`` to have 1001
-            evenly spaced points from start time 0 to end time 10
-        seed: seed for random number generator used by GillesPy2 for stochastic simulation
+        tmax: the maximum time for which to run the simulation
+        nb_steps: number of evenly-spaced time points at which to record the counts between 0 and `tmax`;
+          if not specified (or set to 0, the default value), all reaction events and their exact times are recorded
+        return_simulation_result: whether to return the simulation result; if True, the result of the simulation
+          is returned, but the default behavior is not to do this, so that if the last line of a notebook cell
+          is a call to `plot_gillespie`, the result is not printed to the output, only the plot is shown.
+        seed: seed for random number generator used by rebop for stochastic simulation. Note that currently,
+          the value `nb_steps` actually changes the stochastic sampling in the simulation, i.e., if you double the
+          value of `nb_steps`, but keep the value of `seed` the same, you would think that every other sampled
+          configuration would be the same as when `nb_steps` was half as large, but this is not the case.
+          See https://github.com/Armavica/rebop/issues/26
 
     Returns:
         The result of the simulation, which is the same as the result of :func:`rebop_crn_counts`.
@@ -574,7 +583,7 @@ def plot_gillespie(
         loc=loc,
         **options,
     )
-    return rb_result
+    return rb_result if return_simulation_result else None
 
 
 def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
