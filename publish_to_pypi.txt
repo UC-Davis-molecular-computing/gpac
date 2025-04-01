@@ -1,3 +1,14 @@
+Below are the steps to do this manually. However, now we've set up a github action that does this automatically when we make a new release.
+
+When you want to publish the package to PyPi, and re-compile binary executables available as GitHub "assets" (linked from the README), make sure to bump the version (in pyproject.toml), then add a new GitHub release named v{version}, e.g., v1.0.1. Put "v1.0.1" as the "tag" and "v1.0.1" as the title of the release (the title doesn't matter but the tag does).
+
+If something goes wrong with GitHub actions and you want to try again with the same version number, delete both the GitHub release AND the tag that it created (click on "Tags" at the top of the releases page). If you don't delete the tag, it will look at the files in the commit when the tag was created, not the latest commit.
+
+
+
+
+To publish to PyPI manually:
+
 rem https://medium.com/@joel.barmettler/how-to-upload-your-python-package-to-pypi-65edc5fe9c56
 
 rem !!!change current version number in __version__.py!!!
