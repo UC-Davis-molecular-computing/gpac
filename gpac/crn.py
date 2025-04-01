@@ -236,6 +236,7 @@ def plot_crn(
         return_ode_result: bool = False,
         args: Optional[Tuple] = None,
         loc: Union[str, Tuple[float, float]] = 'best',
+        warn_change_dpi: bool = False,
         **options,
 ) -> OdeResult:
     """
@@ -314,6 +315,7 @@ def plot_crn(
         return_ode_result=return_ode_result,
         args=args,
         loc=loc,
+        warn_change_dpi=warn_change_dpi,
         **options,
     )
 
@@ -510,6 +512,7 @@ def plot_gillespie(
         show: bool = False,
         return_simulation_result: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
+        warn_change_dpi: bool = False,
         vol: Optional[float] = None,
         simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
         **options,
@@ -581,6 +584,7 @@ def plot_gillespie(
         symbols_to_plot=symbols_to_plot,
         show=show,
         loc=loc,
+        warn_change_dpi=warn_change_dpi,
         **options,
     )
     return rb_result if return_simulation_result else None

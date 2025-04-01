@@ -346,6 +346,7 @@ def plot(
         return_ode_result: bool = False,
         args: Optional[Tuple] = None,
         loc: Union[str, Tuple[float, float]] = 'best',
+        warn_change_dpi: bool = False,
         **options,
 ) -> OdeResult | None:
     """
@@ -391,6 +392,9 @@ def plot(
         loc:
             location of the legend; see documentation for `matplotlib.pyplot.legend`:
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+
+        warn_change_dpi:
+            If True, print a warning if the dpi of the figure gets changed from its default.
 
         options:
             This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
@@ -445,6 +449,7 @@ def plot(
         symbols_to_plot=symbols_to_plot,
         show=show,
         loc=loc,
+        warn_change_dpi=warn_change_dpi,
         **options,
     )
     return sol if return_ode_result else None
@@ -468,11 +473,13 @@ def plot_given_values(
         ]] = None,
         show: bool = False,
         loc: Union[str, Tuple[float, float]] = 'best',
+        warn_change_dpi: bool = False,
         **options,
 ) -> None:
     from matplotlib.pylab import rcParams
     if rcParams['figure.dpi'] != 96:
-        print(f"matplotlib.pylab.rcParams['figure.dpi'] was {rcParams['figure.dpi']}; setting it to 96")
+        if warn_change_dpi:
+            print(f"matplotlib.pylab.rcParams['figure.dpi'] was {rcParams['figure.dpi']}; setting it to 96")
         rcParams['figure.dpi'] = 96
 
     # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
