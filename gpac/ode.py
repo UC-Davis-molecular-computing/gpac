@@ -200,10 +200,10 @@ def integrate_odes(
 
         resets:
             If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
-            The times are sorted in increasing order, and the configurations are used to set the values of the symbols.
-            This is a way to manually set the values of some of the symbols at specific times.
-            Any symbols not appearing as keys in `manual_values` are left at their current values.
-            The OdeResult returned by `solve_ivp` will have two additional fields:
+            The configurations are used to set the values of the symbols manually during the ODE integration
+            at specific times.
+            Any symbols not appearing as keys in `resets` are left at their current values.
+            The OdeResult returned (the one returned by `solve_ivp` in scipy) will have two additional fields:
             `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
             corresponding to the times when the resets were applied.
             Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
