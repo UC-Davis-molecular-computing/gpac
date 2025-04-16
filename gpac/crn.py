@@ -52,7 +52,7 @@ So for the reaction defined above, its rate is :math:`k \\cdot [A] \\cdot [B] / 
 
 from __future__ import annotations  # needed for forward references in type hints
 
-from typing import Dict, Iterable, Tuple, Set, Union, Optional, Callable, List, Literal
+from typing import Iterable, Callable, Literal, TypeAlias
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
@@ -65,10 +65,10 @@ import sympy
 import gillespy2 as gp
 import rebop as rb
 
-from gpac import integrate_odes, plot, plot_given_values
+from . import integrate_odes, plot, plot_given_values
 
 
-def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
+def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     """
     Given a set of chemical reactions, return the corresponding ODEs.
 
@@ -139,7 +139,7 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
         (which is essentially all the functions :func:`integrate_crn_odes` and :func:`plot_crn` do).
     """
     # map each symbol to list of reactions in which it appears
-    specie_to_rxn: Dict[Specie, List] = defaultdict(list)
+    specie_to_rxn: dict[Specie, list[Reaction]] = defaultdict(list)
     for rxn in rxns:
         for specie in rxn.get_species():
             specie_to_rxn[specie].append(rxn)
@@ -157,8 +157,8 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> Dict[sympy.Symbol, sympy.Expr]:
     return odes
 
 
-def _normalize_crn_initial_values(initial_values: Dict[Union[Specie, sympy.Symbol, str], float]) \
-        -> Dict[sympy.Symbol, float]:
+def _normalize_crn_initial_values(initial_values: dict[Specie | sympy.Symbol | str, float]) \
+        -> dict[sympy.Symbol, float]:
     normalized_initial_values = {}
     for symbol, conc in initial_values.items():
         if isinstance(symbol, Specie):
@@ -171,14 +171,15 @@ def _normalize_crn_initial_values(initial_values: Dict[Union[Specie, sympy.Symbo
 
 def integrate_crn_odes(
         rxns: Iterable[Reaction],
-        initial_values: Dict[Specie, float],
-        t_eval: Optional[Iterable[float]] = None,
-        t_span: Optional[Tuple[float, float]] = None,
-        method: Union[str, OdeSolver] = 'RK45',
+        initial_values: dict[Specie, float],
+        t_eval: Iterable[float] | None = None,
+        *,
+        t_span: tuple[float, float] | None = None,
+        method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
-        events: Optional[Union[Callable, Iterable[Callable]]] = None,
+        events: Callable | Iterable[Callable] | None = None,
         vectorized: bool = False,
-        args: Optional[Tuple] = None,
+        args: tuple | None = None,
         **options,
 ) -> OdeResult:
     """
@@ -216,26 +217,28 @@ def integrate_crn_odes(
 
 def plot_crn(
         rxns: Iterable[Reaction],
-        initial_values: Dict[Specie, float],
-        t_eval: Optional[Iterable[float]] = None,
-        t_span: Optional[Tuple[float, float]] = None,
-        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
-        figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[Union[
-            Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]],
-            str,
-            re.Pattern,
-            Iterable[re.Pattern],
-        ]] = None,
+        initial_values: dict[Specie, float],
+        t_eval: Iterable[float] | None = None,
+        *,
+        t_span: tuple[float, float] | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, float]] | None = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        figure_size: tuple[float, float] = (10, 3),
+        symbols_to_plot:
+        Iterable[sympy.Symbol | str] |
+        Iterable[Iterable[sympy.Symbol | str]] |
+        str |
+        re.Pattern |
+        Iterable[re.Pattern]
+        | None = None,
         show: bool = False,
-        method: Union[str, OdeSolver] = 'RK45',
+        method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
-        events: Optional[Union[Callable, Iterable[Callable]]] = None,
+        events: Callable | Iterable[Callable] | None = None,
         vectorized: bool = False,
         return_ode_result: bool = False,
-        args: Optional[Tuple] = None,
-        loc: Union[str, Tuple[float, float]] = 'best',
+        args: tuple | None = None,
+        loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
         **options,
 ) -> OdeResult:
@@ -303,6 +306,7 @@ def plot_crn(
         odes,
         initial_values=initial_values,
         t_eval=t_eval,
+        resets=resets,
         t_span=t_span,
         dependent_symbols=dependent_symbols,
         figure_size=figure_size,
@@ -333,10 +337,11 @@ def find_all_species(rxns: Iterable[Reaction]) -> Tuple[Specie, ...]:
 
 def gillespy2_crn_counts(
         rxns: Iterable[Reaction],
-        initial_counts: Dict[Specie, int],
+        initial_counts: dict[Specie, int],
         t_eval: Iterable[float],
-        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
-        seed: Optional[int] = None,
+        *,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        seed: int | None = None,
         solver_class: type = gp.NumPySSASolver,
         **options,
 ) -> gp.Results:
@@ -416,14 +421,16 @@ def gillespy2_crn_counts(
 
     return gp_results
 
+
 def rebop_crn_counts(
         rxns: Iterable[Reaction],
-        initial_counts: Dict[Specie, int],
+        initial_counts: dict[Specie, int],
         tmax: float,
+        *,
         nb_steps: int = 0,
-        vol: Optional[float] = None,
-        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
-        seed: Optional[int] = None,
+        vol: float | None = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        seed: int | None = None,
 ) -> xarray.Dataset:
     """
     Run the reactions using the rebop package (https://pypi.org/project/rebop/)
@@ -496,24 +503,25 @@ def rebop_crn_counts(
 
 def plot_gillespie(
         rxns: Iterable[Reaction],
-        initial_counts: Dict[Specie, int],
+        initial_counts: dict[Specie, int],
         tmax: float,
+        *,
         nb_steps: int = 0,
-        seed: Optional[int] = None,
-        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
-        figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[Union[
-            Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]],
-            str,
-            re.Pattern,
-            Iterable[re.Pattern],
-        ]] = None,
+        seed: int | None = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        figure_size: tuple[float, float] = (10, 3),
+        symbols_to_plot:
+        Iterable[sympy.Symbol | str] |
+        Iterable[Iterable[sympy.Symbol | str]] |
+        str |
+        re.Pattern |
+        Iterable[re.Pattern] |
+        None = None,
         show: bool = False,
         return_simulation_result: bool = False,
-        loc: Union[str, Tuple[float, float]] = 'best',
+        loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
-        vol: Optional[float] = None,
+        vol: float | None = None,
         simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
         **options,
 ) -> xarray.Dataset:
@@ -590,7 +598,7 @@ def plot_gillespie(
     return rb_result if return_simulation_result else None
 
 
-def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
+def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     """
     Create a list of :any:`Specie` (Single species :any:`Expression`'s),
     or a single one.
@@ -614,7 +622,7 @@ def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
         rxn = x + y >> z + w
 
     """
-    species_list: List[str]
+    species_list: list[str]
     if isinstance(sp, str):
         species_list = sp.split()
     else:
@@ -628,11 +636,11 @@ def species(sp: Union[str, Iterable[str]]) -> Tuple[Specie, ...]:
     return tuple(Specie(specie) for specie in species_list)
 
 
-SpeciePair = Tuple['Specie', 'Specie']  # forward annotations don't seem to work here
-Output = Union[SpeciePair, Dict[SpeciePair, float]]
+SpeciePair: TypeAlias = tuple['Specie', 'Specie']  # forward annotations don't seem to work here
+Output: TypeAlias = SpeciePair | dict[SpeciePair, float]
 
 
-def replace_reversible_rxns(rxns: Iterable[Reaction]) -> List[Reaction]:
+def replace_reversible_rxns(rxns: Iterable[Reaction]) -> list[Reaction]:
     """
     Args:
         rxns: list of :any:`Reaction`'s
@@ -641,7 +649,7 @@ def replace_reversible_rxns(rxns: Iterable[Reaction]) -> List[Reaction]:
         list of :any:`Reaction`'s, where every reversible reaction in `rxns` has been replaced by
         two irreversible reactions, and all others have been left as they are
     """
-    new_rxns: List[Reaction] = []
+    new_rxns: list[Reaction] = []
     for rxn in rxns:
         if not rxn.reversible:
             new_rxn = copy.deepcopy(rxn)
@@ -659,7 +667,7 @@ def replace_reversible_rxns(rxns: Iterable[Reaction]) -> List[Reaction]:
 class Specie:
     name: str
 
-    def __add__(self, other: Union[Specie, Expression]) -> Expression:
+    def __add__(self, other: Specie | Expression) -> Expression:
         if isinstance(other, Expression):
             return other + Expression([self])
         elif isinstance(other, Specie):
@@ -669,13 +677,13 @@ class Specie:
 
     __radd__ = __add__
 
-    def __rshift__(self, other: Union[Specie, Expression]) -> Reaction:
+    def __rshift__(self, other: Specie | Expression) -> Reaction:
         return Reaction(self, other)
 
-    def __rrshift__(self, other: Union[Specie, Expression]) -> Reaction:
+    def __rrshift__(self, other: Specie | Expression) -> Reaction:
         return Reaction(other, self)
 
-    def __or__(self, other: Union[Specie, Expression]) -> Reaction:
+    def __or__(self, other: Specie | Expression) -> Reaction:
         return Reaction(self, other, reversible=True)
 
     def __mul__(self, other: int) -> Expression:
@@ -716,7 +724,7 @@ class Expression:
     (see :any:`Reaction` for examples).
     """
 
-    species: List[Specie]
+    species: list[Specie]
     """
     ordered list of species in expression, e.g, A+A+B is [A,A,B]
     """
@@ -731,7 +739,7 @@ class Expression:
         """
         return self.species[idx]
 
-    def __add__(self, other: Union[Expression, Specie]) -> Expression:
+    def __add__(self, other: Expression | Specie) -> Expression:
         """
         Args:
             other: :any:`Expression` or :any:`Specie` to add to this one
@@ -768,10 +776,10 @@ class Expression:
 
     __mul__ = __rmul__
 
-    def __rshift__(self, expr: Union[Specie, Expression]) -> Reaction:
+    def __rshift__(self, expr: Specie | Expression) -> Reaction:
         return Reaction(self, expr)
 
-    def __or__(self, other: Union[Specie, Expression]) -> Reaction:
+    def __or__(self, other: Specie | Expression) -> Reaction:
         return Reaction(self, other, reversible=True)
 
     def __str__(self) -> str:
@@ -782,14 +790,14 @@ class Expression:
     def __len__(self) -> int:
         return len(self.species)
 
-    def get_species(self) -> Set[Specie]:
+    def get_species(self) -> set[Specie]:
         """
         Returns the set of species in this expression, not their
         coefficients.
         """
         return set(self.species)
 
-    def species_counts(self, key_type: Literal['str', 'Specie'] = 'Specie') -> Dict[Specie, int]:
+    def species_counts(self, key_type: Literal['str', 'Specie'] = 'Specie') -> dict[Specie, int]:
         """
         Returns a dictionary mapping each species in this expression to its
         coefficient.
@@ -895,12 +903,12 @@ class Reaction:
     reversible: bool = False
     """Whether reaction is reversible, i.e. `products` :math:`\\to` `reactants` is a reaction also."""
 
-    inhibitors: List[Specie] = field(default_factory=list)
+    inhibitors: list[Specie] = field(default_factory=list)
     """Inhibitors of the reaction."""
 
-    inhibitor_constants: List[float] = field(default_factory=list)
+    inhibitor_constants: list[float] = field(default_factory=list)
 
-    def __init__(self, reactants: Union[Specie, Expression], products: Union[Specie, Expression],
+    def __init__(self, reactants: Specie | Expression, products: Specie | Expression,
                  k: float = 1, r: float = 1,
                  reversible: bool = False) -> None:
         """
@@ -1099,7 +1107,7 @@ class Reaction:
         else:
             raise ValueError(f'reaction {self} does not have exactly one product')
 
-    def reactants_if_bimolecular(self) -> Tuple[Specie, Specie]:
+    def reactants_if_bimolecular(self) -> tuple[Specie, Specie]:
         """
         Returns: pair of reactants if there are exactly two
         Raises: ValueError if there are not exactly two reactants
@@ -1109,7 +1117,7 @@ class Reaction:
         else:
             raise ValueError(f'reaction {self} is not bimolecular')
 
-    def reactant_names_if_bimolecular(self) -> Tuple[str, str]:
+    def reactant_names_if_bimolecular(self) -> tuple[str, str]:
         """
         Returns: pair of reactant names if there are exactly two
         Raises: ValueError if there are not exactly two reactants
@@ -1117,7 +1125,7 @@ class Reaction:
         r1, r2 = self.reactants_if_bimolecular()
         return r1.name, r2.name
 
-    def products_if_exactly_two(self) -> Tuple[Specie, Specie]:
+    def products_if_exactly_two(self) -> tuple[Specie, Specie]:
         """
         Returns: pair of products if there are exactly two
         Raises: ValueError if there are not exactly two products
@@ -1127,7 +1135,7 @@ class Reaction:
         else:
             raise ValueError(f'reaction {self} does not have exactly two products')
 
-    def product_names_if_exactly_two(self) -> Tuple[str, str]:
+    def product_names_if_exactly_two(self) -> tuple[str, str]:
         """
         Returns: pair of product names if there are exactly two
         Raises: ValueError if there are not exactly two products
@@ -1217,7 +1225,7 @@ class Reaction:
         self.rate_constant_reverse = coeff
         return self
 
-    def get_species(self) -> Tuple[Specie, ...]:
+    def get_species(self) -> tuple[Specie, ...]:
         """
         Return: the set of species present in the reactants, products, and inhibitors, in the order.
         """

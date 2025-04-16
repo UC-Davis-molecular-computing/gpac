@@ -23,7 +23,7 @@ Although gpac has two submodules ode and crn, you can import all elements from b
 e.g., ``from gpac import plot, plot_crn``.
 """
 import re
-from typing import Dict, Iterable, Tuple, Union, Optional, Callable, Any, Literal
+from typing import Iterable, Callable, Any, Literal, TypeAlias, cast
 
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
@@ -34,16 +34,18 @@ from matplotlib.pyplot import figure
 import xarray
 
 def integrate_odes(
-        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str, float]],
-        initial_values: Dict[Union[sympy.Symbol, str], float],
-        t_eval: Optional[Iterable[float]] = None,
-        t_span: Optional[Tuple[float, float]] = None,
-        dependent_symbols: Iterable[Union[sympy.Expr, str]] = (),
-        method: Union[str, OdeSolver] = 'RK45',
+        odes: dict[sympy.Symbol | str, sympy.Expr | str | float],
+        initial_values: dict[sympy.Symbol | str, float],
+        t_eval: Iterable[float] | None = None,
+        *,
+        t_span: tuple[float, float] | None = None,
+        dependent_symbols: Iterable[sympy.Expr | str] = (),
+        resets: dict[float, dict[sympy.Symbol | str, float]] | None = None,
+        method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
-        events: Optional[Union[Callable, Iterable[Callable]]] = None,
+        events: Callable | Iterable[Callable] | None = None,
         vectorized: bool = False,
-        args: Optional[Tuple] = None,
+        args: tuple | None = None,
         **options,
         ########################################################################################
         # XXX: the following are all the options that can be passed to solve_ivp,
@@ -196,6 +198,16 @@ def integrate_odes(
             For an example, see the example notebook
             https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
 
+        resets:
+            If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
+            The times are sorted in increasing order, and the configurations are used to set the values of the symbols.
+            This is a way to manually set the values of some of the symbols at specific times.
+            Any symbols not appearing as keys in `manual_values` are left at their current values.
+            The OdeResult returned by `solve_ivp` will have two additional fields:
+            `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
+            corresponding to the times when the resets were applied.
+            Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
+
         method:
             See documentation for `solve_ivp` in scipy.integrate:
             https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
@@ -232,9 +244,10 @@ def integrate_odes(
         solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
         https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
     """
-
     if t_eval is not None:
         t_eval = np.array(t_eval)
+        if not np.all(np.diff(t_eval) >= 0):
+            raise ValueError("t_eval must be sorted in increasing order")
 
     if t_eval is None and t_span is None:
         raise ValueError("Must specify either t_eval or t_span")
@@ -275,7 +288,7 @@ def integrate_odes(
 
     odes = odes_symbols
 
-    independent_symbols = tuple(odes.keys())
+    independent_symbols = cast(tuple[sympy.Symbol, ...], tuple(odes.keys()))
     ode_funcs = {symbol: sympy.lambdify(independent_symbols, ode) for symbol, ode in odes.items()}
 
     def ode_func_vector(_, vals):
@@ -285,27 +298,44 @@ def integrate_odes(
     # and assume initial value of 0 for any symbol not specified
     initial_values_sorted = [initial_values[symbol] if symbol in initial_values else 0
                              for symbol in independent_symbols]
-    solution = solve_ivp(
-        fun=ode_func_vector,
-        t_span=t_span,
-        y0=initial_values_sorted,
-        t_eval=t_eval,
-        method=method,
-        dense_output=dense_output,
-        events=events,
-        vectorized=vectorized,
-        args=args,
-        **options,
-        # first_step=first_step,
-        # max_step=max_step,
-        # rtol=rtol,
-        # atol=atol,
-        # jac=jac,
-        # jac_sparsity=jac_sparsity,
-        # lband=lband,
-        # uband=uband,
-        # min_step=min_step,
-    )
+
+    if resets is None:
+        solution = solve_ivp(
+            fun=ode_func_vector,
+            t_span=t_span,
+            y0=initial_values_sorted,
+            t_eval=t_eval,
+            method=method,  # type:ignore
+            dense_output=dense_output,
+            events=events,
+            vectorized=vectorized,
+            args=args,
+            **options,
+        )
+    else:
+        symbol_to_idx = {symbol: i for i, symbol in enumerate(independent_symbols)}
+        for reset in resets.values():
+            for symbol, value in reset.items():
+                if isinstance(symbol, str):
+                    del reset[symbol]
+                    symbol = sympy.symbols(symbol)
+                    reset[symbol] = value
+                if symbol not in symbol_to_idx:
+                    raise ValueError(f"Symbol {symbol} not found in odes")
+        solution = _solve_ivp_with_resets(
+            resets=resets,  # type:ignore
+            symbol_to_idx=symbol_to_idx,
+            fun=ode_func_vector,
+            t_span=t_span,  # type:ignore
+            y0=initial_values_sorted,  # type:ignore
+            t_eval=t_eval,
+            method=method,
+            dense_output=dense_output,
+            events=events,
+            vectorized=vectorized,
+            args=args,
+            **options,
+        )
 
     if dependent_symbols != ():
         dependent_funcs = [sympy.lambdify(independent_symbols, func)
@@ -324,28 +354,249 @@ def integrate_odes(
     return solution  # type:ignore
 
 
-def plot(
-        odes: Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str, float]],
-        initial_values: Dict[Union[sympy.Symbol, str], float],
-        t_eval: Optional[Iterable[float]] = None,
-        t_span: Optional[Tuple[float, float]] = None,
-        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
-        figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[Union[
-            Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]],
-            str,
-            re.Pattern,
-            Iterable[re.Pattern],
-        ]] = None,
-        show: bool = False,
-        method: Union[str, OdeSolver] = 'RK45',
+import numpy as np
+from scipy.integrate import solve_ivp
+from typing import Callable, Iterable, Any
+
+
+def _solve_ivp_with_resets(
+        resets: dict[float, dict[sympy.Symbol, float]],
+        symbol_to_idx: dict[sympy.Symbol, int],
+        fun: Callable,
+        t_span: tuple[float, float],
+        y0: np.ndarray,
+        t_eval: Iterable[float] | None = None,
         dense_output: bool = False,
-        events: Optional[Union[Callable, Iterable[Callable]]] = None,
+        events: Callable | Iterable[Callable] | None = None,
+        vectorized: bool = False,
+        args: tuple | None = None,
+        **options
+) -> Any:
+    """
+    Solve an initial value problem with parameter resets at specific times.
+    Similar to scipy's solve_ivp but allows resetting variable values at specific times.
+
+    Args:
+        resets:
+            Dictionary mapping time points to dictionaries of variable resets
+            Each inner dict maps symbols to new values
+        symbol_to_idx:
+            Dictionary mapping symbols to their indices in the y0 array
+        fun:
+            Right-hand side of the system, same as in solve_ivp
+        t_span:
+            Interval of integration (t0, tf)
+        y0: array_like, shape (n,)
+            Initial state
+        t_eval:
+            Times at which to store the computed solution, must be sorted and lie within t_span
+        dense_output: bool
+            Whether to compute a continuous solution
+        events:
+            Events to track
+        vectorized:
+            Whether fun is implemented in a vectorized fashion
+        args:
+            Additional arguments to pass to fun
+        **options:
+            Additional options to pass to the solver
+
+    Returns:
+        sol : OdeResult
+            Solution with combined results and additional attributes:
+            - sol.reset_times: List of times when resets were applied
+            - sol.reset_indices: List of indices in sol.t corresponding to reset points
+
+    Raises:
+        ValueError
+            If resets is empty or if any reset time is outside the integration interval t_span
+    """
+    # Check if resets is empty
+    if len(resets) == 0:
+        raise ValueError("resets dictionary must not be empty")
+
+    for reset_time, reset in resets.items():
+        if len(reset) == 0:
+            raise ValueError(f"Each reset dict must be nonempty, "
+                             f"but reset time {reset_time} has an empty dict.")
+
+    # Validate reset times are within the integration interval
+    for reset_time in resets.keys():
+        if reset_time <= t_span[0] or reset_time >= t_span[1]:
+            raise ValueError(f"Reset time {reset_time} is outside the integration interval {t_span}")
+
+    # Extract reset times and sort them
+    reset_times = sorted(resets.keys())
+
+    # Break the interval into segments
+    segments = []
+    for i in range(len(reset_times) + 1):
+        if i == 0:
+            segments.append((t_span[0], reset_times[0]))
+        elif i == len(reset_times):
+            segments.append((reset_times[-1], t_span[1]))
+        else:
+            segments.append((reset_times[i - 1], reset_times[i]))
+
+    # Initialize results storage
+    all_t = []
+    all_y = []
+    reset_indices = []
+    total_nfev = 0
+    total_njev = 0
+    total_nlu = 0
+
+    # If t_eval is provided, create segments for it
+    if t_eval is not None:
+        t_eval = np.array(t_eval)
+        t_eval_segments = []
+
+        for i, (start, end) in enumerate(segments):
+            # Get values in this segment
+            mask = (t_eval >= start) & (t_eval <= end)
+            segment_t_eval = t_eval[mask]
+
+            # Add boundary points if needed
+            if len(segment_t_eval) == 0:
+                # If there are no points, include both ends
+                segment_t_eval = np.array([start, end])
+            elif segment_t_eval[0] != start:
+                # If the start point is missing, add it
+                segment_t_eval = np.insert(segment_t_eval, 0, start)
+            elif segment_t_eval[-1] != end:
+                # If the end point is missing, add it
+                segment_t_eval = np.append(segment_t_eval, end)
+
+            t_eval_segments.append(segment_t_eval)
+    else:
+        # If t_eval is not provided, don't use it for segments
+        t_eval_segments = [None] * len(segments)
+
+    # Integrate each segment
+    current_y = y0.copy()
+
+    for i, ((t_start, t_end), segment_t_eval) in enumerate(zip(segments, t_eval_segments)):
+        # Solve for this segment
+        segment_sol = solve_ivp(
+            fun=fun,
+            t_span=(t_start, t_end),
+            y0=current_y,
+            t_eval=segment_t_eval,
+            dense_output=dense_output,
+            events=events,
+            vectorized=vectorized,
+            args=args,
+            **options
+        )
+
+        if not segment_sol.success:
+            # If integration failed, return the failed solution with reset info
+            segment_sol.reset_times = reset_times[:i]
+            segment_sol.reset_indices = reset_indices
+            return segment_sol
+
+        # Add results to our collection
+        all_t.append(segment_sol.t)
+        all_y.append(segment_sol.y)
+
+        # Update counters
+        total_nfev += segment_sol.nfev
+        total_njev += getattr(segment_sol, 'njev', 0)
+        total_nlu += getattr(segment_sol, 'nlu', 0)
+
+        # If not the last segment, apply resets for the next segment
+        if i < len(segments) - 1:
+            reset_time = reset_times[i]
+            reset_indices.append(len(np.concatenate(all_t)) - 1)
+
+            # Get the final state of this segment
+            current_y = segment_sol.y[:, -1].copy()
+
+            # Apply the resets using the symbol_to_idx mapping
+            reset_dict = resets[reset_time]
+            for symbol, new_value in reset_dict.items():
+                assert symbol in symbol_to_idx
+                idx = symbol_to_idx[symbol]
+                current_y[idx] = new_value
+
+    # Combine all results
+    combined_t = np.concatenate(all_t)
+    combined_y = np.hstack(all_y)
+
+    # Get the final solution object and update its fields
+    final_sol = segment_sol
+    final_sol.t = combined_t
+    final_sol.y = combined_y
+    final_sol.nfev = total_nfev
+    if hasattr(final_sol, 'njev'):
+        final_sol.njev = total_njev
+    if hasattr(final_sol, 'nlu'):
+        final_sol.nlu = total_nlu
+
+    # Add reset information
+    final_sol.reset_times = reset_times
+    final_sol.reset_indices = reset_indices
+
+    # Handle dense output if requested
+    if dense_output:
+        from scipy.integrate._ivp.common import DenseOutput
+
+        class CombinedDenseOutput(DenseOutput):
+            def __init__(self, ts, ys):
+                super().__init__(ts[0], ts[-1])
+                self.ts = ts
+                self.ys = ys
+                self.n = ys.shape[0]
+
+            def _call_impl(self, t):
+                # Find where t belongs
+                if np.isscalar(t):
+                    idx = np.searchsorted(self.ts, t) - 1
+                    if idx < 0:
+                        idx = 0
+                    if idx >= len(self.ts) - 1:
+                        idx = len(self.ts) - 2
+
+                    t0, t1 = self.ts[idx], self.ts[idx + 1]
+                    y0, y1 = self.ys[:, idx], self.ys[:, idx + 1]
+
+                    # Linear interpolation
+                    return y0 + (y1 - y0) * (t - t0) / (t1 - t0)
+                else:
+                    result = np.zeros((self.n, len(t)))
+                    for i, ti in enumerate(t):
+                        result[:, i] = self._call_impl(ti)
+                    return result
+
+        final_sol.sol = CombinedDenseOutput(combined_t, combined_y)
+
+    return final_sol
+
+
+def plot(
+        odes: dict[sympy.Symbol | str, sympy.Expr | str | float],
+        initial_values: dict[sympy.Symbol | str, float],
+        t_eval: Iterable[float] | None = None,
+        *,
+        t_span: tuple[float, float] | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, float]] | None = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        figure_size: tuple[float, float] = (10, 3),
+        symbols_to_plot:
+        Iterable[sympy.Symbol | str] |
+        Iterable[Iterable[sympy.Symbol | str]] |
+        str |
+        re.Pattern |
+        Iterable[re.Pattern]
+        | None = None,
+        show: bool = False,
+        method: str | OdeSolver = 'RK45',
+        dense_output: bool = False,
+        events: Callable | Iterable[Callable] | None = None,
         vectorized: bool = False,
         return_ode_result: bool = False,
-        args: Optional[Tuple] = None,
-        loc: Union[str, Tuple[float, float]] = 'best',
+        args: tuple | None = None,
+        loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
         **options,
 ) -> OdeResult | None:
@@ -355,63 +606,64 @@ def plot(
     (Assumes it is being run in a Jupyter notebook.)
     See :func:`integrate_odes` for description of parameters below that are not documented.
 
-    Args:
-        figure_size:
-            pair (width, height) of the figure
+    Parameters
+    ----------
+    figure_size:
+        pair (width, height) of the figure
 
-        symbols_to_plot:
-            symbols to plot; if not specified, then all symbols are plotted.
-            If it is a 2D list (or other Iterable of Iterables of strings or symbols),
-            then each group of symbols is plotted in a separate subplot.
-            If a string or re.Pattern, then only symbols whose names match the string or pattern are plotted.
+    symbols_to_plot:
+        symbols to plot; if not specified, then all symbols are plotted.
+        If it is a 2D list (or other Iterable of Iterables of strings or symbols),
+        then each group of symbols is plotted in a separate subplot.
+        If a string or re.Pattern, then only symbols whose names match the string or pattern are plotted.
 
-        show:
-            whether to call ``matplotlib.pyplot.show()`` after creating the plot;
-            If False, this helps the user to call other functions
-            such as ``matplotlib.pyplot.legend()`` or ``matplotlib.pyplot.grid()`` after calling this
-            function, which will not work if ``matplotlib.pyplot.show()`` has already been called.
-            However, if you want to display multiple plots from the same cell in a Jupyter notebook,
-            you should either set this to True, or (in case you want to configure each plot by calling
-            other matplotlib.pyplot functions, such as yscale), manually call ``matplotlib.pyplot.show()``
-            after each call to this function.
+    show:
+        whether to call ``matplotlib.pyplot.show()`` after creating the plot;
+        If False, this helps the user to call other functions
+        such as ``matplotlib.pyplot.legend()`` or ``matplotlib.pyplot.grid()`` after calling this
+        function, which will not work if ``matplotlib.pyplot.show()`` has already been called.
+        However, if you want to display multiple plots from the same cell in a Jupyter notebook,
+        you should either set this to True, or (in case you want to configure each plot by calling
+        other matplotlib.pyplot functions, such as yscale), manually call ``matplotlib.pyplot.show()``
+        after each call to this function.
 
-        dependent_symbols:
-            dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
-            that are functions of the other variables that are keys in `odes`.
-            For an example, see the example notebook
-            https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
+    dependent_symbols:
+        dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
+        that are functions of the other variables that are keys in `odes`.
+        For an example, see the example notebook
+        https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
 
-        return_ode_result:
-            if True, returns solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html.
-            Otherwise (default) None is returned. The reason the solution is not automatically returned is that
-            it pollutes the output of a Jupyter notebook, so this avoids needing to type something like
-            ``_ = gpac.plot(...)`` to suppress the output.
-            But if you want that solution object, you can set this to True.
+    return_ode_result:
+        if True, returns solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html.
+        Otherwise (default) None is returned. The reason the solution is not automatically returned is that
+        it pollutes the output of a Jupyter notebook, so this avoids needing to type something like
+        ``_ = gpac.plot(...)`` to suppress the output.
+        But if you want that solution object, you can set this to True.
 
-        loc:
-            location of the legend; see documentation for `matplotlib.pyplot.legend`:
-            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+    loc:
+        location of the legend; see documentation for `matplotlib.pyplot.legend`:
+        https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
 
-        warn_change_dpi:
-            If True, print a warning if the dpi of the figure gets changed from its default.
+    warn_change_dpi:
+        If True, print a warning if the dpi of the figure gets changed from its default.
 
-        options:
-            This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
-            for example you could pass `rtol=1e-6` to set the relative tolerance to 1e-6:
+    options:
+        This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
+        for example you could pass `rtol=1e-6` to set the relative tolerance to 1e-6:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
+            plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
 
-            For solver-specific parameters to `solve_ivp`,
-            see documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+        For solver-specific parameters to `solve_ivp`,
+        see documentation for `solve_ivp` in scipy.integrate:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
 
-            Also used for keyword options to `plot` in matplotlib.pyplot:
-            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html.
-            However, note that using such arguments here will cause `solve_ivp` to print a warning
-            that it does not recognize the keyword argument.
+        Also used for keyword options to `plot` in matplotlib.pyplot:
+        https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html.
+        However, note that using such arguments here will cause `solve_ivp` to print a warning
+        that it does not recognize the keyword argument.
 
     Returns:
         Typically None, but if `return_ode_result` is True, returns the
@@ -426,6 +678,7 @@ def plot(
         t_span=t_span,
         t_eval=t_eval,
         dependent_symbols=dependent_symbols_expressions,
+        resets=resets,
         method=method,
         dense_output=dense_output,
         events=events,
@@ -434,7 +687,7 @@ def plot(
         **options,
     )
 
-    #TODO: add a check that the symbols in dependent_symbols are in the result
+    # TODO: add a check that the symbols in dependent_symbols are in the result
 
     symbols = tuple(odes.keys()) + (() if dependent_symbols is None else tuple(dependent_symbols.keys()))
     assert len(symbols) == len(sol.y)
@@ -459,20 +712,20 @@ def plot(
 # returned from gillespy2.Model.run(). This is not intended to be called by the user, but we make it public
 # so it's accessible from the crn module.
 def plot_given_values(
-        times: Union[np.ndarray, xarray.DataArray],
-        result: Dict[str, Union[np.ndarray, xarray.DataArray]],
+        times: np.ndarray | xarray.DataArray,
+        result: dict[str, np.ndarray | xarray.DataArray],
         source: Literal['ode', 'ssa'],
-        dependent_symbols: Optional[Dict[Union[sympy.Symbol, str], Union[sympy.Expr, str]]] = None,
-        figure_size: Tuple[float, float] = (10, 3),
-        symbols_to_plot: Optional[Union[
-            Iterable[Union[sympy.Symbol, str]],
-            Iterable[Iterable[Union[sympy.Symbol, str]]],
-            str,
-            re.Pattern,
-            Iterable[re.Pattern],
-        ]] = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        figure_size: tuple[float, float] = (10, 3),
+        symbols_to_plot:
+        Iterable[sympy.Symbol | str] |
+        Iterable[Iterable[sympy.Symbol | str]] |
+        str |
+        re.Pattern |
+        Iterable[re.Pattern] | None
+        = None,
         show: bool = False,
-        loc: Union[str, Tuple[float, float]] = 'best',
+        loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
         **options,
 ) -> None:
@@ -569,3 +822,5 @@ def plot_given_values(
 
 def comma_separated(elts: Iterable[Any]) -> str:
     return ', '.join(str(elt) for elt in elts)
+
+

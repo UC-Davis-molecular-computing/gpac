@@ -12,12 +12,12 @@ gpac documentation
 
 gpac.ode
 =====================
-.. automodule:: ode
+.. automodule:: gpac.ode
    :members:
 
 gpac.crn
 =====================
-.. automodule:: crn
+.. automodule:: gpac.crn
    :members:
 
 
