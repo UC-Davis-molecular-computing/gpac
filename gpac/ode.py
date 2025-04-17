@@ -110,7 +110,8 @@ def integrate_odes(
     Although you cannot reference the time variable directly in the ODEs, this can be simulated
     by introducing a new variable `t` whose derivative is 1 and initial value is the initial time.
     For example, the following code implements ``a(t) = sin(t)`` (with time derivative ``a'(t) = cos(t)``)
-    and ``b(t) = -(t/2 - 1)^2 + 2`` (with time derivative ``b'(t) = 1 - t/2``):
+    and ``b(t) = -(t/2 - 1)^2 + 2`` (with time derivative ``b'(t) = 1 - t/2``). In this case we want
+    `t`=0 initially, and any symbol that is not a key in `initial_values` is assumed to have initial value 0.
 
     ```python
     # trick for referencing time variable directly in ODEs
@@ -123,11 +124,7 @@ def integrate_odes(
         b: 1 - t/2, # derivative of -(t/2 - 1)^2 + 2
         t: 1,
     }
-    initial_values = {
-        a: 0,
-        b: 1,
-        t: 0,
-    }
+    initial_values = { b: 1 }
     t_eval = np.linspace(0, 2*pi, 5) # [0, pi/2, pi, 3*pi/2, 2*pi]
     solution = gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
     print(f'a(pi/2) = {solution.y[0][1]:.2f}')
