@@ -25,6 +25,9 @@ dependencies = [
     "gillespy2>=1",
     "rebop>=0.9",
     "xarray>=2025",
+    "mkdocs>=1.4.0",
+    "mkdocstrings[python]>=0.20.0",
+    "mkdocs-material>=9.1.0",
 ]
 
 [project.urls]
