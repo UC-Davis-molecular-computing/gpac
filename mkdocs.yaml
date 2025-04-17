@@ -2,10 +2,10 @@ site_name: gpac
 theme: 
   name: readthedocs
   include_sidebar: true
-#  navigation_depth: 4  # Controls how deep the TOC goes
-#  collapse_navigation: false  # Show all sections, not just the current page
-#  sticky_navigation: true  # Makes the sidebar scroll with the pages
-#
+  navigation_depth: 4  # Controls how deep the TOC goes
+  collapse_navigation: false  # Show all sections, not just the current page
+  sticky_navigation: true  # Makes the sidebar scroll with the pages
+
 #extra_css:
 #  - style.css
 
@@ -22,7 +22,7 @@ plugins:
       handlers:
         python:
           # Use the extended handler instead of the default one
-          handler: python_xref
+#          handler: python_xref
           # Regular mkdocstrings options go here
           options:
             show_source: true
@@ -42,7 +42,7 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
 
-## This is needed to render Latex even though we included arithmatex above.
-#extra_javascript:
-#  - mathjax.js
-#  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+# This is needed to render Latex even though we included arithmatex above.
+extra_javascript:
+  - mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
