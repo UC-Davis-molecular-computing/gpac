@@ -1,27 +1,7 @@
 """
-gpac is a Python package for numerically simulating a general-purpose analog computer (GPAC),
-defined by Claude Shannon in 1941 as an abstract model of programmable analog computational devices
-such as the differential analyzer created by Vannevar Bush and Harold Locke Hazen in the 1920s.
-See here for a description of GPACs:
-
-    - https://en.wikipedia.org/wiki/General_purpose_analog_computer
-    - https://arxiv.org/abs/1805.05729
-
-It also has support for a very common model governed by polynomial ODEs, the of continuous mass-action
-chemical reaction networks:
-
-    - https://en.wikipedia.org/wiki/Chemical_reaction_network_theory#Overview
-
-GPACs are typically defined by a circuit with gates that can add, multiply, introduce constants, and
-integrate an input with respect to time. The most elegant way to specify a GPAC is by defining a set of
-ordinary differential equations (ODEs) corresponding to the output wires of integrator gates in the GPAC
-circuit.
-
-So essentially, this package makes it easy to write down such ODEs and numerically integrate and plot them.
-
-Although gpac has two submodules ode and crn, you can import all elements from both directly from gpac,
-e.g., ``from gpac import plot, plot_crn``.
+This module has ODE-only functions, mainly [integrate_odes][gpac.ode.integrate_odes] and [plot][gpac.ode.plot].
 """
+
 import re
 from typing import Iterable, Callable, Any, Literal, TypeAlias, cast
 
@@ -66,15 +46,17 @@ def integrate_odes(
         # min_step: float = 0.0,
 ) -> OdeResult:
     """
-    Integrate the given ODEs using scipy's `solve_ivp` function in the
-    package scipy.integrate, returning the same object returned by `solve_ivp`:
+    Integrate the given ODEs using scipy's 
+    [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html) 
+    function in the package scipy.integrate, returning the same object returned by
+    [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
 
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-
-    This is a convienence function that wraps the scipy function `solve_ivp`,
+    This is a convienence function that wraps the scipy function
+    [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
     allowing the user to specify the ODEs using sympy symbols and expressions
-    (instead of a Python function on tuples of floats, which is what `solve_ivp` expects,
-    but is more awkward to specify than using sympy expressions).
+    (instead of a Python function on tuples of floats, which is what 
+    [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+    expects, but is more awkward to specify than using sympy expressions).
 
     The object `solution` returned by `solve_ivp` has field `solution.y` which is a 2D numpy array,
     each row of which is the trajectory of a value in the ODEs. The order of the rows is the same as the
@@ -86,42 +68,41 @@ def integrate_odes(
     `method`, `dense_output`, `events`, `vectorized`, `args`, and
     all other keyword arguments are passed in through `**options`; see the
     documentation for solve_ivp for a description of these parameters:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+    <https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html>
 
-    .. code-block:: python
+    ```py title="rock-paper-scissors oscillator example"
+    import sympy, gpac, numpy as np
+    a,b,c = sympy.symbols('a b c')
+    odes = {
+        a: -a*b + c*a,
+        b: -b*c + a*b,
+        c: -c*a + b*c,
+    }
+    initial_values = {
+        a: 10,
+        b: 1,
+        c: 1,
+    }
+    t_eval = np.linspace(0, 1, 5)
+    print(gpac.integrate_odes(odes, initial_values, t_eval=t_eval))
+    ```
 
-        import sympy, gpac, numpy as np
-        a,b,c = sympy.symbols('a b c')
-        odes = {
-            a: -a*b + c*a,
-            b: -b*c + a*b,
-            c: -c*a + b*c,
-        }
-        initial_values = {
-            a: 10,
-            b: 1,
-            c: 1,
-        }
-        t_eval = np.linspace(0, 1, 5)
-        gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
-
-    This outputs
-
-    .. code-block::
-
-      message: 'The solver successfully reached the end of the integration interval.'
-         nfev: 62
-         njev: 0
-          nlu: 0
-          sol: None
-       status: 0
-      success: True
-            t: array([0.  , 0.25, 0.5 , 0.75, 1.  ])
-     t_events: None
-            y: array([[10.        ,  4.84701622,  0.58753815,  0.38765743,  3.07392998],
-           [ 1.        ,  6.84903338,  9.63512628,  3.03634559,  0.38421121],
-           [ 1.        ,  0.3039504 ,  1.77733557,  8.57599698,  8.54185881]])
-     y_events: None
+    This outputs 
+    ```
+     message: 'The solver successfully reached the end of the integration interval.'
+        nfev: 62
+        njev: 0
+         nlu: 0
+         sol: None
+      status: 0
+     success: True
+           t: array([0.  , 0.25, 0.5 , 0.75, 1.  ])
+    t_events: None
+           y: array([[10.        ,  4.84701622,  0.58753815,  0.38765743,  3.07392998],
+          [ 1.        ,  6.84903338,  9.63512628,  3.03634559,  0.38421121],
+          [ 1.        ,  0.3039504 ,  1.77733557,  8.57599698,  8.54185881]])
+    y_events: None
+    ```
 
     All symbols are interpreted as functions of a single variable called "time", and the derivatives
     are with respective to time.
@@ -131,118 +112,113 @@ def integrate_odes(
     For example, the following code implements ``a(t) = sin(t)`` (with time derivative ``a'(t) = cos(t)``)
     and ``b(t) = -(t/2 - 1)^2 + 2`` (with time derivative ``b'(t) = 1 - t/2``):
 
-    .. code-block:: python
+    ```python
+    # trick for referencing time variable directly in ODEs
+    from sympy import sin, cos
+    from math import pi
 
-        # trick for referencing time variable directly in ODEs
-        from sympy import sin, cos
-        from math import pi
-
-        a,b,t = sympy.symbols('a b t')
-        odes = {
-            a: cos(t),
-            b: 1 - t/2, # derivative of -(t/2 - 1)^2 + 2
-            t: 1,
-        }
-        initial_values = {
-            a: 0,
-            b: 1,
-            t: 0,
-        }
-        t_eval = np.linspace(0, 2*pi, 5) # [0, pi/2, pi, 3*pi/2, 2*pi]
-        solution = gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
-        print(f'a(pi/2) = {solution.y[0][1]:.2f}')
-        print(f'a(pi)   = {solution.y[0][2]:.2f}')
-        print(f'b(pi/2) = {solution.y[1][1]:.2f}')
-        print(f'b(pi)   = {solution.y[1][2]:.2f}')
+    a,b,t = sympy.symbols('a b t')
+    odes = {
+        a: cos(t),
+        b: 1 - t/2, # derivative of -(t/2 - 1)^2 + 2
+        t: 1,
+    }
+    initial_values = {
+        a: 0,
+        b: 1,
+        t: 0,
+    }
+    t_eval = np.linspace(0, 2*pi, 5) # [0, pi/2, pi, 3*pi/2, 2*pi]
+    solution = gpac.integrate_odes(odes, initial_values, t_eval=t_eval)
+    print(f'a(pi/2) = {solution.y[0][1]:.2f}')
+    print(f'a(pi)   = {solution.y[0][2]:.2f}')
+    print(f'b(pi/2) = {solution.y[1][1]:.2f}')
+    print(f'b(pi)   = {solution.y[1][2]:.2f}')
+    ```
 
     which prints
 
-    .. code-block::
+    ```
+    a(pi/2) = 1.00
+    a(pi)   = 0.00
+    b(pi/2) = 1.95
+    b(pi)   = 1.67
+    ```
 
-        a(pi/2) = 1.00
-        a(pi)   = 0.00
-        b(pi/2) = 1.95
-        b(pi)   = 1.67
+    Parameters
+    ----------
+    odes:
+        dict mapping sympy symbols to sympy expressions representing the ODEs.
+        Alternatively, the keys can be strings, and the values can be strings that look like expressions,
+        e.g., ``{'a': '-a*b + c*a'}``.
+        If a symbol is referenced in an expression but is not a key in `odes`,
+        a ValueError is raised.
 
-    Args:
-        odes:
-            dict mapping sympy symbols to sympy expressions representing the ODEs.
-            Alternatively, the keys can be strings, and the values can be strings that look like expressions,
-            e.g., ``{'a': '-a*b + c*a'}``.
-            If a symbol is referenced in an expression but is not a key in `odes`,
-            a ValueError is raised.
+    initial_values:
+        dict mapping sympy symbols to initial values of each symbol.
+        Alternatively, the keys can be strings.
+        Any symbols in the ODEs that are not keys in `initial_values`
+        will be assumed to have initial value of 0.
+        If a symbol appears as a key in `initial_values` but is not a key in `odes`,
+        a ValueError is raised.
 
-        initial_values:
-            dict mapping sympy symbols to initial values of each symbol.
-            Alternatively, the keys can be strings.
-            Any symbols in the ODEs that are not keys in `initial_values`
-            will be assumed to have initial value of 0.
-            If a symbol appears as a key in `initial_values` but is not a key in `odes`,
-            a ValueError is raised.
+    t_eval:
+        iterable of times at which to evaluate the ODEs.
+        At least one of `t_eval` or `t_span` must be specified.
 
-        t_eval:
-            iterable of times at which to evaluate the ODEs.
-            At least one of `t_eval` or `t_span` must be specified.
+    t_span:
+        pair (start_time, end_time) for the integration.
+        If not specified, first and last times in `t_eval` are used.
+        (This is different from solve_ivp, which requires `t_span` to be specified.)
+        At least one of `t_eval` or `t_span` must be specified.
 
-        t_span:
-            pair (start_time, end_time) for the integration.
-            If not specified, first and last times in `t_eval` are used.
-            (This is different from solve_ivp, which requires `t_span` to be specified.)
-            At least one of `t_eval` or `t_span` must be specified.
+    dependent_symbols:
+        iterable of sympy expressions (or strings) representing symbols
+        that are functions of the other symbols that are keys in `odes`.
+        These values are added to the end of the 2D array field `sol.y` in the object `sol`
+        returned by `solve_ivp`, in the order in which they appear in `dependent_variables`.
+        For an example, see the example notebook
+        https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
 
-        dependent_symbols:
-            iterable of sympy expressions (or strings) representing symbols
-            that are functions of the other symbols that are keys in `odes`.
-            These values are added to the end of the 2D array field `sol.y` in the object `sol`
-            returned by `solve_ivp`, in the order in which they appear in `dependent_variables`.
-            For an example, see the example notebook
-            https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
+    resets:
+        If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
+        The configurations are used to set the values of the symbols manually during the ODE integration
+        at specific times.
+        Any symbols not appearing as keys in `resets` are left at their current values.
+        The OdeResult returned (the one returned by `solve_ivp` in scipy) will have two additional fields:
+        `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
+        corresponding to the times when the resets were applied.
+        Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
 
-        resets:
-            If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
-            The configurations are used to set the values of the symbols manually during the ODE integration
-            at specific times.
-            Any symbols not appearing as keys in `resets` are left at their current values.
-            The OdeResult returned (the one returned by `solve_ivp` in scipy) will have two additional fields:
-            `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
-            corresponding to the times when the resets were applied.
-            Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
+    method:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
-        method:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+    dense_output:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
-        dense_output:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+    events:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
-        events:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+    vectorized:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
-        vectorized:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+    args:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
-        args:
-            See documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+    options:
+        This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
+        for example you could pass `rtol=1e-6` to set the relative tolerance to 1e-6:
 
-        options:
-            This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
-            for example you could pass `rtol=1e-6` to set the relative tolerance to 1e-6:
+        ```py
+        plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
+        ```
 
-            .. code-block:: python
-
-                plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
-
-            For solver-specific parameters to `solve_ivp`,
-            see documentation for `solve_ivp` in scipy.integrate:
-            https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+        For solver-specific parameters,
+        see [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
     Returns:
-        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+        solution to the ODEs, same as object returned by 
+        [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
     """
     if t_eval is not None:
         t_eval = np.array(t_eval)
@@ -601,13 +577,14 @@ def plot(
         **options,
 ) -> OdeResult | None:
     """
-    Numerically integrate the given ODEs using the function :func:`integrate_odes`,
+    Numerically integrate the given ODEs using the function [integrate_odes][gpac.ode.integrate_odes],
     then plot the trajectories using matplotlib.
     (Assumes it is being run in a Jupyter notebook.)
-    See :func:`integrate_odes` for description of parameters below that are not documented.
+    See [integrate_odes][gpac.ode.integrate_odes] for description of parameters below that are not documented.
 
     Parameters
     ----------
+
     figure_size:
         pair (width, height) of the figure
 
@@ -631,19 +608,20 @@ def plot(
         dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
         that are functions of the other variables that are keys in `odes`.
         For an example, see the example notebook
-        https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
+        <https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb>.
 
     return_ode_result:
-        if True, returns solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html.
+        if True, returns solution to the ODEs, same as object returned by 
+        [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+        in scipy.integrate.
         Otherwise (default) None is returned. The reason the solution is not automatically returned is that
         it pollutes the output of a Jupyter notebook, so this avoids needing to type something like
         ``_ = gpac.plot(...)`` to suppress the output.
         But if you want that solution object, you can set this to True.
 
     loc:
-        location of the legend; see documentation for `matplotlib.pyplot.legend`:
-        https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html
+        location of the legend; see documentation for [matplotlib.pyplot.legend](
+        https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html)
 
     warn_change_dpi:
         If True, print a warning if the dpi of the figure gets changed from its default.
@@ -652,16 +630,16 @@ def plot(
         This is a catch-all for any additional keyword arguments that are passed to `solve_ivp`,
         for example you could pass `rtol=1e-6` to set the relative tolerance to 1e-6:
 
-        .. code-block:: python
-
-            plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
+        ```py
+        plot(odes, initial_values, t_eval=t_eval, rtol=1e-6)
+        ```
 
         For solver-specific parameters to `solve_ivp`,
-        see documentation for `solve_ivp` in scipy.integrate:
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+        see documentation for [`solve_ivp`](
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
-        Also used for keyword options to `plot` in matplotlib.pyplot:
-        https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html.
+        Also used for keyword options to []`matplotlib.pyplot.plot]()
+        https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html).
         However, note that using such arguments here will cause `solve_ivp` to print a warning
         that it does not recognize the keyword argument.
 
@@ -822,5 +800,3 @@ def plot_given_values(
 
 def comma_separated(elts: Iterable[Any]) -> str:
     return ', '.join(str(elt) for elt in elts)
-
-

@@ -1,53 +1,54 @@
-"""
+r"""
 Module for expressing chemical reaction networks and deriving their ODEs. Ideas and much code taken from
-https://github.com/enricozb/python-crn.
+[this repo](https://github.com/enricozb/python-crn).
 
 For example, to specify the "approximate majority" chemical reaction network
-(see https://doi.org/10.1007/978-3-540-75142-7_5 or https://doi.org/10.1126/science.aal2052)
+(see [DOI: 10.1007/978-3-540-75142-7_5](https://doi.org/10.1007/978-3-540-75142-7_5) or
+[DOI: 10.1126/science.aal2052](https://doi.org/10.1126/science.aal2052))
 
-.. math::
-
-    A+B \\to 2U
-
-    A+U \\to 2A
-
-    B+U \\to 2B
+$$
+\begin{align*}
+    A+B &\to 2U \\
+    A+U &\to 2A \\
+    B+U &\to 2B
+\end{align*}
+$$
 
 we can write
 
-.. code-block:: python
-
-    a, b, u = species('A B U')
-    rxns = [
-        a+b >> 2*u,
-        a+u >> 2*a,
-        b+u >> 2*b,
-    ]
-    initial_values = {a: 0.51, b: 0.49}
-    t_eval = np.linspace(0, 10, 100)
-    gpac.plot_crn(rxns, initial_values, t_eval)
+```py
+a, b, u = species('A B U')
+rxns = [
+    a+b >> 2*u,
+    a+u >> 2*a,
+    b+u >> 2*b,
+]
+initial_values = {a: 0.51, b: 0.49}
+t_eval = np.linspace(0, 10, 100)
+gpac.plot_crn(rxns, initial_values, t_eval)
+```
 
 which will plot the concentrations of A, B, and U over time. One can specify reversible reactions
-by using the ``|`` operator instead of ``>>`` (e.g., ``a+b | 2*u``) and rate constants using the functions
-``k`` (for forward rate constants) and ``r`` (for reverse rate constants),
-e.g., ``(a+b | 2*u).k(1.5).r(0.5)``.
+by using the `|` operator instead of `>>` (e.g., `#!py a+b | 2*u`) and rate constants using the functions
+`k` (for forward rate constants) and `r` (for reverse rate constants),
+e.g., `#!py (a+b | 2*u).k(1.5).r(0.5)`.
 
-See functions :func:`crn_to_odes` to convert reactions to ODEs (ordinary differential equations),
-:func:`integrate_crn_odes` to get the trajectories of integrating these ODEs over time, and
-:func:`plot_crn` to plot the trajectories. The documentation for :func:`crn_to_odes` explains
-how reactions are converted into ODEs by each of these functions.
+See functions [crn_to_odes][gpac.crn.crn_to_odes] to convert reactions to ODEs (ordinary differential equations),
+[integrate_crn_odes][gpac.crn.integrate_crn_odes] to get the trajectories of integrating these ODEs over time, and
+[plot_crn][gpac.crn.plot_crn] to plot the trajectories. The documentation for [crn_to_odes][gpac.crn.crn_to_odes]
+explains how reactions are converted into ODEs by each of these functions.
 
-Also supported are inhibitors, which can be added to reactions using the method :meth:`Reaction.i`:
+Also supported are inhibitors, which can be added to reactions using the method [Reaction.i][gpac.crn.Reaction.i]:
 
-.. code-block:: python
+```py
+a, b, u, i = species('A B U I')
+rxn = (a+b | 2*u).i(i, 100)
+```
 
-    a, b, u, i = species('A B U I')
-    rxn = (a+b | 2*u).i(i, 100)
-
-which represents the reaction :math:`A+B \\to 2U` with inhibitor :math:`I` and inhibitor constant 100.
+which represents the reaction $A+B \to 2U$ with inhibitor $I$ and inhibitor constant $100$.
 Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
-reaction rate is to divide by :math:`1 + k \\cdot I`, where :math:`k` is the inhibitor constant.
-So for the reaction defined above, its rate is :math:`k \\cdot [A] \\cdot [B] / (1 + 100 \\cdot [I])`.
+reaction rate is to divide by $1 + k \cdot I$, where $k$ is the inhibitor constant.
+So for the reaction defined above, its rate is $k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])$.
 """
 
 from __future__ import annotations  # needed for forward references in type hints
@@ -65,11 +66,11 @@ import sympy
 import gillespy2 as gp
 import rebop as rb
 
-from . import integrate_odes, plot, plot_given_values
+from gpac.ode import integrate_odes, plot, plot_given_values
 
 
 def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
-    """
+    r"""
     Given a set of chemical reactions, return the corresponding ODEs.
 
     Each reaction contributes one term to the ODEs for each species produced or consumed in it.
@@ -83,11 +84,13 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     For example, consider the following two reactions with respective rate constants
     :math:`k_1` and :math:`k_2`:
 
-    .. math::
-
-        X+X &\\xrightarrow{k_1} C
-
-        C+X &\\xrightarrow{k_2} C+Y
+    $$
+    \begin{align*}
+        X+X &\xrightarrow{k_1} C
+        \\
+        C+X &\xrightarrow{k_2} C+Y
+    \end{align*}
+    $$
 
     The net stoichiometry of `X` in the first reaction is -2, since two copies of `X` are consumed,
     and the net stoichiometry of `C` in that reaction is 1, since one copy of `C` is produced.
@@ -97,46 +100,53 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     This corresponds to ODEs (following the convention of lowercase letter `x`
     for the concentration of species `X`):
 
-    .. math::
-
+    $$
+    \begin{align*}
         x' &= -2 k_1 x^2 - k_2 c x
-
+        \\
         c' &= k_1 x^2
-
+        \\
         y' &= k_2 c x
+    \end{align*}
+    $$
 
     In the package, this can be implemented (for example setting :math:`k_1 = 1.5` and :math:`k_2 = 0.2`)
     via:
 
-    .. code-block:: python
-
-        x, y, c = species('X Y C')
-        rxns = [
-            (x+x >> c).k(1.5),
-            (c+x >> c+y).k(0.2),
-        ]
-        odes = crn_to_odes(rxns)
-        for symbol, ode in odes.items():
-            print(f"{symbol}' = {ode}")
+    ```py
+    x, y, c = species('X Y C')
+    rxns = [
+        (x+x >> c).k(1.5),
+        (c+x >> c+y).k(0.2),
+    ]
+    odes = crn_to_odes(rxns)
+    for symbol, ode in odes.items():
+        print(f"{symbol}' = {ode}")
+    ```
 
     which prints
 
-    .. code-block:: none
+    ```
+    X' = -0.2*C*X - 3.0*X**2
+    C' = 1.5*X**2
+    Y' = 0.2*C*X
+    ```
 
-        X' = -0.2*C*X - 3.0*X**2
-        C' = 1.5*X**2
-        Y' = 0.2*C*X
+    Parameters
+    ----------
+    rxns: list of [`Reaction`'s](gpac.crn.Reaction) comprising the chemical reaction network.
+            See documentation for [`Reaction`'s](gpac.crn.Reaction) for details on how to specify reactions.
 
-    Args:
-        rxns: list of :any:`Reaction`'s comprising the chemical reaction network.
-              See documentation for :any:`Reaction` for details on how to specify reactions.
-
-    Returns:
-        Dictionary mapping each species (represented as a sympy Symbol object, rather than a :any:`Specie`
+    Returns
+    -------
+        Dictionary mapping each species (represented as a sympy Symbol object, rather than a [`Specie`](gpac.crn.Specie)
         object) to its corresponding ODE (represented as a sympy Expression).
-        This object can be given as the parameter `odes` to the functions :func:`ode.integrate_odes`
-        and :func:`ode.plot` to integrate/plot the ODEs.
-        (which is essentially all the functions :func:`integrate_crn_odes` and :func:`plot_crn` do).
+        This object can be given as the parameter `odes` to the functions 
+        [`integrate_odes`][gpac.ode.integrate_odes]
+        and 
+        [`plot`][gpac.ode.plot] to integrate/plot the ODEs.
+        (which is essentially all the functions [`integrate_crn_odes`](gpac.crn.integrate_crn_odes) 
+        and [`plot_crn`](gpac.crn.plot_crn) do.
     """
     # map each symbol to list of reactions in which it appears
     specie_to_rxn: dict[Specie, list[Reaction]] = defaultdict(list)
@@ -184,20 +194,21 @@ def integrate_crn_odes(
 ) -> OdeResult:
     """
     Integrate the ODEs derived from to the given set of chemical reactions.
-    This calls :func:`ode.integrate_odes` with the ODEs derived from the given reactions via
-    :func:`crn_to_odes`.
-    See :func:`ode.integrate_odes` for description of parameters other than `rxns` and `initial_values`.
+    This calls [integrate_odes][gpac.ode.integrate_odes] with the ODEs derived from the given reactions via
+    [crn_to_odes][gpac.crn.crn_to_odes].
+    See [integrate_odes][gpac.ode.integrate_odes] for description of parameters other than 
+    `rxns` and `initial_values`.
 
-    Args:
-        rxns:
-            list of :any:`Reaction`'s comprising the chemical reaction network.
-            See documentation for :any:`Reaction` for details on how to specify reactions.
+    Parameters
+    ----------
+    rxns:
+        list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
+        See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
-        initial_values:
-            dict mapping each species to its initial concentration.
-            Note that unlike the parameter `initial_values` in :func:`ode.integrate_odes`,
-            keys in this dict must be :any:`Specie` objects, not strings or sympy symbols.
-
+    initial_values:
+        dict mapping each species to its initial concentration.
+        Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+        keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
@@ -244,61 +255,64 @@ def plot_crn(
 ) -> OdeResult:
     """
     Plot the ODEs derived from to the given set of chemical reactions.
-    This calls :func:`ode.plot` with the ODEs derived from the given reactions via
-    :func:`crn_to_odes`.
+    This calls [`plot`][gpac.ode.plot] with the ODEs derived from the given reactions via
+    [`crn_to_odes`][gpac.crn.crn_to_odes].
 
-    See :func:`crn.integrate_crn_odes`, :func:`ode.integrate_odes`, and :func:`ode.plot`
-    for description of parameters.
-    As with :func:`ode.plot`, the keyword arguments in `options` are passed to
-    matplotlib.pyplot.plot
-    (https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
+    See [`integrate_crn_odes`][gpac.crn.integrate_crn_odes], 
+    [`integrate_odes`][gpac.ode.integrate_odes], and 
+    [`plot`][gpac.ode.plot] for description of parameters.
+    As with [`plot`][gpac.ode.plot], the keyword arguments in `options` are passed to
+    [`matplotlib.pyplot.plot`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
     as well as to
-    scipy.integrate.solve_ivp
-    (https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
-    and as with :func:`ode.plot`, keyword arguments not recognized by scipy.integrate.solve_ivp
+    [`scipy.integrate.solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html),
+    and as with [plot][gpac.ode.plot], keyword arguments not recognized by `solve_ivp`
     (such as those intended for matplotlib.pyplot.plot) cause `solve_ivp` to print a warning that it
     does not recognize the argument.
 
-    Note that the parameter `dependent_symbols` should use sympy symbols, not :any:`Specie` objects.
+    Note that the parameter `dependent_symbols` should use sympy symbols, not 
+    [`Specie`][gpac.crn.Specie] objects.
     Here is an example of how to use this parameter. Each species that a dependent symbol depends on
-    should be represented by a sympy symbol with the same name as the corresponding :any:`Specie` object:
+    should be represented by a sympy symbol with the same name as the corresponding 
+    [`Specie`][gpac.crn.Specie] object:
 
-    .. code-block:: python
+    ```python
+    Xp,Xm,Yp,Ym = gpac.species('Xp Xm Yp Ym')
+    x,y,xp,xm,yp,ym = sympy.symbols('x y Xp Xm Yp Ym')
 
-        Xp,Xm,Yp,Ym = gpac.species('Xp Xm Yp Ym')
-        x,y,xp,xm,yp,ym = sympy.symbols('x y Xp Xm Yp Ym')
+    # dual-rail CRN implementation of sine/cosine oscillator
+    # x' = -y
+    # y' = x
+    rxns = [
+        Yp >> Yp + Xm,
+        Ym >> Ym + Xp,
+        Xp >> Xp + Yp,
+        Xm >> Xm + Ym,
+        Xp+Xm >> gpac.empty,
+        Yp+Ym >> gpac.empty,
+    ]
+    inits = { Xp: 1, Yp: 0 }
+    from math import pi
+    t_eval = np.linspace(0, 6*pi, 200)
 
-        # dual-rail CRN implementation of sine/cosine oscillator
-        # x' = -y
-        # y' = x
-        rxns = [
-            Yp >> Yp + Xm,
-            Ym >> Ym + Xp,
-            Xp >> Xp + Yp,
-            Xm >> Xm + Ym,
-            Xp+Xm >> gpac.empty,
-            Yp+Ym >> gpac.empty,
-        ]
-        inits = { Xp: 1, Yp: 0 }
-        from math import pi
-        t_eval = np.linspace(0, 6*pi, 200)
+    dependent_symbols = {
+        x: xp - xm,
+        y: yp - ym,
+    }
 
-        dependent_symbols = {
-            x: xp - xm,
-            y: yp - ym,
-        }
+    gpac.plot_crn(rxns, inits, t_eval, dependent_symbols=dependent_symbols, symbols_to_plot=[x,y])
+    ```
 
-        gpac.plot_crn(rxns, inits, t_eval, dependent_symbols=dependent_symbols, symbols_to_plot=[x,y])
+    Parameters
+    ----------
+    dependent_symbols:
+        dict mapping each symbol to an expression that defines its value in terms of other symbols.
+        Note that these are not [`Specie`](gpac.crn.Specie) objects as in the parameter `rxns`, but sympy symbols.
+        Symbols used in the expressions must have the same name as [`Specie`](gpac.crn.Specie) objects in `rxns`.
 
-    Args:
-        dependent_symbols:
-            dict mapping each symbol to an expression that defines its value in terms of other symbols.
-            Note that these are not :any:`Specie` objects as in the parameter `rxns`, but sympy symbols.
-            Symbols used in the expressions must have the same name as :any:`Specie` objects in `rxns`.
-
-    Returns:
-        None, or the result of the integration, which is the same as the result of :func:`ode.integrate_odes`
-        if `return_ode_result` is True. See :func:`ode.integrate_odes` for details about this parameter.
+    Returns
+    -------
+        None, or the result of the integration, which is the same as the result of [`integrate_odes`](gpac.ode.integrate_odes)
+        if `return_ode_result` is True. See [`integrate_odes`](gpac.ode.integrate_odes) for details about this parameter.
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
@@ -324,7 +338,7 @@ def plot_crn(
     )
 
 
-def find_all_species(rxns: Iterable[Reaction]) -> Tuple[Specie, ...]:
+def find_all_species(rxns: Iterable[Reaction]) -> tuple[Specie, ...]:
     all_species = []
     all_species_set = set()
     for rxn in rxns:
@@ -348,19 +362,19 @@ def gillespy2_crn_counts(
     """
     Run the reactions using the GillesPy2 package for discrete simulation using the Gillespie algorithm.
 
-    Any parameters not described here are passed along to the function gillespy2.GillesPySolver.run:
-    https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run
+    Any parameters not described here are passed along to the function [gillespy2.GillesPySolver.run](
+    https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run)
 
 
     Args:
         rxns:
-            list of :any:`Reaction`'s comprising the chemical reaction network.
-            See documentation for :any:`Reaction` for details on how to specify reactions.
+            list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
+            See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
         initial_counts:
             dict mapping each species to its initial integer count.
-            Note that unlike the parameter `initial_values` in :func:`ode.integrate_odes`,
-            keys in this dict must be :any:`Specie` objects, not strings or sympy symbols.
+            Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+            keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
 
     Returns:
         Same Result object returned by gillespy2.GillesPySolver.run.
@@ -433,19 +447,19 @@ def rebop_crn_counts(
         seed: int | None = None,
 ) -> xarray.Dataset:
     """
-    Run the reactions using the rebop package (https://pypi.org/project/rebop/)
+    Run the reactions using the [rebop package](https://pypi.org/project/rebop/)
     for discrete simulation using the Gillespie algorithm.
 
 
     Args:
         rxns:
-            list of :any:`Reaction`'s comprising the chemical reaction network.
-            See documentation for :any:`Reaction` for details on how to specify reactions.
+            list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
+            See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
         initial_counts:
             dict mapping each species to its initial integer count.
-            Note that unlike the parameter `initial_values` in :func:`ode.integrate_odes`,
-            keys in this dict must be :any:`Specie` objects, not strings or sympy symbols.
+            Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+            keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
 
         nb_steps:
             Number of evenly-spaced time points at which to record the counts between 0 and `tmax`.
@@ -523,35 +537,41 @@ def plot_gillespie(
         warn_change_dpi: bool = False,
         vol: float | None = None,
         simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
-        **options,
+        **options: dict[str, object],
 ) -> xarray.Dataset:
     """
-    Similar to :func:`plot_crn`, but uses the rebop package (https://pypi.org/project/rebop/)
+    Similar to [`plot_crn`](gpac.crn.plot_crn), but uses the [rebop package](https://pypi.org/project/rebop/)
     for discrete simulation using the Gillespie algorithm instead of continuous ODEs.
 
-    Undocumented arguments have the same meaning as with :func:`plot_crn`.
+    Undocumented arguments have the same meaning as with [`plot_crn`](gpac.crn.plot_crn).
 
-    Arguments `tmax`, `nb_steps`, and `seed` are passed to :func:`rebop_crn_counts`.
+    Arguments `tmax`, `nb_steps`, and `seed` are passed to [`rebop_crn_counts`](gpac.crn.rebop_crn_counts).
     Any custom keyword arguments (specified in `**options`) to the function matplotlib.pyplot.plot.
 
     Args:
         rxns: the reactions of the CRN
+        
         initial_counts: initial (integer) counts of each species
+        
         vol: volume of the system (reactions with k ractants have their rate divided by vol^(k-1))
+        
         tmax: the maximum time for which to run the simulation
+        
         nb_steps: number of evenly-spaced time points at which to record the counts between 0 and `tmax`;
-          if not specified (or set to 0, the default value), all reaction events and their exact times are recorded
+            if not specified (or set to 0, the default value), all reaction events and their exact times are recorded
+        
         return_simulation_result: whether to return the simulation result; if True, the result of the simulation
-          is returned, but the default behavior is not to do this, so that if the last line of a notebook cell
-          is a call to `plot_gillespie`, the result is not printed to the output, only the plot is shown.
+            is returned, but the default behavior is not to do this, so that if the last line of a notebook cell
+            is a call to `plot_gillespie`, the result is not printed to the output, only the plot is shown.
+        
         seed: seed for random number generator used by rebop for stochastic simulation. Note that currently,
-          the value `nb_steps` actually changes the stochastic sampling in the simulation, i.e., if you double the
-          value of `nb_steps`, but keep the value of `seed` the same, you would think that every other sampled
-          configuration would be the same as when `nb_steps` was half as large, but this is not the case.
-          See https://github.com/Armavica/rebop/issues/26
+            the value `nb_steps` actually changes the stochastic sampling in the simulation, i.e., if you double the
+            value of `nb_steps`, but keep the value of `seed` the same, you would think that every other sampled
+            configuration would be the same as when `nb_steps` was half as large, but this is not the case.
+    See [rebop issue #26](https://github.com/Armavica/rebop/issues/26).
 
     Returns:
-        The result of the simulation, which is the same as the result of :func:`rebop_crn_counts`.
+        The result of the simulation, which is the same as the result of [`rebop_crn_counts`](gpac.crn.rebop_crn_counts).
     """
     if simulation_package == 'rebop':
         rb_result = rebop_crn_counts(
@@ -600,7 +620,7 @@ def plot_gillespie(
 
 def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     """
-    Create a list of :any:`Specie` (Single species :any:`Expression`'s),
+    Create a list of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s),
     or a single one.
 
     args:
@@ -610,17 +630,15 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
 
     Examples:
 
-    .. code-block:: python
-
+    ```py
         w, x, y, z = species('W X Y Z')
         rxn = x + y >> z + w
+    ```
 
-
-    .. code-block:: python
-
+    ```py
         w, x, y, z = species(['W', 'X', 'Y', 'Z'])
         rxn = x + y >> z + w
-
+    ```
     """
     species_list: list[str]
     if isinstance(sp, str):
@@ -643,10 +661,10 @@ Output: TypeAlias = SpeciePair | dict[SpeciePair, float]
 def replace_reversible_rxns(rxns: Iterable[Reaction]) -> list[Reaction]:
     """
     Args:
-        rxns: list of :any:`Reaction`'s
+        rxns: list of [`Reaction`](gpac.crn.Reaction)'s
 
     Returns:
-        list of :any:`Reaction`'s, where every reversible reaction in `rxns` has been replaced by
+        list of [`Reaction`](gpac.crn.Reaction)'s, where every reversible reaction in `rxns` has been replaced by
         two irreversible reactions, and all others have been left as they are
     """
     new_rxns: list[Reaction] = []
@@ -665,7 +683,24 @@ def replace_reversible_rxns(rxns: Iterable[Reaction]) -> list[Reaction]:
 
 @dataclass(frozen=True)
 class Specie:
+    """
+    Represents species in a chemical reaction network. In general these are not created directly,
+    but rather via the [`species`](gpac.crn.species) function, 
+    which creates a tuple of [`Specie`](gpac.crn.Specie) objects.
+    """
+    
     name: str
+    """
+    Name of the species. This is used in two ways: when plotting, this name is used 
+    in the legend, and when using the `dependent_symbols` parameter in the functions
+    [`plot_crn`](gpac.crn.plot_crn) and [`plot_gillespie`](gpac.crn.plot_gillespie), 
+    this name is used to identify the species, since dependent symbols need to be specified
+    as sympy.Symbol objects defined as functions of other sympy.Symbol objects.
+    The way to connect that to the species is to make two objects, one Specie and one Symbol,
+    with the same name. See the 
+    [example notebook](https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb)
+    for an example of how this is done.
+    """
 
     def __add__(self, other: Specie | Expression) -> Expression:
         if isinstance(other, Expression):
@@ -719,9 +754,9 @@ class Expression:
     """
     Class used for very basic symbolic manipulation of left/right hand
     side of stoichiometric equations. Not very user friendly; users should
-    just use the :func:`species` function and manipulate :any:`Specie` objects
-    with operators ``>>``, ``|``, ``+``, and ``*`` to create reactions
-    (see :any:`Reaction` for examples).
+    just use the [`species`](gpac.crn.species) function and manipulate [`Specie`](gpac.crn.Specie) objects
+    with operators `>>`, `|`, `+`, and `*` to create reactions
+    (see [`Reaction`](gpac.crn.Reaction) for examples).
     """
 
     species: list[Specie]
@@ -735,17 +770,17 @@ class Expression:
             idx: index of species to return
 
         Returns:
-            :any:`Specie` at index `idx` in this :any:`Expression`
+            [`Specie`](gpac.crn.Specie) at index `idx` in this [`Expression`](gpac.crn.Expression)
         """
         return self.species[idx]
 
     def __add__(self, other: Expression | Specie) -> Expression:
         """
         Args:
-            other: :any:`Expression` or :any:`Specie` to add to this one
+            other: [`Expression`](gpac.crn.Expression) or [`Specie`](gpac.crn.Specie) to add to this one
 
         Returns:
-            :any:`Expression` representing the union of this :any:`Expression` and `other`
+            [`Expression`](gpac.crn.Expression) representing the union of this [`Expression`](gpac.crn.Expression) and `other`
         """
         if isinstance(other, Expression):
             species_copy = list(self.species)
@@ -761,10 +796,10 @@ class Expression:
     def __rmul__(self, coeff: int) -> Expression:
         """
         Args:
-            coeff: coefficient to multiply this :any:`Expression` by
+            coeff: coefficient to multiply this [`Expression`](gpac.crn.Expression) by
 
         Returns:
-            :any:`Expression` representing this :any:`Expression` multiplied by `coeff`
+            [`Expression`](gpac.crn.Expression) representing this [`Expression`](gpac.crn.Expression) multiplied by `coeff`
         """
         if isinstance(coeff, int):
             species_copy = []
@@ -810,15 +845,13 @@ class Expression:
 
 
 empty = Expression([])
-"""
+r"""
 Used for chemical reactions with empty reactant or product lists, e.g., to implement the exponential
-decay reaction :math:`X \\to \\emptyset`:
-
-.. code-block:: python
-    
-    x = species('X')
-    rxn = x >> empty
-
+decay reaction $X \to \emptyset$:
+```py
+x = species('X')
+rxn = x >> empty
+```
 """
 
 avogadro = 6.02214076e23
@@ -840,13 +873,13 @@ def concentration_to_count(concentration: float, volume: float) -> int:
 @dataclass
 class Reaction:
     """
-    Representation of a stoichiometric reaction using a pair of :any:`Expression`'s,
+    Representation of a stoichiometric reaction using a pair of [`Expression`](gpac.crn.Expression)'s,
     one for the reactants and one for the products.
 
-    Reactions are constructed by creating objects of type :any:`Specie` and using the operators
+    Reactions are constructed by creating objects of type [`Specie`](gpac.crn.Specie) and using the operators
     ``>>`` (for irreversible reactions) and ``|`` (for reversible reactions), as well as the ``+`` and
     ``*`` operators to specify the stoichiometric coefficients of the reactants and products,
-    and optionally the methods :meth:`Reaction.k` and :meth:`Reaction.r` to specify forward and reverse
+    and optionally the methods [`Reaction.k`](gpac.crn.Reaction.k) and [`Reaction.r`](gpac.crn.Reaction.r) to specify forward and reverse
     rate constants.
 
     For example, the following code creates a reaction that represents the irreversible reaction
@@ -875,7 +908,7 @@ class Reaction:
             (c >> d).k(5.2),
         ]
 
-    Also supported are inhibitors, which can be added to reactions using the method :meth:`Reaction.i`:
+    Also supported are inhibitors, which can be added to reactions using the method [`Reaction.i`](gpac.crn.Reaction.i):
 
     .. code-block:: python
 
@@ -898,7 +931,8 @@ class Reaction:
     """Rate constant of forward reaction."""
 
     rate_constant_reverse: float = 1.0
-    """Rate constant of reverse reaction (only used if :py:data:`Reaction.reversible` is true)."""
+    """Rate constant of reverse reaction 
+    (only used if [`Reaction.reversible`](gpac.crn.Reaction.reversible) is true)."""
 
     reversible: bool = False
     """Whether reaction is reversible, i.e. `products` :math:`\\to` `reactants` is a reaction also."""
@@ -913,14 +947,14 @@ class Reaction:
                  reversible: bool = False) -> None:
         """
         In general this constructor should not be used directly; instead, use the operators ``>>``,
-        ``|``, ``+``, and ``*`` to construct reactions. (See description of :any:`Reaction` for
+        ``|``, ``+``, and ``*`` to construct reactions. (See description of [`Reaction`](gpac.crn.Reaction) for
         examples.)
 
         Args:
             reactants: left side of species in the reaction
             products: right side of species in the reaction
             k: Rate constant of forward reaction
-            r: Rate constant of reverse reaction (only used if :py:data:`Reaction.reversible` is true
+            r: Rate constant of reverse reaction (only used if [`Reaction.reversible`](gpac.crn.Reaction.reversible) is true
             reversible: Whether reaction is reversible
         """
         if not (isinstance(reactants, Specie) or isinstance(reactants, Expression)):
@@ -958,7 +992,7 @@ class Reaction:
 
     def i(self, inhibitor: Specie, constant: float = 1.0) -> Reaction:
         """
-        alias for :meth:`Reaction.with_inhibitor`
+        alias for [`Reaction.with_inhibitor`](gpac.crn.Reaction.with_inhibitor)
         """
         return self.with_inhibitor(inhibitor, constant)
 
@@ -967,14 +1001,14 @@ class Reaction:
 
         Args:
             specie:
-                A :any:`Specie` that may or may not appear in this :any:`Reaction`.
+                A [`Specie`](gpac.crn.Specie) that may or may not appear in this [`Reaction`](gpac.crn.Reaction).
 
             reverse:
                 Whether to interpret this reaction in reverse, i.e., treat products as reactants
                 and vice versa. Raises exception if the reaction is not reversible.
 
         Returns:
-            sympy expression for the ODE term for the given :any:`Specie`.
+            sympy expression for the ODE term for the given [`Specie`](gpac.crn.Specie).
             For example, if the reaction is :math:`A+B \\to 2C`,
             then the ODE for :math:`A` is :math:`-k \\cdot A \\cdot B`,
             the ODE for B is :math:`-k \\cdot A \\cdot B`,
@@ -1169,7 +1203,7 @@ class Reaction:
 
     def k(self, coeff: float) -> Reaction:
         """
-        Same as :meth:`Reaction.f`.
+        Same as [`Reaction.f`](gpac.crn.Reaction.f).
 
         args:
             coeff: float

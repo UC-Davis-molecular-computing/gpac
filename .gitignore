@@ -17,3 +17,4 @@ dist/
 .mypy_cache/
 gpac-*
 .virtual_documents/notebook.ipynb
+site/
