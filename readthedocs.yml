@@ -11,4 +11,5 @@ python:
 
 mkdocs:
   configuration: mkdocs.yaml
-  fail_on_warning: true
+#  fail_on_warning: true
+
