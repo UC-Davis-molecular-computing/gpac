@@ -6,8 +6,8 @@ theme:
 #  collapse_navigation: false  # Show all sections, not just the current page
 #  sticky_navigation: true  # Makes the sidebar scroll with the pages
 
-#extra_css:
-#  - style.css
+extra_css:
+  - style.css
 
 # Add watch directive to monitor Python source files
 watch:
@@ -22,6 +22,8 @@ plugins:
       handlers:
         python:
           options:
+            rendering:
+              line_length: 100
             members_order: source
             signature_crossrefs: true
             show_if_no_docstring: false
@@ -30,8 +32,25 @@ plugins:
             docstring_section_style: table
             show_symbol_type_heading: true
             docstring_style: numpy
-            line_length: 100
             show_source: true
+
+#plugins:
+#  - search
+#  - mkdocstrings:
+#      default_handler: python
+#      handlers:
+#        python:
+#          options:
+#            members_order: source
+#            signature_crossrefs: true
+#            show_if_no_docstring: false
+#            separate_signature: true
+#            show_signature_annotations: true
+#            docstring_section_style: table
+#            show_symbol_type_heading: true
+#            docstring_style: numpy
+#            line_length: 100
+#            show_source: true
 
 #plugins:
 #  - search
