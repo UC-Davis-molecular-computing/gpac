@@ -216,8 +216,10 @@ def integrate_odes(
         For solver-specific parameters,
         see [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 
-    Returns:
-        solution to the ODEs, same as object returned by 
+    Returns
+    -------
+    :
+        solution to the ODEs, same as object returned by
         [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
     """
     if t_eval is not None:
@@ -352,38 +354,41 @@ def _solve_ivp_with_resets(
     Solve an initial value problem with parameter resets at specific times.
     Similar to scipy's solve_ivp but allows resetting variable values at specific times.
 
-    Args:
-        resets:
-            Dictionary mapping time points to dictionaries of variable resets
-            Each inner dict maps symbols to new values
-        symbol_to_idx:
-            Dictionary mapping symbols to their indices in the y0 array
-        fun:
-            Right-hand side of the system, same as in solve_ivp
-        t_span:
-            Interval of integration (t0, tf)
-        y0: array_like, shape (n,)
-            Initial state
-        t_eval:
-            Times at which to store the computed solution, must be sorted and lie within t_span
-        dense_output: bool
-            Whether to compute a continuous solution
-        events:
-            Events to track
-        vectorized:
-            Whether fun is implemented in a vectorized fashion
-        args:
-            Additional arguments to pass to fun
-        **options:
-            Additional options to pass to the solver
+    Parameters
+    ----------
+    resets:
+        Dictionary mapping time points to dictionaries of variable resets
+        Each inner dict maps symbols to new values
+    symbol_to_idx:
+        Dictionary mapping symbols to their indices in the y0 array
+    fun:
+        Right-hand side of the system, same as in solve_ivp
+    t_span:
+        Interval of integration (t0, tf)
+    y0: array_like, shape (n,)
+        Initial state
+    t_eval:
+        Times at which to store the computed solution, must be sorted and lie within t_span
+    dense_output: bool
+        Whether to compute a continuous solution
+    events:
+        Events to track
+    vectorized:
+        Whether fun is implemented in a vectorized fashion
+    args:
+        Additional arguments to pass to fun
+    **options:
+        Additional options to pass to the solver
 
-    Returns:
-        sol : OdeResult
-            Solution with combined results and additional attributes:
-            - sol.reset_times: List of times when resets were applied
-            - sol.reset_indices: List of indices in sol.t corresponding to reset points
+    Returns
+    -------
+    :
+    Solution with combined results and additional attributes:
+    - sol.reset_times: List of times when resets were applied
+    - sol.reset_indices: List of indices in sol.t corresponding to reset points
 
-    Raises:
+    Raises
+    ------
         ValueError
             If resets is empty or if any reset time is outside the integration interval t_span
     """
@@ -643,10 +648,12 @@ def plot(
         However, note that using such arguments here will cause `solve_ivp` to print a warning
         that it does not recognize the keyword argument.
 
-    Returns:
+    Returns
+    -------
+    :
         Typically None, but if `return_ode_result` is True, returns the
-        solution to the ODEs, same as object returned by `solve_ivp` in scipy.integrate
-        https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+        solution to the ODEs, same as object returned by 
+        [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
     """
     dependent_symbols_expressions = tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
 

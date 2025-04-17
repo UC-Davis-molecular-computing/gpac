@@ -135,10 +135,11 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     Parameters
     ----------
     rxns: list of [`Reaction`'s](gpac.crn.Reaction) comprising the chemical reaction network.
-            See documentation for [`Reaction`'s](gpac.crn.Reaction) for details on how to specify reactions.
+          See documentation for [`Reaction`'s](gpac.crn.Reaction) for details on how to specify reactions.
 
     Returns
     -------
+    :
         Dictionary mapping each species (represented as a sympy Symbol object, rather than a [`Specie`](gpac.crn.Specie)
         object) to its corresponding ODE (represented as a sympy Expression).
         This object can be given as the parameter `odes` to the functions 
@@ -209,6 +210,12 @@ def integrate_crn_odes(
         dict mapping each species to its initial concentration.
         Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
         keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
+
+    Returns
+    -------
+    :
+        The result of the integration.
+        See [`integrate_odes`](gpac.ode.integrate_odes) for details about this parameter.
     """
     odes = crn_to_odes(rxns)
     initial_values = _normalize_crn_initial_values(initial_values)
@@ -253,14 +260,14 @@ def plot_crn(
         warn_change_dpi: bool = False,
         **options,
 ) -> OdeResult:
-    """
+    r"""
     Plot the ODEs derived from to the given set of chemical reactions.
     This calls [`plot`][gpac.ode.plot] with the ODEs derived from the given reactions via
     [`crn_to_odes`][gpac.crn.crn_to_odes].
 
     See [`integrate_crn_odes`][gpac.crn.integrate_crn_odes], 
     [`integrate_odes`][gpac.ode.integrate_odes], and 
-    [`plot`][gpac.ode.plot] for description of parameters.
+    [`plot`][gpac.ode.plot] for description of parameters shared with those functions.
     As with [`plot`][gpac.ode.plot], the keyword arguments in `options` are passed to
     [`matplotlib.pyplot.plot`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html),
     as well as to
@@ -275,7 +282,7 @@ def plot_crn(
     should be represented by a sympy symbol with the same name as the corresponding 
     [`Specie`][gpac.crn.Specie] object:
 
-    ```python
+    ```py
     Xp,Xm,Yp,Ym = gpac.species('Xp Xm Yp Ym')
     x,y,xp,xm,yp,ym = sympy.symbols('x y Xp Xm Yp Ym')
 
@@ -311,6 +318,7 @@ def plot_crn(
 
     Returns
     -------
+    :
         None, or the result of the integration, which is the same as the result of [`integrate_odes`](gpac.ode.integrate_odes)
         if `return_ode_result` is True. See [`integrate_odes`](gpac.ode.integrate_odes) for details about this parameter.
     """
@@ -359,25 +367,29 @@ def gillespy2_crn_counts(
         solver_class: type = gp.NumPySSASolver,
         **options,
 ) -> gp.Results:
-    """
+    r"""
     Run the reactions using the GillesPy2 package for discrete simulation using the Gillespie algorithm.
 
     Any parameters not described here are passed along to the function [gillespy2.GillesPySolver.run](
     https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run)
 
 
-    Args:
-        rxns:
-            list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
-            See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
+    Parameters
+    ----------
+    rxns:
+        list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
+        See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
-        initial_counts:
-            dict mapping each species to its initial integer count.
-            Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
-            keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
+    initial_counts:
+        dict mapping each species to its initial integer count.
+        Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+        keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
 
-    Returns:
-        Same Result object returned by gillespy2.GillesPySolver.run.
+    Returns
+    -------
+    :
+        Same Result object returned by [gillespy2.GillesPySolver.run](
+        https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run)
     """
     if 'solver' in options:
         raise ValueError('solver should not be passed in options; instead, pass the solver_class parameter')
@@ -446,34 +458,37 @@ def rebop_crn_counts(
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         seed: int | None = None,
 ) -> xarray.Dataset:
-    """
+    r"""
     Run the reactions using the [rebop package](https://pypi.org/project/rebop/)
     for discrete simulation using the Gillespie algorithm.
 
 
-    Args:
-        rxns:
-            list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
-            See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
+    Parameters
+    ----------
+    rxns:
+        list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
+        See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
-        initial_counts:
-            dict mapping each species to its initial integer count.
-            Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
-            keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
+    initial_counts:
+        dict mapping each species to its initial integer count.
+        Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+        keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
 
-        nb_steps:
-            Number of evenly-spaced time points at which to record the counts between 0 and `tmax`.
-            If not specified, all reaction events and their exact times are recorded,
-            instead of fixed, evenly-spaced time points.
+    nb_steps:
+        Number of evenly-spaced time points at which to record the counts between 0 and `tmax`.
+        If not specified, all reaction events and their exact times are recorded,
+        instead of fixed, evenly-spaced time points.
 
-        tmax:
-            the maximum time for the simulation.
+    tmax:
+        the maximum time for the simulation.
 
-        vol:
-            the volume of the system. If not specified, the volume is assumed to be the sum of the initial counts.
-            reactions with k total reactants have their rate divided by vol^(k-1) to account for the volume.
+    vol:
+        the volume of the system. If not specified, the volume is assumed to be the sum of the initial counts.
+        reactions with k total reactants have their rate divided by vol^(k-1) to account for the volume.
 
-    Returns:
+    Returns
+    -------
+    :
         Same Result object returned by rebop.Gillespie.run. (an xarray.Dataset object)
         It can be indexed by species name to get the counts,
         and by the key `"time"` to get the times at which the counts were recorded.
@@ -524,8 +539,7 @@ def plot_gillespie(
         seed: int | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         figure_size: tuple[float, float] = (10, 3),
-        symbols_to_plot:
-        Iterable[sympy.Symbol | str] |
+        symbols_to_plot: Iterable[sympy.Symbol | str] |
         Iterable[Iterable[sympy.Symbol | str]] |
         str |
         re.Pattern |
@@ -539,7 +553,7 @@ def plot_gillespie(
         simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
         **options: dict[str, object],
 ) -> xarray.Dataset:
-    """
+    r"""
     Similar to [`plot_crn`](gpac.crn.plot_crn), but uses the [rebop package](https://pypi.org/project/rebop/)
     for discrete simulation using the Gillespie algorithm instead of continuous ODEs.
 
@@ -548,30 +562,34 @@ def plot_gillespie(
     Arguments `tmax`, `nb_steps`, and `seed` are passed to [`rebop_crn_counts`](gpac.crn.rebop_crn_counts).
     Any custom keyword arguments (specified in `**options`) to the function matplotlib.pyplot.plot.
 
-    Args:
-        rxns: the reactions of the CRN
-        
-        initial_counts: initial (integer) counts of each species
-        
-        vol: volume of the system (reactions with k ractants have their rate divided by vol^(k-1))
-        
-        tmax: the maximum time for which to run the simulation
-        
-        nb_steps: number of evenly-spaced time points at which to record the counts between 0 and `tmax`;
-            if not specified (or set to 0, the default value), all reaction events and their exact times are recorded
-        
-        return_simulation_result: whether to return the simulation result; if True, the result of the simulation
-            is returned, but the default behavior is not to do this, so that if the last line of a notebook cell
-            is a call to `plot_gillespie`, the result is not printed to the output, only the plot is shown.
-        
-        seed: seed for random number generator used by rebop for stochastic simulation. Note that currently,
-            the value `nb_steps` actually changes the stochastic sampling in the simulation, i.e., if you double the
-            value of `nb_steps`, but keep the value of `seed` the same, you would think that every other sampled
-            configuration would be the same as when `nb_steps` was half as large, but this is not the case.
-    See [rebop issue #26](https://github.com/Armavica/rebop/issues/26).
+    Parameters
+    ----------
+    rxns: the reactions of the CRN
 
-    Returns:
-        The result of the simulation, which is the same as the result of [`rebop_crn_counts`](gpac.crn.rebop_crn_counts).
+    initial_counts: initial (integer) counts of each species
+
+    vol: volume of the system (reactions with k ractants have their rate divided by vol^(k-1))
+
+    tmax: the maximum time for which to run the simulation
+
+    nb_steps: number of evenly-spaced time points at which to record the counts between 0 and `tmax`;
+        if not specified (or set to 0, the default value), all reaction events and their exact times are recorded
+
+    return_simulation_result: whether to return the simulation result; if True, the result of the simulation
+        is returned, but the default behavior is not to do this, so that if the last line of a notebook cell
+        is a call to `plot_gillespie`, the result is not printed to the output, only the plot is shown.
+
+    seed: seed for random number generator used by rebop for stochastic simulation. Note that currently,
+        the value `nb_steps` actually changes the stochastic sampling in the simulation, i.e., if you double the
+        value of `nb_steps`, but keep the value of `seed` the same, you would think that every other sampled
+        configuration would be the same as when `nb_steps` was half as large, but this is not the case.
+        See [rebop issue #26](https://github.com/Armavica/rebop/issues/26).
+
+    Returns
+    -------
+    :
+        The result of the simulation, which is the same as the result of
+        [`rebop_crn_counts`](gpac.crn.rebop_crn_counts).
     """
     if simulation_package == 'rebop':
         rb_result = rebop_crn_counts(
@@ -619,26 +637,33 @@ def plot_gillespie(
 
 
 def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
-    """
-    Create a list of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s),
-    or a single one.
+    r"""
+    Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s).
 
-    args:
-        sp:
-            A string or Iterable of strings representing the names of the species being created.
-            If a single string, species names are interpreted as space-separated.
-
-    Examples:
+    Examples
+    --------
 
     ```py
-        w, x, y, z = species('W X Y Z')
-        rxn = x + y >> z + w
+    w, x, y, z = species('W X Y Z')
+    rxn = x + y >> z + w
     ```
 
     ```py
-        w, x, y, z = species(['W', 'X', 'Y', 'Z'])
-        rxn = x + y >> z + w
+    w, x, y, z = species(['W', 'X', 'Y', 'Z'])
+    rxn = x + y >> z + w
     ```
+
+    Parameters
+    ----------
+    sp:
+        A string or Iterable of strings representing the names of the species being created.
+        If a single string, species names are interpreted as space-separated.
+
+    Returns
+    -------
+    :
+        tuple of [`Specie`](gpac.crn.Specie) objects. Note that it is a tuple even if there is only one,
+        so it is necessary to write `#!py x, = species('X')` in this case to unpack the length-1 tuple.
     """
     species_list: list[str]
     if isinstance(sp, str):
@@ -659,11 +684,15 @@ Output: TypeAlias = SpeciePair | dict[SpeciePair, float]
 
 
 def replace_reversible_rxns(rxns: Iterable[Reaction]) -> list[Reaction]:
-    """
-    Args:
-        rxns: list of [`Reaction`](gpac.crn.Reaction)'s
+    r"""
+    Parameters
+    ----------
+    rxns:
+        list of [`Reaction`](gpac.crn.Reaction)'s
 
-    Returns:
+    Returns
+    -------
+    :
         list of [`Reaction`](gpac.crn.Reaction)'s, where every reversible reaction in `rxns` has been replaced by
         two irreversible reactions, and all others have been left as they are
     """
@@ -766,20 +795,28 @@ class Expression:
 
     def __getitem__(self, idx: int) -> Specie:
         """
-        Args:
-            idx: index of species to return
+        Parameters
+        ----------
+        idx:
+            index of species to return
 
-        Returns:
+        Returns
+        -------
+        :
             [`Specie`](gpac.crn.Specie) at index `idx` in this [`Expression`](gpac.crn.Expression)
         """
         return self.species[idx]
 
     def __add__(self, other: Expression | Specie) -> Expression:
         """
-        Args:
-            other: [`Expression`](gpac.crn.Expression) or [`Specie`](gpac.crn.Specie) to add to this one
+        Parameters
+        ----------
+        other:
+            [`Expression`](gpac.crn.Expression) or [`Specie`](gpac.crn.Specie) to add to this one
 
-        Returns:
+        Returns
+        -------
+        :
             [`Expression`](gpac.crn.Expression) representing the union of this [`Expression`](gpac.crn.Expression) and `other`
         """
         if isinstance(other, Expression):
@@ -795,11 +832,16 @@ class Expression:
 
     def __rmul__(self, coeff: int) -> Expression:
         """
-        Args:
-            coeff: coefficient to multiply this [`Expression`](gpac.crn.Expression) by
+        Parameters
+        ----------
+        coeff:
+            coefficient to multiply this [`Expression`](gpac.crn.Expression) by
 
-        Returns:
-            [`Expression`](gpac.crn.Expression) representing this [`Expression`](gpac.crn.Expression) multiplied by `coeff`
+        Returns
+        -------
+        :
+            [`Expression`](gpac.crn.Expression) representing this [`Expression`](gpac.crn.Expression)
+            multiplied by `coeff`
         """
         if isinstance(coeff, int):
             species_copy = []
@@ -859,12 +901,17 @@ avogadro = 6.02214076e23
 
 def concentration_to_count(concentration: float, volume: float) -> int:
     """
+    Parameters
+    ----------
+    concentration:
+        units of M (molar) = moles / liter
 
-    Args:
-        concentration: units of M (molar) = moles / liter
-        volume: units of liter
+    volume:
+        units of liter
 
-    Returns:
+    Returns
+    -------
+    :
         count of molecule with `concentration` in `volume`
     """
     return round(avogadro * concentration * volume)
@@ -917,10 +964,10 @@ class Reaction:
     rxn = (a+b | 2*u).i(i, 100)
     ```
 
-    which represents the reaction :math:`A+B \\to 2U` with inhibitor :math:`I` and inhibitor constant 100.
+    which represents the reaction $A+B \to 2U$ with inhibitor $I$ and inhibitor constant 100.
     Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
-    reaction rate is to divide by :math:`1 + k \\cdot I`, where :math:`k` is the inhibitor constant.
-    So for the reaction defined above, its rate is :math:`k \\cdot [A] \\cdot [B] / (1 + 100 \\cdot [I])`.
+    reaction rate is to divide by $1 + k \cdot I$, where $k$ is the inhibitor constant.
+    So for the reaction defined above, its rate is $k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])$.
     """
 
     reactants: Expression
@@ -952,12 +999,19 @@ class Reaction:
         ``|``, ``+``, and ``*`` to construct reactions. (See description of [`Reaction`](gpac.crn.Reaction) for
         examples.)
 
-        Args:
-            reactants: left side of species in the reaction
-            products: right side of species in the reaction
-            k: Rate constant of forward reaction
-            r: Rate constant of reverse reaction (only used if [`Reaction.reversible`](gpac.crn.Reaction.reversible) is true
-            reversible: Whether reaction is reversible
+
+        Parameters
+        ----------
+        reactants:
+            left side of species in the reaction
+        products:
+            right side of species in the reaction
+        k:
+            Rate constant of forward reaction
+        r:
+            Rate constant of reverse reaction (only used if [`Reaction.reversible`](gpac.crn.Reaction.reversible) is true
+        reversible:
+            Whether reaction is reversible
         """
         if not (isinstance(reactants, Specie) or isinstance(reactants, Expression)):
             raise ValueError(
@@ -984,9 +1038,12 @@ class Reaction:
 
     def with_inhibitor(self, inhibitor: Specie, constant: float = 1.0) -> Reaction:
         """
-        Args:
-            inhibitor: The inhibitor species
-            constant: The inhibitor constant
+        Parameters
+        ----------
+        inhibitor:
+            The inhibitor species
+        constant:
+            The inhibitor constant
         """
         self.inhibitors.append(inhibitor)
         self.inhibitor_constants.append(constant)
@@ -999,22 +1056,24 @@ class Reaction:
         return self.with_inhibitor(inhibitor, constant)
 
     def get_ode(self, specie: Specie, reverse: bool = False) -> sympy.Expr:
-        """
+        r"""
+        Parameters
+        ----------
+        specie:
+            A [`Specie`](gpac.crn.Specie) that may or may not appear in this [`Reaction`](gpac.crn.Reaction).
 
-        Args:
-            specie:
-                A [`Specie`](gpac.crn.Specie) that may or may not appear in this [`Reaction`](gpac.crn.Reaction).
+        reverse:
+            Whether to interpret this reaction in reverse, i.e., treat products as reactants
+            and vice versa. Raises exception if the reaction is not reversible.
 
-            reverse:
-                Whether to interpret this reaction in reverse, i.e., treat products as reactants
-                and vice versa. Raises exception if the reaction is not reversible.
-
-        Returns:
+        Returns
+        -------
+        :
             sympy expression for the ODE term for the given [`Specie`](gpac.crn.Specie).
-            For example, if the reaction is :math:`A+B \\to 2C`,
-            then the ODE for :math:`A` is :math:`-k \\cdot A \\cdot B`,
-            the ODE for B is :math:`-k \\cdot A \\cdot B`,
-            and the ODE for C is :math:`2 \\cdot k \\cdot A \\cdot B`.
+            For example, if the reaction is $A+B \to 2C$,
+            then the ODE for $A$ is $-k \cdot A \cdot B$,
+            the ODE for B is $-k \cdot A \cdot B$,
+            and the ODE for C is $2 \cdot k \cdot A \cdot B$.
         """
         if reverse and not self.reversible:
             raise ValueError(f'reaction {self} is not reversible, so `reverse` parameter must be False')
@@ -1077,56 +1136,87 @@ class Reaction:
 
     def is_unimolecular(self) -> bool:
         """
-        Returns: true if there is one reactant
+        Returns
+        -------
+        :
+            true if there is one reactant
         """
         return self.num_reactants() == 1
 
     def is_bimolecular(self) -> bool:
         """
-        Returns: true if there are two reactants
+        Returns
+        -------
+        :
+            true if there are two reactants
         """
         return self.num_reactants() == 2
 
     def symmetric(self) -> bool:
         """
-        Returns: true if there are two reactants that are the same species
+        Returns
+        -------
+        :
+            true if there are two reactants that are the same species
         """
         return self.num_reactants() == 2 and self.reactants.species[0] == self.reactants.species[1]
 
     def symmetric_products(self) -> bool:
         """
-        Returns: true if there are two products that are the same species
+        Returns
+        -------
+        :
+            true if there are two products that are the same species
         """
         return self.num_products() == 2 and self.products.species[0] == self.products.species[1]
 
     def num_reactants(self) -> int:
         """
-        Returns: number of reactants
+        Returns
+        -------
+        :
+            number of reactants
         """
         return len(self.reactants)
 
     def num_products(self) -> int:
         """
-        Returns: number of products
+        Returns
+        -------
+        :
+            number of products
         """
         return len(self.products)
 
     def num_inhibitors(self) -> int:
         """
-        Returns: number of inhibitors
+        Returns
+        -------
+        :
+            number of inhibitors
         """
         return len(self.inhibitors)
 
     def is_conservative(self) -> bool:
         """
-        Returns: true if number of reactants equals number of products
+        Returns
+        -------
+        :
+            true if number of reactants equals number of products
         """
         return self.num_reactants() == self.num_products()
 
     def reactant_if_unimolecular(self) -> Specie:
         """
-        Returns: unique reactant if there is only one
-        Raises: ValueError if there are multiple reactants
+        Returns
+        -------
+        :
+            unique reactant if there is only one
+
+        Raises
+        ------
+        ValueError
+            if there are multiple reactants
         """
         if self.is_unimolecular():
             return self.reactants.species[0]
@@ -1135,8 +1225,15 @@ class Reaction:
 
     def product_if_unique(self) -> Specie:
         """
-        Returns: unique product if there is only one
-        Raises: ValueError if there are multiple products
+        Returns
+        -------
+        :
+            unique product if there is only one
+
+        Raises
+        ------
+        ValueError
+            if there are multiple products
         """
         if self.num_products() == 1:
             return self.products.species[0]
@@ -1145,8 +1242,15 @@ class Reaction:
 
     def reactants_if_bimolecular(self) -> tuple[Specie, Specie]:
         """
-        Returns: pair of reactants if there are exactly two
-        Raises: ValueError if there are not exactly two reactants
+        Returns
+        -------
+        :
+            pair of reactants if there are exactly two
+
+        Raises
+        ------
+        ValueError
+            if there are not exactly two reactants
         """
         if self.is_bimolecular():
             return self.reactants.species[0], self.reactants.species[1]
@@ -1155,16 +1259,30 @@ class Reaction:
 
     def reactant_names_if_bimolecular(self) -> tuple[str, str]:
         """
-        Returns: pair of reactant names if there are exactly two
-        Raises: ValueError if there are not exactly two reactants
+        Returns
+        -------
+        :
+            pair of reactant names if there are exactly two
+
+        Raises
+        ------
+        ValueError
+            if there are not exactly two reactants
         """
         r1, r2 = self.reactants_if_bimolecular()
         return r1.name, r2.name
 
     def products_if_exactly_two(self) -> tuple[Specie, Specie]:
         """
-        Returns: pair of products if there are exactly two
-        Raises: ValueError if there are not exactly two products
+        Returns
+        -------
+        :
+            pair of products if there are exactly two
+
+        Raises
+        ------
+        ValueError
+            if there are not exactly two products
         """
         if self.num_products() == 2:
             return self.products.species[0], self.products.species[1]
@@ -1173,8 +1291,15 @@ class Reaction:
 
     def product_names_if_exactly_two(self) -> tuple[str, str]:
         """
-        Returns: pair of product names if there are exactly two
-        Raises: ValueError if there are not exactly two products
+        Returns
+        -------
+        :
+            pair of product names if there are exactly two
+
+        Raises
+        ------
+        ValueError
+            if there are not exactly two products
         """
         p1, p2 = self.products_if_exactly_two()
         return p1.name, p2.name
@@ -1207,9 +1332,10 @@ class Reaction:
         """
         Same as [`Reaction.f`](gpac.crn.Reaction.f).
 
-        args:
-            coeff: float
-                The new reaction coefficient
+        Parameters
+        ----------
+        coeff: float
+            The new reaction coefficient
         """
         self.rate_constant = coeff
         return self
@@ -1232,29 +1358,31 @@ class Reaction:
 
         Note that if this is a reversible reaction, this specifies the *forward* rate constant.
 
-        args:
-            coeff: float
-                The new (forward) reaction coefficient
+        Parameters
+        ----------
+        coeff: float
+            The new (forward) reaction coefficient
         """
         self.rate_constant = coeff
         return self
 
     def r(self, coeff: float) -> Reaction:
-        """
-        Changes the reverse reactionn reaction rate constant to `coeff` and returns `self`.
+        r"""
+        Changes the reverse reaction reaction rate constant to `coeff` and returns `self`.
 
         This is useful for including the rate constant during the construction
         of a reaction. For example, the following defines a reversible reaction
-        :math:`X + Y \\rightleftharpoons Z` with forward rate constant 2.5 and reverse rate constant 1.5.
+        $X + Y \rightleftharpoons Z$ with forward rate constant 2.5 and reverse rate constant 1.5.
 
-        .. code-block:: python
+        ```py
+        x, y, z = species("X Y Z")
+        rxn = (x + y | z).k(2.5).r(1.5)
+        ```
 
-            x, y, z = species("X Y Z")
-            rxn = (x + y | z).k(2.5).r(1.5)
-
-        args:
-            coeff: float
-                The new reverse reaction rate constant
+        Parameters
+        ----------
+        coeff: float
+            The new reverse reaction rate constant
         """
         if not self.reversible:
             raise ValueError('cannot set r on an irreversible reaction')
@@ -1263,7 +1391,10 @@ class Reaction:
 
     def get_species(self) -> tuple[Specie, ...]:
         """
-        Return: the set of species present in the reactants, products, and inhibitors, in the order.
+        Returns
+        -------
+        :
+            a tuple with the species present in the reactants, products, and inhibitors, in that order.
         """
         all_species = []
         all_species_set = set()
