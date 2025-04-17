@@ -1,12 +1,3 @@
-scipy
-sympy
-numpy
-matplotlib
-gillespy2
-rebop
-xarray
-sphinx_rtd_theme
-alabaster
 mkdocs>=1.6
 mkdocstrings>=0.29
 mkdocstrings-python>=1.16
