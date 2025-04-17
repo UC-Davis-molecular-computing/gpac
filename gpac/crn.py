@@ -38,17 +38,17 @@ See functions [crn_to_odes][gpac.crn.crn_to_odes] to convert reactions to ODEs (
 [plot_crn][gpac.crn.plot_crn] to plot the trajectories. The documentation for [crn_to_odes][gpac.crn.crn_to_odes]
 explains how reactions are converted into ODEs by each of these functions.
 
-Also supported are inhibitors, which can be added to reactions using the method [Reaction.i][gpac.crn.Reaction.i]:
+Also supported are inhibitors, which can be added to reactions using the method [`Reaction.i`](gpac.crn.Reaction.i):
 
 ```py
 a, b, u, i = species('A B U I')
 rxn = (a+b | 2*u).i(i, 100)
 ```
 
-which represents the reaction $A+B \to 2U$ with inhibitor $I$ and inhibitor constant $100$.
+which represents the reaction $A+B \to 2U$ with inhibitor $I$ and inhibitor constant 100.
 Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
-reaction rate is to divide by $1 + k \cdot I$, where $k$ is the inhibitor constant.
-So for the reaction defined above, its rate is $k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])$.
+reaction rate is to divide by $1 + i \cdot I$, where $i$ is the inhibitor constant.
+So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [I])$.
 """
 
 from __future__ import annotations  # needed for forward references in type hints
@@ -966,8 +966,8 @@ class Reaction:
 
     which represents the reaction $A+B \to 2U$ with inhibitor $I$ and inhibitor constant 100.
     Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
-    reaction rate is to divide by $1 + k \cdot I$, where $k$ is the inhibitor constant.
-    So for the reaction defined above, its rate is $k \cdot [A] \cdot [B] / (1 + 100 \cdot [I])$.
+    reaction rate is to divide by $1 + i \cdot I$, where $i$ is the inhibitor constant.
+    So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [I])$.
     """
 
     reactants: Expression
