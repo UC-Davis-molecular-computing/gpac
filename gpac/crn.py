@@ -872,48 +872,50 @@ def concentration_to_count(concentration: float, volume: float) -> int:
 
 @dataclass
 class Reaction:
-    """
+    r"""
     Representation of a stoichiometric reaction using a pair of [`Expression`](gpac.crn.Expression)'s,
     one for the reactants and one for the products.
 
     Reactions are constructed by creating objects of type [`Specie`](gpac.crn.Specie) and using the operators
-    ``>>`` (for irreversible reactions) and ``|`` (for reversible reactions), as well as the ``+`` and
-    ``*`` operators to specify the stoichiometric coefficients of the reactants and products,
-    and optionally the methods [`Reaction.k`](gpac.crn.Reaction.k) and [`Reaction.r`](gpac.crn.Reaction.r) to specify forward and reverse
-    rate constants.
+    `>>` (for irreversible reactions) and `|` (for reversible reactions), as well as the `+` and
+    `*` operators to specify the stoichiometric coefficients of the reactants and products,
+    and optionally the methods [`Reaction.k`](gpac.crn.Reaction.k) and [`Reaction.r`](gpac.crn.Reaction.r) 
+    to specify forward and reverse rate constants.
 
     For example, the following code creates a reaction that represents the irreversible reaction
-    :math:`A + B \\rightarrow C` (with implicit rate constant 1.0):
+    $A + B \rightarrow C$ (with implicit rate constant 1.0):
 
-    .. code-block:: python
-
-        a,b,c = species('A B C')
-        rxn = a+b >> c
+    ```py
+    a,b,c = species('A B C')
+    rxn = a+b >> c
+    ```
 
     To create reactions
 
-    .. math::
-
-        A+B &\\underset{4.1}{\\stackrel{0.6}{\\rightleftharpoons}} 2C
-
-        C   &\\xrightarrow{5.2} D
+    $$
+    \begin{align*}
+        A+B &\underset{4.1}{\stackrel{0.6}{\rightleftharpoons}} 2C
+    \\
+        C   &\xrightarrow{5.2} D
+    \end{align*}
+    $$
 
     use the following code:
 
-    .. code-block:: python
-
-        a,b,c,d = gpac.species('A B C D')
-        rxns = [
-            (a+b | 2*c).k(0.6).r(4.1),
-            (c >> d).k(5.2),
-        ]
+    ```py
+    a,b,c,d = gpac.species('A B C D')
+    rxns = [
+        (a+b | 2*c).k(0.6).r(4.1),
+        (c >> d).k(5.2),
+    ]
+    ```
 
     Also supported are inhibitors, which can be added to reactions using the method [`Reaction.i`](gpac.crn.Reaction.i):
 
-    .. code-block:: python
-
-        a, b, u, i = species('A B U I')
-        rxn = (a+b | 2*u).i(i, 100)
+    ```py
+    a, b, u, i = species('A B U I')
+    rxn = (a+b | 2*u).i(i, 100)
+    ```
 
     which represents the reaction :math:`A+B \\to 2U` with inhibitor :math:`I` and inhibitor constant 100.
     Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
@@ -1219,14 +1221,14 @@ class Reaction:
         This is useful for including the rate constant during the construction
         of a reaction. For example
 
-        .. code-block:: python
-
-            x, y, z = species("X Y Z")
-            rxns = [
-                (x + y >> z).f(2.5),
-                (z >> x).f(1.5),
-                (z >> y).f(0.5)),
-            ]
+        ```py
+        x, y, z = species("X Y Z")
+        rxns = [
+            (x + y >> z).f(2.5),
+            (z >> x).f(1.5),
+            (z >> y).f(0.5)),
+        ]
+        ```
 
         Note that if this is a reversible reaction, this specifies the *forward* rate constant.
 
