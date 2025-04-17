@@ -1,48 +1,48 @@
 site_name: gpac
 theme: 
   name: readthedocs
-  include_sidebar: true
-  navigation_depth: 4  # Controls how deep the TOC goes
-  collapse_navigation: false  # Show all sections, not just the current page
-  sticky_navigation: true  # Makes the sidebar scroll with the pages
-
-extra_css:
-  - style.css
-
-# Add watch directive to monitor Python source files
-watch:
-  - docs
-  - mkdocs.yaml
-  - gpac
-
-plugins:
-  - search
-  - autorefs
-  - mkdocstrings:
-      handlers:
-        python:
-          # Use the extended handler instead of the default one
-          handler: python_xref
-          # Regular mkdocstrings options go here
-          options:
-            show_source: true
-            show_root_heading: true
+#  include_sidebar: true
+#  navigation_depth: 4  # Controls how deep the TOC goes
+#  collapse_navigation: false  # Show all sections, not just the current page
+#  sticky_navigation: true  # Makes the sidebar scroll with the pages
+#
+#extra_css:
+#  - style.css
+#
+## Add watch directive to monitor Python source files
+#watch:
+#  - docs
+#  - mkdocs.yaml
+#  - gpac
+#
+#plugins:
+#  - search
+#  - autorefs
+#  - mkdocstrings:
+#      handlers:
+#        python:
+#          # Use the extended handler instead of the default one
+#          handler: python_xref
+#          # Regular mkdocstrings options go here
+#          options:
+#            show_source: true
+#            show_root_heading: true
             
 nav:
   - Home: index.md
 
-markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
-      pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.arithmatex:
-      generic: true
-
-# This is needed to render Latex even though we included arithmatex above.
-extra_javascript:
-  - mathjax.js
-  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+#markdown_extensions:
+#  - pymdownx.highlight:
+#      anchor_linenums: true
+#      line_spans: __span
+#      pygments_lang_class: true
+#  - pymdownx.inlinehilite
+#  - pymdownx.snippets
+#  - pymdownx.superfences
+#  - pymdownx.arithmatex:
+#      generic: true
+#
+## This is needed to render Latex even though we included arithmatex above.
+#extra_javascript:
+#  - mathjax.js
+#  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
