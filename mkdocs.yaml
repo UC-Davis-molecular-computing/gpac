@@ -1,6 +1,6 @@
 site_name: gpac
 theme:
-  name: material
+  name: readthedocs
 #  include_sidebar: true
 #  navigation_depth: 1  # Controls how deep the TOC goes
 #  collapse_navigation: false  # Show all sections, not just the current page
