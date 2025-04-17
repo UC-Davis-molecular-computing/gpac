@@ -7,3 +7,7 @@ rebop
 xarray
 sphinx_rtd_theme
 alabaster
+mkdocs
+mkdocstrings[python]
+mkdocs-material
+pymdown-extensions
