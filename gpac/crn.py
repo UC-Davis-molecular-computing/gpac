@@ -250,6 +250,7 @@ def plot_crn(
         Iterable[re.Pattern]
         | None = None,
         show: bool = False,
+        legend: dict[sympy.Symbol | str, str] | None = None,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
         events: Callable | Iterable[Callable] | None = None,
@@ -333,6 +334,7 @@ def plot_crn(
         dependent_symbols=dependent_symbols,
         figure_size=figure_size,
         symbols_to_plot=symbols_to_plot,
+        legend=legend,
         show=show,
         method=method,
         dense_output=dense_output,
@@ -545,6 +547,7 @@ def plot_gillespie(
         re.Pattern |
         Iterable[re.Pattern] |
         None = None,
+        legend: dict[sympy.Symbol | str, str] | None = None,
         show: bool = False,
         return_simulation_result: bool = False,
         loc: str | tuple[float, float] = 'best',
@@ -628,6 +631,7 @@ def plot_gillespie(
         dependent_symbols=dependent_symbols,
         figure_size=figure_size,
         symbols_to_plot=symbols_to_plot,
+        legend=legend,
         show=show,
         loc=loc,
         warn_change_dpi=warn_change_dpi,

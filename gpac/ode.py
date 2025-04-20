@@ -567,6 +567,7 @@ def plot(
         re.Pattern |
         Iterable[re.Pattern]
         | None = None,
+        legend: dict[sympy.Symbol | str, str] | None = None,
         show: bool = False,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
@@ -595,6 +596,12 @@ def plot(
         If it is a 2D list (or other Iterable of Iterables of strings or symbols),
         then each group of symbols is plotted in a separate subplot.
         If a string or re.Pattern, then only symbols whose names match the string or pattern are plotted.
+        
+    legend:
+        If specified, should be a dict mapping symbols (or strings) to strings.
+        For each symbol that is plotted, the corresponding string is used as the label in the plot's legend
+        instead of the original name of the symbol. This can be useful for example to include LaTeX,
+        mapping a symbol with a name like `'xt'` to a string like `r'$x_t$'`.
 
     show:
         whether to call ``matplotlib.pyplot.show()`` after creating the plot;
@@ -652,6 +659,9 @@ def plot(
         solution to the ODEs, same as object returned by 
         [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
     """
+    if legend is None:
+        legend = {}
+
     dependent_symbols_expressions = tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
 
     sol = integrate_odes(
@@ -682,6 +692,7 @@ def plot(
         dependent_symbols=dependent_symbols,
         figure_size=figure_size,
         symbols_to_plot=symbols_to_plot,
+        legend=legend,
         show=show,
         loc=loc,
         warn_change_dpi=warn_change_dpi,
@@ -694,6 +705,7 @@ def plot(
 # returned from gillespy2.Model.run(). This is not intended to be called by the user, but we make it public
 # so it's accessible from the crn module.
 def plot_given_values(
+        *,
         times: np.ndarray | xarray.DataArray,
         result: dict[str, np.ndarray | xarray.DataArray],
         source: Literal['ode', 'ssa'],
@@ -706,11 +718,14 @@ def plot_given_values(
         re.Pattern |
         Iterable[re.Pattern] | None
         = None,
+        legend: dict[sympy.Symbol | str, str] | None = None,
         show: bool = False,
         loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
         **options,
 ) -> None:
+    if legend is None:
+        legend = {}
     from matplotlib.pylab import rcParams
     if rcParams['figure.dpi'] != 96:
         if warn_change_dpi:
@@ -792,6 +807,12 @@ def plot_given_values(
             y = result[symbol_name]
             assert len(y) == len(times)
             color = next(colors)["color"]
+            if symbol in legend:
+                symbol_name = legend[symbol]
+            if symbol_name in legend:
+                symbol_name = legend[symbol_name]
+            if isinstance(symbol, str) and  sympy.Symbol(symbol) in legend:
+                symbol_name = legend[sympy.Symbol(symbol)]
             plt.plot(times, y, label=symbol_name, color=color, **options)
 
         plt.legend(loc=loc)
@@ -804,3 +825,39 @@ def plot_given_values(
 
 def comma_separated(elts: Iterable[Any]) -> str:
     return ', '.join(str(elt) for elt in elts)
+
+
+def bubble():
+    import numpy as np
+    import sympy
+    # bubble sort values x1, x2, x3, x4
+    x1, x2, x3, x4, y12, y23, y34 = sympy.symbols('x1 x2 x3 x4 y12 y23 y34')
+
+    odes = {
+        x1: -y12,
+        x2: -y23 + y12,
+        x3: -y34 + y23,
+        x4: y34,
+        y12: (x1 - x2) * y12,
+        y23: (x2 - x3) * y23,
+        y34: (x3 - x4) * y34,
+    }
+    eps = 0.001
+    initial_values = {
+        x1: 3,
+        x2: 7,
+        x3: 2,
+        x4: 1,
+        y12: eps,
+        y23: eps,
+        y34: eps,
+    }
+    t_eval = np.linspace(0, 30, 500)
+    # for clarity, you can pass a 2D list for symbols_to_plot
+    # each group of symbols will be shown in separate subplots stacked vertically
+    _ = plot(odes, initial_values, t_eval, figure_size=(12, 4),
+                  symbols_to_plot=[[x1, x2, x3, x4], [y12, y23, y34]])
+
+
+if __name__ == '__main__':
+    bubble()
