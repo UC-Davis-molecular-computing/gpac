@@ -8,7 +8,7 @@ docs = [
 
 [project]
 name = "gpac"
-version = "1.0.9"
+version = "1.0.10"
 description = "A Python package for extracting and processing grant data from AggieEnterprise spreadsheets."
 authors = [
     { name="Dave Doty", email="doty@ucdavis.edu" }
