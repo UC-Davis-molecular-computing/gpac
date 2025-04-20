@@ -32,7 +32,7 @@ def extract_version(filename: str):
     raise AssertionError(f'could not find version in {filename}')
 
 package_name = 'gpac'
-version = extract_version(f'{package_name}/__version__.py')
+version = extract_version(f'pyproject.toml')
 print(f'{package_name} version = {version}')
 
 
