@@ -640,9 +640,10 @@ def plot_gillespie(
     return rb_result if return_simulation_result else None
 
 
-def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
+def species(sp: str | Iterable[str]) -> tuple[Specie, ...] | Specie:
     r"""
-    Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s).
+    Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s),
+    or a single [`Specie`](gpac.crn.Specie) object.
 
     Examples
     --------
@@ -657,6 +658,11 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     rxn = x + y >> z + w
     ```
 
+    ```py
+    x = species('X')
+    rxn = x >> 2*x
+    ```
+
     Parameters
     ----------
     sp:
@@ -666,8 +672,7 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     Returns
     -------
     :
-        tuple of [`Specie`](gpac.crn.Specie) objects. Note that it is a tuple even if there is only one,
-        so it is necessary to write `#!py x, = species('X')` in this case to unpack the length-1 tuple.
+        tuple of [`Specie`](gpac.crn.Specie) objects, or a single [`Specie`](gpac.crn.Specie) object.
     """
     species_list: list[str]
     if isinstance(sp, str):
@@ -680,7 +685,10 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     if len(species_list) != len(set(species_list)):
         raise ValueError(f'species_list {species_list} cannot contain duplicates.')
 
-    return tuple(Specie(specie) for specie in species_list)
+    if len(species_list) > 1:
+        return tuple(Specie(specie) for specie in species_list)
+    else:
+        return Specie(species_list[0])
 
 
 SpeciePair: TypeAlias = tuple['Specie', 'Specie']  # forward annotations don't seem to work here
