@@ -65,8 +65,60 @@ from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
 import gillespy2 as gp
 import rebop as rb
+import xarray as xr
 
 from gpac.ode import integrate_odes, plot, plot_given_values
+
+
+def species(sp: str | Iterable[str]) -> tuple[Specie, ...] | Specie:
+    r"""
+    Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s),
+    or a single [`Specie`](gpac.crn.Specie) object.
+
+    Examples
+    --------
+
+    ```py
+    w, x, y, z = species('W X Y Z')
+    rxn = x + y >> z + w
+    ```
+
+    ```py
+    w, x, y, z = species(['W', 'X', 'Y', 'Z'])
+    rxn = x + y >> z + w
+    ```
+
+    ```py
+    x = species('X')
+    rxn = x >> 2*x
+    ```
+
+    Parameters
+    ----------
+    sp:
+        A string or Iterable of strings representing the names of the species being created.
+        If a single string, species names are interpreted as space-separated.
+
+    Returns
+    -------
+    :
+        tuple of [`Specie`](gpac.crn.Specie) objects, or a single [`Specie`](gpac.crn.Specie) object.
+    """
+    species_list: list[str]
+    if isinstance(sp, str):
+        species_list = sp.split()
+    else:
+        species_list = [specie.strip() for specie in sp]
+
+    # if len(species_list) == 1:
+    #     return Specie(species_list[0])
+    if len(species_list) != len(set(species_list)):
+        raise ValueError(f'species_list {species_list} cannot contain duplicates.')
+
+    if len(species_list) > 1:
+        return tuple(Specie(specie) for specie in species_list)
+    else:
+        return Specie(species_list[0])
 
 
 def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
@@ -242,6 +294,7 @@ def plot_crn(
         resets: dict[float, dict[sympy.Symbol | str, float]] | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         figure_size: tuple[float, float] = (10, 3),
+        latex_legend: bool = False,
         symbols_to_plot:
         Iterable[sympy.Symbol | str] |
         Iterable[Iterable[sympy.Symbol | str]] |
@@ -333,6 +386,7 @@ def plot_crn(
         t_span=t_span,
         dependent_symbols=dependent_symbols,
         figure_size=figure_size,
+        latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
         show=show,
@@ -450,6 +504,57 @@ def gillespy2_crn_counts(
     return gp_results
 
 
+def _run_rebop_with_resets(
+        resets: dict[float, dict[str, int]],
+        crn: rb.Gillespie,
+        inits: dict[str, int],
+        tmax: float,
+        nb_steps: int = 0,
+        seed: int | None = None,
+) -> xarray.Dataset:
+    if len(resets) == 0:
+        raise ValueError("resets dictionary must not be empty")
+
+    for reset_time, reset in resets.items():
+        if len(reset) == 0:
+            raise ValueError(f"Each reset dict must be nonempty, "
+                             f"but reset time {reset_time} has an empty dict.")
+
+    for reset_time in resets.keys():
+        if reset_time <= 0 or reset_time >= tmax:
+            raise ValueError(f"Reset time {reset_time} is outside the simulated time interval [0, {tmax}]")
+
+    reset_times = sorted(resets.keys())
+
+    # Break the interval (0,tmax) into segments based on reset times
+    segments_and_resets = []
+    for i in range(len(reset_times) + 1):
+        reset = resets[reset_times[i - 1]] if i > 0 else inits
+        if i == 0:
+            segments_and_resets.append(((0, reset_times[0]), reset))
+        elif i == len(reset_times):
+            segments_and_resets.append(((reset_times[-1], tmax), reset))
+        else:
+            segments_and_resets.append(((reset_times[i - 1], reset_times[i]), reset))
+
+    total_results = None
+    for (t_start, t_end), reset in segments_and_resets:
+        tmax = t_end - t_start
+        latest_results = crn.run(init=reset, tmax=tmax, nb_steps=nb_steps, seed=seed)
+        if total_results is None:
+            total_results = latest_results
+        else:
+            time_offset = total_results.time.values[-1]
+            latest_results_adjusted = latest_results.assign_coords(time=latest_results.time + time_offset)
+            total_results_trimmed = total_results.isel(time=slice(0, -1))
+            print(f"total_results before concat: {total_results}")
+            print(f"latest_results before concat: {total_results}")
+            total_results = xr.concat([total_results_trimmed, latest_results_adjusted], dim="time")
+            print(f"total_results after concat: {total_results}")
+
+    return total_results
+
+
 def rebop_crn_counts(
         rxns: Iterable[Reaction],
         initial_counts: dict[Specie, int],
@@ -457,6 +562,7 @@ def rebop_crn_counts(
         *,
         nb_steps: int = 0,
         vol: float | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         seed: int | None = None,
 ) -> xarray.Dataset:
@@ -488,6 +594,16 @@ def rebop_crn_counts(
         the volume of the system. If not specified, the volume is assumed to be the sum of the initial counts.
         reactions with k total reactants have their rate divided by vol^(k-1) to account for the volume.
 
+    resets:
+        If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
+        The configurations are used to set the values of the symbols manually during the ODE integration
+        at specific times.
+        Any symbols not appearing as keys in `resets` are left at their current values.
+        The OdeResult returned (the one returned by `solve_ivp` in scipy) will have two additional fields:
+        `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
+        corresponding to the times when the resets were applied.
+        Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
+
     Returns
     -------
     :
@@ -509,7 +625,16 @@ def rebop_crn_counts(
             crn.add_reaction(rate_rev, products, reactants)
 
     initial_counts_str = {specie.name: count for specie, count in initial_counts.items()}
-    rb_results = crn.run(init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, seed=seed)
+    if resets is None:
+        rb_results = crn.run(init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, seed=seed)
+    else:
+        # normalize resets to have strings as keys
+        resets_normalized: dict[float, dict[str, int]] = {
+            time: {str(symbol): count for symbol, count in counts.items()}
+            for time, counts in resets.items()
+        }
+        rb_results = _run_rebop_with_resets(resets=resets_normalized, crn=crn, inits=initial_counts_str, tmax=tmax,
+                                            nb_steps=nb_steps, seed=seed)
 
     all_species = find_all_species(rxns)
     if dependent_symbols is not None:
@@ -539,14 +664,16 @@ def plot_gillespie(
         *,
         nb_steps: int = 0,
         seed: int | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         figure_size: tuple[float, float] = (10, 3),
+        latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol | str] |
-        Iterable[Iterable[sympy.Symbol | str]] |
-        str |
-        re.Pattern |
-        Iterable[re.Pattern] |
-        None = None,
+                         Iterable[Iterable[sympy.Symbol | str]] |
+                         str |
+                         re.Pattern |
+                         Iterable[re.Pattern] |
+                         None = None,
         legend: dict[sympy.Symbol | str, str] | None = None,
         show: bool = False,
         return_simulation_result: bool = False,
@@ -588,6 +715,16 @@ def plot_gillespie(
         configuration would be the same as when `nb_steps` was half as large, but this is not the case.
         See [rebop issue #26](https://github.com/Armavica/rebop/issues/26).
 
+    resets:
+        If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
+        The configurations are used to set the values of the symbols manually during the ODE integration
+        at specific times.
+        Any symbols not appearing as keys in `resets` are left at their current values.
+        The OdeResult returned (the one returned by `solve_ivp` in scipy) will have two additional fields:
+        `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
+        corresponding to the times when the resets were applied.
+        Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
+
     Returns
     -------
     :
@@ -602,6 +739,7 @@ def plot_gillespie(
             nb_steps=nb_steps,
             seed=seed,
             vol=vol,
+            resets=resets,
             dependent_symbols=dependent_symbols,
         )
         times = rb_result['time']
@@ -630,6 +768,7 @@ def plot_gillespie(
         source='ssa',
         dependent_symbols=dependent_symbols,
         figure_size=figure_size,
+        latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
         show=show,
@@ -638,57 +777,6 @@ def plot_gillespie(
         **options,
     )
     return rb_result if return_simulation_result else None
-
-
-def species(sp: str | Iterable[str]) -> tuple[Specie, ...] | Specie:
-    r"""
-    Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s),
-    or a single [`Specie`](gpac.crn.Specie) object.
-
-    Examples
-    --------
-
-    ```py
-    w, x, y, z = species('W X Y Z')
-    rxn = x + y >> z + w
-    ```
-
-    ```py
-    w, x, y, z = species(['W', 'X', 'Y', 'Z'])
-    rxn = x + y >> z + w
-    ```
-
-    ```py
-    x = species('X')
-    rxn = x >> 2*x
-    ```
-
-    Parameters
-    ----------
-    sp:
-        A string or Iterable of strings representing the names of the species being created.
-        If a single string, species names are interpreted as space-separated.
-
-    Returns
-    -------
-    :
-        tuple of [`Specie`](gpac.crn.Specie) objects, or a single [`Specie`](gpac.crn.Specie) object.
-    """
-    species_list: list[str]
-    if isinstance(sp, str):
-        species_list = sp.split()
-    else:
-        species_list = [specie.strip() for specie in sp]
-
-    # if len(species_list) == 1:
-    #     return Specie(species_list[0])
-    if len(species_list) != len(set(species_list)):
-        raise ValueError(f'species_list {species_list} cannot contain duplicates.')
-
-    if len(species_list) > 1:
-        return tuple(Specie(specie) for specie in species_list)
-    else:
-        return Specie(species_list[0])
 
 
 SpeciePair: TypeAlias = tuple['Specie', 'Specie']  # forward annotations don't seem to work here
@@ -729,7 +817,7 @@ class Specie:
     but rather via the [`species`](gpac.crn.species) function, 
     which creates a tuple of [`Specie`](gpac.crn.Specie) objects.
     """
-    
+
     name: str
     """
     Name of the species. This is used in two ways: when plotting, this name is used 
@@ -1415,3 +1503,7 @@ class Reaction:
                 all_species.append(s)
                 all_species_set.add(s)
         return tuple(all_species)
+
+
+if __name__ == '__main__':
+    main()

@@ -14,13 +14,13 @@ from matplotlib.pyplot import figure
 import xarray
 
 def integrate_odes(
-        odes: dict[sympy.Symbol | str, sympy.Expr | str | float],
+        odes: dict[sympy.Symbol | str, sympy.Expr | str | float | int],
         initial_values: dict[sympy.Symbol | str, float],
         t_eval: Iterable[float] | None = None,
         *,
         t_span: tuple[float, float] | None = None,
         dependent_symbols: Iterable[sympy.Expr | str] = (),
-        resets: dict[float, dict[sympy.Symbol | str, float]] | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, float | int]] | None = None,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
         events: Callable | Iterable[Callable] | None = None,
@@ -335,7 +335,7 @@ from typing import Callable, Iterable, Any
 
 
 def _solve_ivp_with_resets(
-        resets: dict[float, dict[sympy.Symbol, float]],
+        resets: dict[float, dict[sympy.Symbol, float | int]],
         symbol_to_idx: dict[sympy.Symbol, int],
         fun: Callable,
         t_span: tuple[float, float],
@@ -552,14 +552,15 @@ def _solve_ivp_with_resets(
 
 
 def plot(
-        odes: dict[sympy.Symbol | str, sympy.Expr | str | float],
-        initial_values: dict[sympy.Symbol | str, float],
+        odes: dict[sympy.Symbol | str, sympy.Expr | str | float | int],
+        initial_values: dict[sympy.Symbol | str, float | int],
         t_eval: Iterable[float] | None = None,
         *,
         t_span: tuple[float, float] | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, float]] | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, float | int]] | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         figure_size: tuple[float, float] = (10, 3),
+        latex_legend: bool = False,
         symbols_to_plot:
         Iterable[sympy.Symbol | str] |
         Iterable[Iterable[sympy.Symbol | str]] |
@@ -590,6 +591,11 @@ def plot(
 
     figure_size:
         pair (width, height) of the figure
+        
+    latex_legend:
+        If True, surround each symbol name with dollar signs, unless it is already surrounded with them, 
+        so that the legend is interpreted as LaTeX. If this is True, then the symbol name must either start and end
+        with `$`, or neither start nor end with `$`.
 
     symbols_to_plot:
         symbols to plot; if not specified, then all symbols are plotted.
@@ -691,6 +697,7 @@ def plot(
         source='ode',
         dependent_symbols=dependent_symbols,
         figure_size=figure_size,
+        latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
         show=show,
@@ -711,6 +718,7 @@ def plot_given_values(
         source: Literal['ode', 'ssa'],
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         figure_size: tuple[float, float] = (10, 3),
+        latex_legend: bool = False,
         symbols_to_plot:
         Iterable[sympy.Symbol | str] |
         Iterable[Iterable[sympy.Symbol | str]] |
@@ -813,6 +821,13 @@ def plot_given_values(
                 symbol_name = legend[symbol_name]
             if isinstance(symbol, str) and  sympy.Symbol(symbol) in legend:
                 symbol_name = legend[sympy.Symbol(symbol)]
+            if latex_legend:
+                if symbol_name[0] == '$' or symbol_name[-1] == '$':
+                    if not symbol_name[0] == '$' and symbol_name[-1] == '$':
+                        raise ValueError(f'symbol name "{symbol_name}" must either end with $, '
+                                         f'or neither start nor end with $')
+                else:
+                    symbol_name = f'${symbol_name}$'
             plt.plot(times, y, label=symbol_name, color=color, **options)
 
         plt.legend(loc=loc)
@@ -857,6 +872,30 @@ def bubble():
     # each group of symbols will be shown in separate subplots stacked vertically
     _ = plot(odes, initial_values, t_eval, figure_size=(12, 4),
                   symbols_to_plot=[[x1, x2, x3, x4], [y12, y23, y34]])
+
+def display_odes(odes: dict[sympy.Symbol | str, sympy.Expr | str | float | int]) -> None:
+    """
+    Display the ODEs in a readable format in a Jupyter notebook.
+
+    Parameters
+    ----------
+    odes:
+        dict mapping sympy symbols (or strings) to sympy expressions (or strings or floats) representing the ODEs.
+        Alternatively, the keys can be strings, and the values can be strings that look like expressions,
+        e.g., ``{'a': '-a*b + c*a'}``.
+    """
+    from IPython.display import display, Math
+    for symbol, expr in odes.items():
+        # normalize so symbol is a sympy Symbol and expr is a sympy Expression
+        if isinstance(symbol, str):
+            symbol = sympy.symbols(symbol)
+        if isinstance(expr, (str, float, int)):
+            expr = sympy.sympify(expr)
+
+        symbol_latex = sympy.latex(symbol)
+        expr_latex = sympy.latex(expr)
+        ode_latex = f"{symbol_latex}' = {expr_latex}"
+        display(Math(ode_latex))
 
 
 if __name__ == '__main__':
