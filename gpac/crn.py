@@ -58,6 +58,7 @@ from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
 import re
+import sys
 
 import xarray
 from scipy.integrate import OdeSolver
@@ -68,7 +69,7 @@ import rebop as rb
 import xarray as xr
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from gpac.ode import integrate_odes, plot, plot_given_values
 
@@ -591,12 +592,12 @@ def rebop_sample_future_configurations(
         resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         seed: int | None = None,
-) -> dict[str, npt.NDArray[np.uint]]:
+) -> dict[Specie, npt.NDArray[np.uint]]:
     """
     Sample future configurations of the system using the rebop package. Arguments have same meaning as in
     rebop_crn_counts, except that `nb_steps` is not used (set to 1), and there is a parameter `trials` that
     specifies how many times to sample the future configuration. The returned dictionary maps each species
-    name to a 1D numpy array of length `trials`, representing the sampled configuration counts for that species.
+    to a 1D numpy array of length `trials`, representing the sampled configuration counts for that species.
 
     Parameters
     ----------
@@ -607,13 +608,17 @@ def rebop_sample_future_configurations(
     -------
     :
         A dictionary mapping each species to a 1D numpy array of `trials`, representing the sampled
-        configurations. For example, if the returned dict is {'A': np.array([1, 2, 3]), 'B': np.array([4, 5, 6])},
-        then there are three sampled configurations:
-        ``{'A': 1, 'B': 4}``, ``{'A': 2, 'B': 5}``, and ``{'A': 3, 'B': 6}``.
+        configurations. For example, if the returned dict is {a: np.array([1, 2, 3]), a: np.array([4, 5, 6])}
+        for species `a` and `b`, then there are three sampled configurations:
+        ``{a: 1, a: 4}``, ``{a: 2, a: 5}``, and ``{a: 3, a: 6}``.
     """
     all_species = find_all_species(rxns)
     sampled_configs_as_list = {sp: [] for sp in all_species}
+    # it is possible to give a RNG to rebop, but here I'm being lazy and just using the parameter
+    # seed to generate random seeds to give to rebop_crn_counts
+    rng = np.random.default_rng(seed)
     for _ in tqdm(range(trials)):
+        seed_generated = rng.integers(0, sys.maxsize)
         dataset = rebop_crn_counts(
             rxns,
             initial_counts,
@@ -622,7 +627,7 @@ def rebop_sample_future_configurations(
             vol=vol,
             resets=resets,
             dependent_symbols=dependent_symbols,
-            seed=seed,
+            seed=seed_generated,
         )
         for sp in all_species:
             sampled_configs_as_list[sp].append(dataset[sp.name].values[-1])
