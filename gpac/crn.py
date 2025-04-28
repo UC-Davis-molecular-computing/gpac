@@ -70,10 +70,13 @@ import xarray as xr
 from gpac.ode import integrate_odes, plot, plot_given_values
 
 
-def species(sp: str | Iterable[str]) -> tuple[Specie, ...] | Specie:
+def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     r"""
     Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s),
     or a single [`Specie`](gpac.crn.Specie) object.
+
+    The return type is tuple[Specie, ...] to avoid mypy warnings in the more common case of multiple species.
+    You can use `# type: ignore` to silence the mypy warning for a single species.
 
     Examples
     --------
@@ -553,6 +556,27 @@ def _run_rebop_with_resets(
             print(f"total_results after concat: {total_results}")
 
     return total_results
+
+def main():
+    import gpac
+    import numpy as np
+
+    a,b,u = gpac.species('A B U')
+    rxns = [
+        a+b >> 2*u,
+        a+u >> 2*a,
+        b+u >> 2*b,
+    ]
+    n = 10**6
+    inits = {
+        a: round(n * 0.51),
+        b: round(n * 0.49),
+    }
+    tmax = 10
+    # gpac.plot_gillespie(rxns, inits, tmax, nb_steps=200)
+    sol = gpac.rebop_crn_counts(rxns, inits, tmax, nb_steps=200, seed=0)
+    print(sol)
+
 
 
 def rebop_crn_counts(
