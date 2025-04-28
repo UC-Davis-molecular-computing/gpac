@@ -8,7 +8,7 @@ docs = [
 
 [project]
 name = "gpac"
-version = "1.0.12"
+version = "1.0.13"
 description = "A Python package for extracting and processing grant data from AggieEnterprise spreadsheets."
 authors = [
     { name="Dave Doty", email="doty@ucdavis.edu" }
@@ -26,6 +26,7 @@ dependencies = [
     "gillespy2>=1",
     "rebop>=0.9",
     "xarray>=2025",
+    "tqdm>=4",
 ]
 
 [project.urls]

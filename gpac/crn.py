@@ -66,6 +66,9 @@ import sympy
 import gillespy2 as gp
 import rebop as rb
 import xarray as xr
+import numpy as np
+import numpy.typing as npt
+from tqdm import tqdm
 
 from gpac.ode import integrate_odes, plot, plot_given_values
 
@@ -578,6 +581,54 @@ def main():
     print(sol)
 
 
+def rebop_sample_future_configurations(
+        rxns: Iterable[Reaction],
+        initial_counts: dict[Specie, int],
+        tmax: float,
+        trials: int,
+        *,
+        vol: float | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        seed: int | None = None,
+) -> dict[str, npt.NDArray[np.uint]]:
+    """
+    Sample future configurations of the system using the rebop package. Arguments have same meaning as in
+    rebop_crn_counts, except that `nb_steps` is not used (set to 1), and there is a parameter `trials` that
+    specifies how many times to sample the future configuration. The returned dictionary maps each species
+    name to a 1D numpy array of length `trials`, representing the sampled configuration counts for that species.
+
+    Parameters
+    ----------
+    trials:
+        how many future configurations to sample
+
+    Returns
+    -------
+    :
+        A dictionary mapping each species to a 1D numpy array of `trials`, representing the sampled
+        configurations. For example, if the returned dict is {'A': np.array([1, 2, 3]), 'B': np.array([4, 5, 6])},
+        then there are three sampled configurations:
+        ``{'A': 1, 'B': 4}``, ``{'A': 2, 'B': 5}``, and ``{'A': 3, 'B': 6}``.
+    """
+    all_species = find_all_species(rxns)
+    sampled_configs_as_list = {sp: [] for sp in all_species}
+    for _ in tqdm(range(trials)):
+        dataset = rebop_crn_counts(
+            rxns,
+            initial_counts,
+            tmax,
+            nb_steps=1,
+            vol=vol,
+            resets=resets,
+            dependent_symbols=dependent_symbols,
+            seed=seed,
+        )
+        for sp in all_species:
+            sampled_configs_as_list[sp].append(dataset[sp.name].values[-1])
+    sampled_configs = {sp: np.array(sampled_configs_as_list[sp], dtype=np.uint) for sp in all_species}
+    return sampled_configs
+
 
 def rebop_crn_counts(
         rxns: Iterable[Reaction],
@@ -605,14 +656,14 @@ def rebop_crn_counts(
         dict mapping each species to its initial integer count.
         Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
         keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
-
-    nb_steps:
-        Number of evenly-spaced time points at which to record the counts between 0 and `tmax`.
-        If not specified, all reaction events and their exact times are recorded,
         instead of fixed, evenly-spaced time points.
 
     tmax:
         the maximum time for the simulation.
+
+    nb_steps:
+        Number of evenly-spaced time points at which to record the counts between 0 and `tmax`.
+        If not specified, all reaction events and their exact times are recorded,
 
     vol:
         the volume of the system. If not specified, the volume is assumed to be the sum of the initial counts.
