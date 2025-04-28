@@ -543,7 +543,7 @@ def _run_rebop_with_resets(
     total_results = None
     for (t_start, t_end), reset in segments_and_resets:
         tmax = t_end - t_start
-        latest_results = crn.run(init=reset, tmax=tmax, nb_steps=nb_steps, seed=seed)
+        latest_results = crn.run(init=reset, tmax=tmax, nb_steps=nb_steps, rng=seed)
         if total_results is None:
             total_results = latest_results
         else:
@@ -650,7 +650,7 @@ def rebop_crn_counts(
 
     initial_counts_str = {specie.name: count for specie, count in initial_counts.items()}
     if resets is None:
-        rb_results = crn.run(init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, seed=seed)
+        rb_results = crn.run(init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, rng=seed)
     else:
         # normalize resets to have strings as keys
         resets_normalized: dict[float, dict[str, int]] = {
