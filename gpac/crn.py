@@ -70,7 +70,7 @@ import xarray as xr
 import numpy as np
 import numpy.typing as npt
 from tqdm.auto import tqdm
-import pandas as pd
+import polars as pl
 
 from gpac.ode import integrate_odes, plot, plot_given_values
 
@@ -576,7 +576,7 @@ def rebop_sample_future_configurations(
         resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         seed: int | None = None,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """
     Sample future configurations of the system using the rebop package. Arguments have same meaning as in
     rebop_crn_counts, except that `nb_steps` is not used (set to 1), and there is a parameter `trials` that
@@ -591,10 +591,8 @@ def rebop_sample_future_configurations(
     Returns
     -------
     :
-        A dictionary mapping each species to a 1D numpy array of `trials`, representing the sampled
-        configurations. For example, if the returned dict is {a: np.array([1, 2, 3]), a: np.array([4, 5, 6])}
-        for species `a` and `b`, then there are three sampled configurations:
-        ``{a: 1, a: 4}``, ``{a: 2, a: 5}``, and ``{a: 3, a: 6}``.
+        A pandas DataFrame with one column per species name, giving and number of rows equal to `trials`,
+        representing the sampled configurations.
     """
     # samples = []
     # for _ in tqdm(range(trials)):
@@ -608,8 +606,8 @@ def rebop_sample_future_configurations(
     # seed to generate random seeds to give to rebop_crn_counts
     rng = np.random.default_rng(seed)
     samples = []
-    # for _ in tqdm(range(trials)):
-    for _ in range(trials):
+    for _ in tqdm(range(trials)):
+    # for _ in range(trials):
         seed_generated = rng.integers(0, sys.maxsize)
         dataset = rebop_crn_counts(
             rxns,
@@ -623,8 +621,8 @@ def rebop_sample_future_configurations(
         )
         for sp in all_species:
             sampled_configs_as_list[sp].append(dataset[sp.name].values[-1])
-    sampled_configs = {sp: np.array(sampled_configs_as_list[sp], dtype=np.uint) for sp in all_species}
-    df = pd.DataFrame.from_dict(sampled_configs)
+    sampled_configs = {sp.name: np.array(sampled_configs_as_list[sp], dtype=np.uint) for sp in all_species}
+    df = pl.DataFrame(sampled_configs)
     return df
 
 
