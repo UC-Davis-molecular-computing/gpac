@@ -64,12 +64,13 @@ import xarray
 from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
-import gillespy2 as gp
+import gillespy2 as gp2
 import rebop as rb
 import xarray as xr
 import numpy as np
 import numpy.typing as npt
 from tqdm.auto import tqdm
+import pandas as pd
 
 from gpac.ode import integrate_odes, plot, plot_given_values
 
@@ -413,6 +414,9 @@ def find_all_species(rxns: Iterable[Reaction]) -> tuple[Specie, ...]:
     all_species = []
     all_species_set = set()
     for rxn in rxns:
+        if not isinstance(rxn, Reaction):
+            raise TypeError(f'Expected {Reaction}, but got {type(rxn)} '
+                            f'(possibly a Reaction type from another package)')
         for specie in rxn.get_species():
             if specie not in all_species_set:
                 all_species.append(specie)
@@ -427,9 +431,9 @@ def gillespy2_crn_counts(
         *,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         seed: int | None = None,
-        solver_class: type = gp.NumPySSASolver,
+        solver_class: type = gp2.NumPySSASolver,
         **options,
-) -> gp.Results:
+) -> gp2.Results:
     r"""
     Run the reactions using the GillesPy2 package for discrete simulation using the Gillespie algorithm.
 
@@ -456,36 +460,36 @@ def gillespy2_crn_counts(
     """
     if 'solver' in options:
         raise ValueError('solver should not be passed in options; instead, pass the solver_class parameter')
-    model = gp.Model()
+    model = gp2.Model()
 
     all_species = find_all_species(rxns)
     for specie in all_species:
         val = initial_counts.get(specie, 0)
-        model.add_species(gp.Species(name=specie.name, initial_value=val))
+        model.add_species(gp2.Species(name=specie.name, initial_value=val))
         if specie.name == 'time':
             raise ValueError('species cannot be named "time"')
 
     for rxn in rxns:
         rxn_name = (''.join([rct.name for rct in rxn.reactants.species]) + 'to'
                     + ''.join([prd.name for prd in rxn.products.species]))
-        rate_f = gp.Parameter(name=f'{rxn_name}_k', expression=f'{rxn.rate_constant}')
+        rate_f = gp2.Parameter(name=f'{rxn_name}_k', expression=f'{rxn.rate_constant}')
         model.add_parameter(rate_f)
         reactant_counts = rxn.reactants.species_counts('str')
         product_counts = rxn.products.species_counts('str')
-        gp_rxn = gp.Reaction(name=rxn_name, reactants=reactant_counts, products=product_counts,
-                             rate=rate_f)  # type: ignore
+        gp_rxn = gp2.Reaction(name=rxn_name, reactants=reactant_counts, products=product_counts,
+                              rate=rate_f)  # type: ignore
         model.add_reaction(gp_rxn)
         if rxn.reversible:
             rxn_name_r = rxn_name + '_r'
-            rate_r = gp.Parameter(name=f'{rxn_name_r}_f', expression=f'{rxn.rate_constant_reverse}')
+            rate_r = gp2.Parameter(name=f'{rxn_name_r}_f', expression=f'{rxn.rate_constant_reverse}')
             model.add_parameter(rate_r)
-            gp_rxn_r = gp.Reaction(name=rxn_name_r, reactants=product_counts, products=reactant_counts,
-                                   rate=rate_r)  # type: ignore
+            gp_rxn_r = gp2.Reaction(name=rxn_name_r, reactants=product_counts, products=reactant_counts,
+                                    rate=rate_r)  # type: ignore
             model.add_reaction(gp_rxn_r)
 
-    tspan = gp.TimeSpan(t_eval)
+    tspan = gp2.TimeSpan(t_eval)
     model.timespan(tspan)
-    solver: gp.GillesPySolver = solver_class(model=model)
+    solver: gp2.GillesPySolver = solver_class(model=model)
     if seed is None:
         gp_results = model.run(solver=solver, **options)
     else:
@@ -561,26 +565,6 @@ def _run_rebop_with_resets(
 
     return total_results
 
-def main():
-    import gpac
-    import numpy as np
-
-    a,b,u = gpac.species('A B U')
-    rxns = [
-        a+b >> 2*u,
-        a+u >> 2*a,
-        b+u >> 2*b,
-    ]
-    n = 10**6
-    inits = {
-        a: round(n * 0.51),
-        b: round(n * 0.49),
-    }
-    tmax = 10
-    # gpac.plot_gillespie(rxns, inits, tmax, nb_steps=200)
-    sol = gpac.rebop_crn_counts(rxns, inits, tmax, nb_steps=200, seed=0)
-    print(sol)
-
 
 def rebop_sample_future_configurations(
         rxns: Iterable[Reaction],
@@ -592,7 +576,7 @@ def rebop_sample_future_configurations(
         resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
         seed: int | None = None,
-) -> dict[Specie, npt.NDArray[np.uint]]:
+) -> pd.DataFrame:
     """
     Sample future configurations of the system using the rebop package. Arguments have same meaning as in
     rebop_crn_counts, except that `nb_steps` is not used (set to 1), and there is a parameter `trials` that
@@ -612,12 +596,20 @@ def rebop_sample_future_configurations(
         for species `a` and `b`, then there are three sampled configurations:
         ``{a: 1, a: 4}``, ``{a: 2, a: 5}``, and ``{a: 3, a: 6}``.
     """
+    # samples = []
+    # for _ in tqdm(range(trials)):
+    #     self.simulator.reset(np.array(self.configs[-1], dtype=np.uint), t)
+    #     end_step = t + self.time_to_steps(time)
+    #     self.simulator.run(end_step)
+    #     samples.append(np.array(self.simulator.config))
     all_species = find_all_species(rxns)
     sampled_configs_as_list = {sp: [] for sp in all_species}
     # it is possible to give a RNG to rebop, but here I'm being lazy and just using the parameter
     # seed to generate random seeds to give to rebop_crn_counts
     rng = np.random.default_rng(seed)
-    for _ in tqdm(range(trials)):
+    samples = []
+    # for _ in tqdm(range(trials)):
+    for _ in range(trials):
         seed_generated = rng.integers(0, sys.maxsize)
         dataset = rebop_crn_counts(
             rxns,
@@ -632,7 +624,8 @@ def rebop_sample_future_configurations(
         for sp in all_species:
             sampled_configs_as_list[sp].append(dataset[sp.name].values[-1])
     sampled_configs = {sp: np.array(sampled_configs_as_list[sp], dtype=np.uint) for sp in all_species}
-    return sampled_configs
+    df = pd.DataFrame.from_dict(sampled_configs)
+    return df
 
 
 def rebop_crn_counts(

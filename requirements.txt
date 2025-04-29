@@ -5,3 +5,5 @@ matplotlib
 gillespy2
 rebop
 xarray
+pandas
+tqdm

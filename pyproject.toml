@@ -27,6 +27,7 @@ dependencies = [
     "rebop>=0.9",
     "xarray>=2025",
     "tqdm>=4",
+    "pandas>=2",
 ]
 
 [project.urls]
