@@ -33,17 +33,12 @@ A. **pip:** The easiest option is to install via `pip` by typing the following a
 
 B. **git:** The other option is to clone the git repo. You may need to install `git` first: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
-   1. Install the dependencies by typing the following at the command line:
-      ```
-      pip install numpy scipy matplotlib sympy gillespy2 rebop xarray
-      ```
-
-   2. Clone this repo by typing the following at the command line:
+   1. Clone this repo by typing the following at the command line:
       ```
       git clone https://github.com/UC-Davis-molecular-computing/gpac.git
       ```
 
-   3. Install the Python package by changing to the directory where the nuad repository is stored localled and type `pip install -e .` This should install the needed dependencies. An advantage of this approach is that, if there are features available on some branch of the github repo (typically the [dev branch](https://github.com/UC-Davis-molecular-computing/nuad/tree/dev)) that are not yet available in the latest version of nuad, you can check out the branch via `git checkout dev`, and those new features will be available. After doing this you should be able to import the gpac package in your Python scripts/Jupyter notebooks with `import gpac`. Try testing this out in the Python interpreter:
+   2. Install the Python package by changing to the directory where the nuad repository is stored localled and type `pip install -e .` This should install the needed dependencies. An advantage of this approach is that, if there are features available on some branch of the github repo (typically the [dev branch](https://github.com/UC-Davis-molecular-computing/nuad/tree/dev)) that are not yet available in the latest version of nuad, you can check out the branch via `git checkout dev`, and those new features will be available. After doing this you should be able to import the gpac package in your Python scripts/Jupyter notebooks with `import gpac`. Try testing this out in the Python interpreter:
        ```python
        $ python
        Python 3.9.12 (main, Apr  4 2022, 05:22:27) [MSC v.1916 64 bit (AMD64)] :: Anaconda, Inc. on win32
