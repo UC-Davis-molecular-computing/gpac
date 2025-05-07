@@ -514,14 +514,30 @@ def gillespy2_crn_counts(
 
     return gp_results
 
+def test_rebop_reset():
+    """
+    Test the rebop reset functionality.
+    """
+    a, b = species('A B')
+    rxns = [
+        a+b >> 2*b,
+    ]
+    initial_counts = {a: 99, b: 1}
+    tmax = 30
+    nb_steps = 300
+    resets = {
+        10: {a: 100},
+        20: {a: 100},
+    }
+    plot_gillespie(rxns, initial_counts, tmax, nb_steps=nb_steps, resets=resets, show=True)
 
 def _run_rebop_with_resets(
         resets: dict[float, dict[str, int]],
         crn: rb.Gillespie,
         inits: dict[str, int],
         tmax: float,
-        nb_steps: int = 0,
-        seed: int | None = None,
+        nb_steps: int,
+        seed: int | None,
 ) -> xarray.Dataset:
     if len(resets) == 0:
         raise ValueError("resets dictionary must not be empty")
@@ -538,30 +554,42 @@ def _run_rebop_with_resets(
     reset_times = sorted(resets.keys())
 
     # Break the interval (0,tmax) into segments based on reset times
-    segments_and_resets = []
+    segments_and_resets_and_nbsteps = []
     for i in range(len(reset_times) + 1):
         reset = resets[reset_times[i - 1]] if i > 0 else inits
         if i == 0:
-            segments_and_resets.append(((0, reset_times[0]), reset))
+            start = 0
+            end = reset_times[0]
         elif i == len(reset_times):
-            segments_and_resets.append(((reset_times[-1], tmax), reset))
+            start = reset_times[-1]
+            end = tmax
         else:
-            segments_and_resets.append(((reset_times[i - 1], reset_times[i]), reset))
+            start = reset_times[i - 1]
+            end = reset_times[i]
+        nb_steps_fraction = nb_steps * (end - start) // tmax
+        segments_and_resets_and_nbsteps.append((
+            (start, end),
+            reset,
+            nb_steps_fraction,
+        ))
 
     total_results = None
-    for (t_start, t_end), reset in segments_and_resets:
+    config = {}
+    for (t_start, t_end), reset, nb_steps_fraction in segments_and_resets_and_nbsteps:
         tmax = t_end - t_start
-        latest_results = crn.run(init=reset, tmax=tmax, nb_steps=nb_steps, rng=seed)
+        for specie_name, count in reset.items():
+            config[specie_name] = count
+        latest_results = crn.run(init=config, tmax=tmax, nb_steps=nb_steps_fraction, rng=seed)
         if total_results is None:
             total_results = latest_results
         else:
             time_offset = total_results.time.values[-1]
             latest_results_adjusted = latest_results.assign_coords(time=latest_results.time + time_offset)
             total_results_trimmed = total_results.isel(time=slice(0, -1))
-            print(f"total_results before concat: {total_results}")
-            print(f"latest_results before concat: {total_results}")
             total_results = xr.concat([total_results_trimmed, latest_results_adjusted], dim="time")
-            print(f"total_results after concat: {total_results}")
+        for specie_name, counts in total_results.data_vars.items():
+            final_count = int(counts.data[-1])
+            config[specie_name] = final_count
 
     return total_results
 
@@ -701,7 +729,7 @@ def rebop_crn_counts(
     else:
         # normalize resets to have strings as keys
         resets_normalized: dict[float, dict[str, int]] = {
-            time: {str(symbol): count for symbol, count in counts.items()}
+            time: {str(specie): count for specie, count in counts.items()}
             for time, counts in resets.items()
         }
         rb_results = _run_rebop_with_resets(resets=resets_normalized, crn=crn, inits=initial_counts_str, tmax=tmax,
@@ -1577,4 +1605,4 @@ class Reaction:
 
 
 if __name__ == '__main__':
-    main()
+    test_rebop_reset()
