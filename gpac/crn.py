@@ -53,6 +53,7 @@ So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [
 
 from __future__ import annotations  # needed for forward references in type hints
 
+import math
 from typing import Iterable, Callable, Literal, TypeAlias
 from collections import defaultdict
 import copy
@@ -524,12 +525,13 @@ def test_rebop_reset():
     ]
     initial_counts = {a: 99, b: 1}
     tmax = 30
-    nb_steps = 300
+    nb_steps = 0
     resets = {
         10: {a: 100},
         20: {a: 100},
     }
     plot_gillespie(rxns, initial_counts, tmax, nb_steps=nb_steps, resets=resets, show=True)
+    # plot_gillespie(rxns, initial_counts, tmax, nb_steps=nb_steps, show=True)
 
 def _run_rebop_with_resets(
         resets: dict[float, dict[str, int]],
@@ -567,6 +569,8 @@ def _run_rebop_with_resets(
             start = reset_times[i - 1]
             end = reset_times[i]
         nb_steps_fraction = nb_steps * (end - start) // tmax
+        if nb_steps > 0 and nb_steps_fraction == 0:
+            nb_steps_fraction = 1
         segments_and_resets_and_nbsteps.append((
             (start, end),
             reset,
@@ -583,10 +587,24 @@ def _run_rebop_with_resets(
         if total_results is None:
             total_results = latest_results
         else:
-            time_offset = total_results.time.values[-1]
-            latest_results_adjusted = latest_results.assign_coords(time=latest_results.time + time_offset)
-            total_results_trimmed = total_results.isel(time=slice(0, -1))
-            total_results = xr.concat([total_results_trimmed, latest_results_adjusted], dim="time")
+            # This "math.nextafter" makes the plot look like species in
+            # reset shoot from their value at t_end to their reset value.
+            # This prevents the problem that if nb_steps = 0 and the configuration in the previous
+            # interval went silent long before t_end, then it looks like that species count is linearly
+            # interpolated between <silence_time> and t_end, when we want it to look like it stayed
+            # at its convergent value until t_end. But since t_end is the *first* time in the next interval,
+            # we set the "time" of the end of this interval to be just before t_end.
+            # math.nextafter can give us the largest float less than t_end.
+            latest_results_adjusted = latest_results.assign_coords(time=latest_results.time + math.nextafter(t_start, math.inf))
+            # total_results_trimmed = total_results.isel(time=slice(0, -1))
+            # total_results = xr.concat([total_results_trimmed, latest_results_adjusted], dim="time")
+            total_results = xr.concat([total_results, latest_results_adjusted], dim="time")
+
+        times = total_results.time.values
+        if times[-1] == np.inf:
+            assert nb_steps_fraction == 0
+            times[-1] = t_end
+
         for specie_name, counts in total_results.data_vars.items():
             final_count = int(counts.data[-1])
             config[specie_name] = final_count
