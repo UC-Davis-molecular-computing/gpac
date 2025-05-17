@@ -54,7 +54,7 @@ So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [
 from __future__ import annotations  # needed for forward references in type hints
 
 import math
-from typing import Iterable, Callable, Literal, TypeAlias
+from typing import Iterable, Callable, Literal, TypeAlias, overload
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
@@ -65,11 +65,9 @@ import xarray
 from scipy.integrate import OdeSolver
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
-import gillespy2 as gp2
 import rebop as rb
 import xarray as xr
 import numpy as np
-import numpy.typing as npt
 from tqdm.auto import tqdm
 import polars as pl
 
@@ -425,95 +423,95 @@ def find_all_species(rxns: Iterable[Reaction]) -> tuple[Specie, ...]:
     return tuple(all_species)
 
 
-def gillespy2_crn_counts(
-        rxns: Iterable[Reaction],
-        initial_counts: dict[Specie, int],
-        t_eval: Iterable[float],
-        *,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-        seed: int | None = None,
-        solver_class: type = gp2.NumPySSASolver,
-        **options,
-) -> gp2.Results:
-    r"""
-    Run the reactions using the GillesPy2 package for discrete simulation using the Gillespie algorithm.
+# def gillespy2_crn_counts(
+#         rxns: Iterable[Reaction],
+#         initial_counts: dict[Specie, int],
+#         t_eval: Iterable[float],
+#         *,
+#         dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+#         seed: int | None = None,
+#         solver_class: type = gp2.NumPySSASolver,
+#         **options,
+# ) -> gp2.Results:
+#     r"""
+#     Run the reactions using the GillesPy2 package for discrete simulation using the Gillespie algorithm.
 
-    Any parameters not described here are passed along to the function [gillespy2.GillesPySolver.run](
-    https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run)
+#     Any parameters not described here are passed along to the function [gillespy2.GillesPySolver.run](
+#     https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run)
 
 
-    Parameters
-    ----------
-    rxns:
-        list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
-        See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
+#     Parameters
+#     ----------
+#     rxns:
+#         list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
+#         See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
-    initial_counts:
-        dict mapping each species to its initial integer count.
-        Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
-        keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
+#     initial_counts:
+#         dict mapping each species to its initial integer count.
+#         Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+#         keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
 
-    Returns
-    -------
-    :
-        Same Result object returned by [gillespy2.GillesPySolver.run](
-        https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run)
-    """
-    if 'solver' in options:
-        raise ValueError('solver should not be passed in options; instead, pass the solver_class parameter')
-    model = gp2.Model()
+#     Returns
+#     -------
+#     :
+#         Same Result object returned by [gillespy2.GillesPySolver.run](
+#         https://gillespy2.readthedocs.io/en/latest/classes/gillespy2.core.html#gillespy2.core.gillespySolver.GillesPySolver.run)
+#     """
+#     if 'solver' in options:
+#         raise ValueError('solver should not be passed in options; instead, pass the solver_class parameter')
+#     model = gp2.Model()
 
-    all_species = find_all_species(rxns)
-    for specie in all_species:
-        val = initial_counts.get(specie, 0)
-        model.add_species(gp2.Species(name=specie.name, initial_value=val))
-        if specie.name == 'time':
-            raise ValueError('species cannot be named "time"')
+#     all_species = find_all_species(rxns)
+#     for specie in all_species:
+#         val = initial_counts.get(specie, 0)
+#         model.add_species(gp2.Species(name=specie.name, initial_value=val))
+#         if specie.name == 'time':
+#             raise ValueError('species cannot be named "time"')
 
-    for rxn in rxns:
-        rxn_name = (''.join([rct.name for rct in rxn.reactants.species]) + 'to'
-                    + ''.join([prd.name for prd in rxn.products.species]))
-        rate_f = gp2.Parameter(name=f'{rxn_name}_k', expression=f'{rxn.rate_constant}')
-        model.add_parameter(rate_f)
-        reactant_counts = rxn.reactants.species_counts('str')
-        product_counts = rxn.products.species_counts('str')
-        gp_rxn = gp2.Reaction(name=rxn_name, reactants=reactant_counts, products=product_counts,
-                              rate=rate_f)  # type: ignore
-        model.add_reaction(gp_rxn)
-        if rxn.reversible:
-            rxn_name_r = rxn_name + '_r'
-            rate_r = gp2.Parameter(name=f'{rxn_name_r}_f', expression=f'{rxn.rate_constant_reverse}')
-            model.add_parameter(rate_r)
-            gp_rxn_r = gp2.Reaction(name=rxn_name_r, reactants=product_counts, products=reactant_counts,
-                                    rate=rate_r)  # type: ignore
-            model.add_reaction(gp_rxn_r)
+#     for rxn in rxns:
+#         rxn_name = (''.join([rct.name for rct in rxn.reactants.species]) + 'to'
+#                     + ''.join([prd.name for prd in rxn.products.species]))
+#         rate_f = gp2.Parameter(name=f'{rxn_name}_k', expression=f'{rxn.rate_constant}')
+#         model.add_parameter(rate_f)
+#         reactant_counts = rxn.reactants.species_counts('str')
+#         product_counts = rxn.products.species_counts('str')
+#         gp_rxn = gp2.Reaction(name=rxn_name, reactants=reactant_counts, products=product_counts,
+#                               rate=rate_f)  # type: ignore
+#         model.add_reaction(gp_rxn)
+#         if rxn.reversible:
+#             rxn_name_r = rxn_name + '_r'
+#             rate_r = gp2.Parameter(name=f'{rxn_name_r}_f', expression=f'{rxn.rate_constant_reverse}')
+#             model.add_parameter(rate_r)
+#             gp_rxn_r = gp2.Reaction(name=rxn_name_r, reactants=product_counts, products=reactant_counts,
+#                                     rate=rate_r)  # type: ignore
+#             model.add_reaction(gp_rxn_r)
 
-    tspan = gp2.TimeSpan(t_eval)
-    model.timespan(tspan)
-    solver: gp2.GillesPySolver = solver_class(model=model)
-    if seed is None:
-        gp_results = model.run(solver=solver, **options)
-    else:
-        gp_results = model.run(solver=solver, seed=seed, **options)
+#     tspan = gp2.TimeSpan(t_eval)
+#     model.timespan(tspan)
+#     solver: gp2.GillesPySolver = solver_class(model=model)
+#     if seed is None:
+#         gp_results = model.run(solver=solver, **options)
+#     else:
+#         gp_results = model.run(solver=solver, seed=seed, **options)
 
-    if dependent_symbols is not None:
-        independent_symbols = [sympy.Symbol(specie.name) for specie in all_species]
-        dependent_funcs = {symbol: sympy.lambdify(independent_symbols, func)
-                           for symbol, func in dependent_symbols.items()}
+#     if dependent_symbols is not None:
+#         independent_symbols = [sympy.Symbol(specie.name) for specie in all_species]
+#         dependent_funcs = {symbol: sympy.lambdify(independent_symbols, func)
+#                            for symbol, func in dependent_symbols.items()}
 
-        indp_vals = []
-        for specie in all_species:
-            indp_vals.append(gp_results[0][specie.name])
+#         indp_vals = []
+#         for specie in all_species:
+#             indp_vals.append(gp_results[0][specie.name])
 
-        for dependent_symbol, func in dependent_funcs.items():
-            # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
-            # the vectors as separate arguments to the function func
-            dep_vals_row = func(*indp_vals)
-            dependent_symbol_name = dependent_symbol.name if isinstance(dependent_symbol,
-                                                                        sympy.Symbol) else dependent_symbol
-            gp_results[0][dependent_symbol_name] = dep_vals_row
+#         for dependent_symbol, func in dependent_funcs.items():
+#             # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
+#             # the vectors as separate arguments to the function func
+#             dep_vals_row = func(*indp_vals)
+#             dependent_symbol_name = dependent_symbol.name if isinstance(dependent_symbol,
+#                                                                         sympy.Symbol) else dependent_symbol
+#             gp_results[0][dependent_symbol_name] = dep_vals_row
 
-    return gp_results
+#     return gp_results
 
 def test_rebop_reset():
     """
@@ -774,6 +772,99 @@ def rebop_crn_counts(
     return rb_results
 
 
+@overload
+def plot_gillespie(
+        rxns: Iterable[Reaction],
+        initial_counts: dict[Specie, int],
+        tmax: float,
+        *,
+        nb_steps: int = 0,
+        seed: int | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        figure_size: tuple[float, float] = (10, 3),
+        latex_legend: bool = False,
+        symbols_to_plot: Iterable[sympy.Symbol | str] |
+                         Iterable[Iterable[sympy.Symbol | str]] |
+                         str |
+                         re.Pattern |
+                         Iterable[re.Pattern] |
+                         None = None,
+        legend: dict[sympy.Symbol | str, str] | None = None,
+        show: bool = False,
+        return_simulation_result: Literal[True],
+        loc: str | tuple[float, float] = 'best',
+        warn_change_dpi: bool = False,
+        vol: float | None = None,
+        **options: dict[str, object],
+) -> xarray.Dataset: ...
+
+@overload
+def plot_gillespie(
+        rxns: Iterable[Reaction],
+        initial_counts: dict[Specie, int],
+        tmax: float,
+        *,
+        nb_steps: int = 0,
+        seed: int | None = None,
+        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
+        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        figure_size: tuple[float, float] = (10, 3),
+        latex_legend: bool = False,
+        symbols_to_plot: Iterable[sympy.Symbol | str] |
+                         Iterable[Iterable[sympy.Symbol | str]] |
+                         str |
+                         re.Pattern |
+                         Iterable[re.Pattern] |
+                         None = None,
+        legend: dict[sympy.Symbol | str, str] | None = None,
+        show: bool = False,
+        return_simulation_result: Literal[False],
+        loc: str | tuple[float, float] = 'best',
+        warn_change_dpi: bool = False,
+        vol: float | None = None,
+        **options: dict[str, object],
+) -> None: ...
+
+@overload
+def plot_gillespie(
+    rxns: Iterable[Reaction],
+    initial_counts: dict[Specie, int],
+    tmax: float,
+    *,
+    nb_steps: int = 0,
+    seed: int | None = None,
+    resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
+    dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+    figure_size: tuple[float, float] = (10, 3),
+    latex_legend: bool = False,
+    symbols_to_plot: Iterable[sympy.Symbol | str] |
+                     Iterable[Iterable[sympy.Symbol | str]] |
+                     str |
+                     re.Pattern |
+                     Iterable[re.Pattern] |
+                     None = None,
+    legend: dict[sympy.Symbol | str, str] | None = None,
+    show: bool = False,
+    return_simulation_result: bool = False,
+    loc: str | tuple[float, float] = 'best',
+    warn_change_dpi: bool = False,
+    vol: float | None = None,
+    **options: dict[str, object],
+) -> None: ...
+
+def test_mypy():
+    """
+    Test mypy type checking.
+    """
+    a, b = species('A B')
+    rxns = [
+        a+b >> 2*b,
+    ]
+    inits = {a: 99, b: 1}
+    tmax = 30
+    plot_gillespie(rxns, inits, tmax)
+
 def plot_gillespie(
         rxns: Iterable[Reaction],
         initial_counts: dict[Specie, int],
@@ -797,9 +888,8 @@ def plot_gillespie(
         loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
         vol: float | None = None,
-        simulation_package: Literal['rebop', 'gillespy2'] = 'rebop',
         **options: dict[str, object],
-) -> xarray.Dataset:
+) -> xarray.Dataset | None:
     r"""
     Similar to [`plot_crn`](gpac.crn.plot_crn), but uses the [rebop package](https://pypi.org/project/rebop/)
     for discrete simulation using the Gillespie algorithm instead of continuous ODEs.
@@ -848,37 +938,18 @@ def plot_gillespie(
         The result of the simulation, which is the same as the result of
         [`rebop_crn_counts`](gpac.crn.rebop_crn_counts).
     """
-    if simulation_package == 'rebop':
-        rb_result = rebop_crn_counts(
-            rxns=rxns,
-            initial_counts=initial_counts,
-            tmax=tmax,
-            nb_steps=nb_steps,
-            seed=seed,
-            vol=vol,
-            resets=resets,
-            dependent_symbols=dependent_symbols,
-        )
-        times = rb_result['time']
-        result = {str(name): rb_result[name] for name in rb_result if name != 'time'}
-    elif simulation_package == 'gillespy2':
-        raise NotImplementedError('gillespy2 is not yet supported')
-        # gp_result = gillespie_crn_counts(
-        #     rxns=rxns,
-        #     initial_counts=initial_counts,
-        #     t_eval=t_eval,
-        #     seed=seed,
-        #     dependent_symbols=dependent_symbols,
-        #     **options,
-        # )
-        # symbols = tuple(name for name in gp_result[0].keys() if name != 'time')
-        # assert len(symbols) == len(gp_result[0]) - 1  # -1 for 'time'
-        # times = np.array(t_eval)
-        # # convert gp_result to Dict[str, np.ndarray] for _plot_given_values
-        # result = {symbol: gp_result[0][symbol] for symbol in symbols}
-    else:
-        raise ValueError(f'Unknown simulation_package {simulation_package}')
-
+    rb_result = rebop_crn_counts(
+        rxns=rxns,
+        initial_counts=initial_counts,
+        tmax=tmax,
+        nb_steps=nb_steps,
+        seed=seed,
+        vol=vol,
+        resets=resets,
+        dependent_symbols=dependent_symbols,
+    )
+    times = rb_result['time']
+    result = {str(name): rb_result[name] for name in rb_result if name != 'time'}
     plot_given_values(
         times=times,
         result=result,

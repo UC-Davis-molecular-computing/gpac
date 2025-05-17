@@ -17,13 +17,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
-    "openpyxl>=3",
-    "tabulate>=0.9",
     "scipy>=1",
     "sympy>=1",
     "numpy>=2",
     "matplotlib>=3",
-    "gillespy2>=1",
     "rebop>=0.9",
     "xarray>=2025",
     "tqdm>=4",
