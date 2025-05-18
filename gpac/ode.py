@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import xarray
 
-default_figure_size = (10, 3)
+default_figure_size = (12, 3)
 
 ValOde = TypeVar("ValOde", sympy.Expr, float, int)
 Number = TypeVar("Number", float, int)
