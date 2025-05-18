@@ -2,8 +2,9 @@ scipy
 sympy
 numpy
 matplotlib
-gillespy2
 rebop
 xarray
-pandas
 tqdm
+polars
+ipywidgets
+ipykernel
