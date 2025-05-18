@@ -17,11 +17,13 @@ watch:
 
 plugins:
   - search
+  - autorefs
   - mkdocstrings:
       default_handler: python
       handlers:
         python:
           options:
+            show_overloads: false
             rendering:
               line_length: 100
             members_order: source

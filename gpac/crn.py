@@ -23,9 +23,9 @@ rxns = [
     a+u >> 2*a,
     b+u >> 2*b,
 ]
-initial_values = {a: 0.51, b: 0.49}
+inits = {a: 0.51, b: 0.49}
 t_eval = np.linspace(0, 10, 100)
-gpac.plot_crn(rxns, initial_values, t_eval)
+gpac.plot_crn(rxns, inits, t_eval)
 ```
 
 which will plot the concentrations of A, B, and U over time. One can specify reversible reactions
@@ -51,7 +51,7 @@ reaction rate is to divide by $1 + i \cdot I$, where $i$ is the inhibitor consta
 So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [I])$.
 """
 
-from __future__ import annotations  # needed for forward references in type hints
+from __future__ import annotations
 
 import math
 from typing import Iterable, Callable, Literal, Sequence, TypeAlias, cast, overload, TypeVar
@@ -83,7 +83,7 @@ class Specie:
     """
     Name of the species. This is used in two ways: when plotting, this name is used 
     in the legend, and when using the `dependent_symbols` parameter in the functions
-    [`plot_crn`](gpac.crn.plot_crn) and [`plot_gillespie`](gpac.crn.plot_gillespie), 
+    [`plot_crn`](gpac.crn.plot_crn) and [`plot_gillespie`](gpac.crn.plot_gillespie),
     this name is used to identify the species, since dependent symbols need to be specified
     as sympy.Symbol objects defined as functions of other sympy.Symbol objects.
     The way to connect that to the species is to make two objects, one Specie and one Symbol,
@@ -139,7 +139,7 @@ class Specie:
     __req__ = __eq__
 
 
-from gpac.ode import integrate_odes, plot, plot_given_values, Number, ValOde, default_figure_size
+from gpac.ode import integrate_odes, plot, plot_given_values, Number, ValOde, default_figsize
 
 KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol, str)
 ConfigCrn: TypeAlias = dict[KeyConfigCrn, Number]
@@ -267,13 +267,14 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     Returns
     -------
     :
-        Dictionary mapping each species (represented as a sympy Symbol object, rather than a [`Specie`](gpac.crn.Specie)
-        object) to its corresponding ODE (represented as a sympy Expression).
+        dict mapping each species (represented as a sympy Symbol object, 
+        rather than a [`Specie`](gpac.crn.Specie) object) to its corresponding ODE 
+        (represented as a sympy Expression).
         This object can be given as the parameter `odes` to the functions 
         [`integrate_odes`][gpac.ode.integrate_odes]
         and 
         [`plot`][gpac.ode.plot] to integrate/plot the ODEs.
-        (which is essentially all the functions [`integrate_crn_odes`](gpac.crn.integrate_crn_odes) 
+        (this is essentially what the functions [`integrate_crn_odes`](gpac.crn.integrate_crn_odes) 
         and [`plot_crn`](gpac.crn.plot_crn) do.
     """
     # map each symbol to list of reactions in which it appears
@@ -295,21 +296,21 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     return odes
 
 
-def _normalize_crn_initial_values(initial_values: ConfigCrn) \
+def _normalize_crn_inits(inits: ConfigCrn) \
         -> dict[sympy.Symbol, Number]:
-    normalized_initial_values = {}
-    for symbol, conc in initial_values.items():
+    normalized_inits = {}
+    for symbol, conc in inits.items():
         if isinstance(symbol, Specie):
             symbol = sympy.Symbol(symbol.name)
         elif isinstance(symbol, str):
             symbol = sympy.Symbol(symbol)
-        normalized_initial_values[symbol] = conc
-    return normalized_initial_values
+        normalized_inits[symbol] = conc
+    return normalized_inits
 
 
 def integrate_crn_odes(
         rxns: Iterable[Reaction],
-        initial_values: ConfigCrn,
+        inits: ConfigCrn,
         t_eval: Iterable[Number] | None = None,
         *,
         t_span: tuple[Number, Number] | None = None,
@@ -324,8 +325,6 @@ def integrate_crn_odes(
     Integrate the ODEs derived from to the given set of chemical reactions.
     This calls [integrate_odes][gpac.ode.integrate_odes] with the ODEs derived from the given reactions via
     [crn_to_odes][gpac.crn.crn_to_odes].
-    See [integrate_odes][gpac.ode.integrate_odes] for description of parameters other than 
-    `rxns` and `initial_values`.
 
     Parameters
     ----------
@@ -333,10 +332,16 @@ def integrate_crn_odes(
         list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
         See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
-    initial_values:
+    inits:
         dict mapping each species to its initial concentration.
-        Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+        Note that unlike the parameter `inits` in [`integrate_odes`](gpac.ode.integrate_odes),
         keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
+
+    t_eval:
+        See [`integrate_odes`][gpac.ode.integrate_odes].
+
+    t_span:
+        See [`integrate_odes`][gpac.ode.integrate_odes].
 
     Returns
     -------
@@ -345,10 +350,10 @@ def integrate_crn_odes(
         See [`integrate_odes`](gpac.ode.integrate_odes) for details about this parameter.
     """
     odes = crn_to_odes(rxns)
-    initial_values_normalized = _normalize_crn_initial_values(initial_values)
+    inits_normalized = _normalize_crn_inits(inits)
     return integrate_odes(
         odes,
-        initial_values=initial_values_normalized,
+        inits=inits_normalized,
         t_eval=t_eval,
         t_span=t_span,
         method=method,
@@ -362,7 +367,7 @@ def integrate_crn_odes(
 @overload
 def plot_crn(
         rxns: Iterable[Reaction],
-        initial_values: ConfigCrn,
+        inits: ConfigCrn,
         t_eval: Iterable[Number] | None = ...,
         *,
         t_span: tuple[Number, Number] | None = ...,
@@ -393,7 +398,7 @@ def plot_crn(
 @overload
 def plot_crn(
         rxns: Iterable[Reaction],
-        initial_values: ConfigCrn,
+        inits: ConfigCrn,
         t_eval: Iterable[Number] | None = ...,
         *,
         t_span: tuple[Number, Number] | None = ...,
@@ -433,13 +438,13 @@ def test_mypy_plot_crn():
 
 def plot_crn(
         rxns: Iterable[Reaction],
-        initial_values: ConfigCrn,
+        inits: ConfigCrn,
         t_eval: Iterable[Number] | None = None,
         *,
         t_span: tuple[Number, Number] | None = None,
         resets: dict[Number, ConfigCrn] | None = None,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = default_figure_size,
+        figure_size: tuple[Number, Number] = default_figsize,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -522,17 +527,17 @@ def plot_crn(
         if `return_ode_result` is True. See [`integrate_odes`](gpac.ode.integrate_odes) for details about this parameter.
     """
     odes = crn_to_odes(rxns)
-    initial_values_normalized = _normalize_crn_initial_values(initial_values)
+    inits_normalized = _normalize_crn_inits(inits)
     return plot(
         odes,
-        initial_values=initial_values_normalized,
+        inits=inits_normalized,
         t_eval=t_eval,
         resets=resets,
         t_span=t_span,
         # I don't understand why there's a type warning on the next line; 
         # `dependent_symbols` is the same type in each function
         dependent_symbols=dependent_symbols, #type: ignore
-        figure_size=figure_size,
+        figsize=figure_size,
         latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
@@ -588,7 +593,7 @@ def find_all_species(rxns: Iterable[Reaction]) -> tuple[Specie, ...]:
 
 #     initial_counts:
 #         dict mapping each species to its initial integer count.
-#         Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+#         Note that unlike the parameter `inits` in [`integrate_odes`](gpac.ode.integrate_odes),
 #         keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
 
 #     Returns
@@ -832,7 +837,7 @@ def rebop_crn_counts(
 
     initial_counts:
         dict mapping each species to its initial integer count.
-        Note that unlike the parameter `initial_values` in [`integrate_odes`](gpac.ode.integrate_odes),
+        Note that unlike the parameter `inits` in [`integrate_odes`](gpac.ode.integrate_odes),
         keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
         instead of fixed, evenly-spaced time points.
 
@@ -983,7 +988,7 @@ def plot_gillespie(
         seed: int | None = None,
         resets: dict[Number, ConfigCrn] | None = None,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = default_figure_size,
+        figure_size: tuple[Number, Number] = default_figsize,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |

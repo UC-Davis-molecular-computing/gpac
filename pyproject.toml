@@ -1,11 +1,3 @@
-[project.optional-dependencies]
-docs = [
-    "mkdocs>=1.4.0",
-    "mkdocstrings[python]>=0.20.0",
-    "mkdocs-material>=9.1.0",
-    "pymdown-extensions",
-]
-
 [project]
 name = "gpac"
 version = "1.1.0"
@@ -34,3 +26,13 @@ Homepage = "https://github.com/UC-Davis-molecular-computing/gpac"
 Issues = "https://github.com/UC-Davis-molecular-computing/gpac/issues"
 API = "https://gpac.readthedocs.io/"
 
+[project.optional-dependencies]
+docs = [
+    "mkdocs>=1.4.0",
+    "mkdocstrings[python]>=0.20.0",
+    "mkdocs-material>=9.1.0",
+    "pymdown-extensions",
+]
+dev = [
+    "black",
+]
