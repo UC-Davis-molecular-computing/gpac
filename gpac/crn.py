@@ -139,7 +139,7 @@ class Specie:
     __req__ = __eq__
 
 
-from gpac.ode import integrate_odes, plot, plot_given_values, Number, ValOde
+from gpac.ode import integrate_odes, plot, plot_given_values, Number, ValOde, default_figure_size
 
 KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol, str)
 ConfigCrn: TypeAlias = dict[KeyConfigCrn, Number]
@@ -442,7 +442,7 @@ def plot_crn(
         t_span: tuple[Number, Number] | None = None,
         resets: dict[Number, ConfigCrn] | None = None,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = (10, 3),
+        figure_size: tuple[Number, Number] = default_figure_size,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -992,7 +992,7 @@ def plot_gillespie(
         seed: int | None = None,
         resets: dict[Number, ConfigCrn] | None = None,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = (10, 3),
+        figure_size: tuple[Number, Number] = default_figure_size,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |

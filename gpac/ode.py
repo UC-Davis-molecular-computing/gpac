@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import xarray
 
+default_figure_size = (10, 3)
+
 ValOde = TypeVar("ValOde", sympy.Expr, float, int)
 Number = TypeVar("Number", float, int)
 Config: TypeAlias = dict[sympy.Symbol, Number]
@@ -597,7 +599,7 @@ def plot(
         t_span: tuple[Number, Number] | None = None,
         resets: dict[Number, Config] | None = None,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = (10, 3),
+        figure_size: tuple[Number, Number] = default_figure_size,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -754,7 +756,7 @@ def plot_given_values(
         result: dict[sympy.Symbol, np.ndarray] | dict[sympy.Symbol, xarray.DataArray],
         source: Literal['ode', 'ssa'],
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = (10, 3),
+        figure_size: tuple[Number, Number] = default_figure_size,
         latex_legend: bool = False,
         symbols_to_plot:
             Iterable[sympy.Symbol] |
