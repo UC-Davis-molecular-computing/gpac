@@ -27,6 +27,9 @@ def symbols(names: str | Iterable[str], *, cls=sympy.Symbol, **args) -> tuple[sy
     even if `names` represents only a single symbol. That means we can declare
     the return type unconditionally as `tuple[sympy.Symbol, ...]` instead of `Any` as `sympy.symbols` does.
 
+    This means that, for instance, if you write `x,y = gpac.symbols('x y')`, then mypy will
+    know that `x` and `y` are both of type `sympy.Symbol`.
+
     Parameters
     ----------
     names:
