@@ -778,6 +778,7 @@ def plot_given_values(
         if warn_change_dpi:
             print(f"matplotlib.pylab.rcParams['figure.dpi'] was {rcParams['figure.dpi']}; setting it to 96")
         rcParams['figure.dpi'] = 96
+    rcParams.update({'font.size': 14})
 
     # partially normalize symbols_to_plot to be tuple of something (Symbol, Iterable[Symbol], or re.Pattern)
     dependent_symbols_list = list(dependent_symbols.keys()) if dependent_symbols is not None else []
