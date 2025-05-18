@@ -422,9 +422,6 @@ def plot_crn(
 
 
 def test_mypy_plot_crn():
-    """
-    Test mypy type checking.
-    """
     a, b = species('A B')
     rxns = [
         a+b >> 2*b,
