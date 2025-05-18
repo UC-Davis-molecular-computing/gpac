@@ -71,10 +71,10 @@ a,b,c = sympy.symbols('a b c')
 # ODEs specified as dict mapping each variable to expression describing its derivative.
 # key representing variable can be a sympy Symbol or string.
 # value representing derivative can be a sympy Expr, string, or (if constant) int or float.
-odes = {               # represents ODEs:
-    a: -a*b + c*a,     # d/dt a(t) = -a(t)*b(t) + c(t)*a(t)
-    b: -b*c + a*b,     # d/dt b(t) = -b(t)*c(t) + a(t)*b(t)
-    'c': '-c*a + b*c', # d/dt c(t) = -c(t)*a(t) + b(t)*c(t)
+odes = {            # represents ODEs:
+    a: -a*b + c*a,  # d/dt a(t) = -a(t)*b(t) + c(t)*a(t)
+    b: -b*c + a*b,  # d/dt b(t) = -b(t)*c(t) + a(t)*b(t)
+    c: -c*a + b*c,  # d/dt c(t) = -c(t)*a(t) + b(t)*c(t)
 }
 initial_values = {
     a: 10,
@@ -87,6 +87,21 @@ gpac.plot(odes, initial_values, t_eval=t_eval, figure_size=(12,3), symbols_to_pl
 ```
 
 ![](images/rps-a-c.png)
+
+The function [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols) returns `Any`
+because the return type varies depending greatly on the parameter types.
+For convenience, gpac provides a strongly-typed wrapper around `sympy.symbols`, which always returns a 
+`tuple[sympy.Symbol, ...]`. Since `Any` is dynamically typed, in most circumstances this should not cause mypy errors,
+but in case you would like to have more mypy help, calling the gpac wrapper will ensure mypy can infer the
+types as `sympy.Symbol`:
+
+```python
+import sympy
+import gpac
+a = sympy.symbols('a') # mypy infers type of a is Any
+b, = gpac.symbols('b') # mypy infers type of x is sympy.Symbol; note that we need 
+                       #   to unpack the length-1 tuple, unlike with sympy.symbols
+```
 
 ### Getting trajectory data of ODEs
 If you want the data itself from the ODE numerical integration (without plotting it), you can call [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#ode.integrate_odes) (replace the call to [`plot`](https://gpac.readthedocs.io/en/latest/#ode.plot) above with the following code).

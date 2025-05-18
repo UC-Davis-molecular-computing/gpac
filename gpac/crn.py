@@ -54,7 +54,7 @@ So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [
 from __future__ import annotations  # needed for forward references in type hints
 
 import math
-from typing import Iterable, Callable, Literal, TypeAlias, overload
+from typing import Iterable, Callable, Literal, Sequence, TypeAlias, cast, overload, TypeVar
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
@@ -71,16 +71,85 @@ import numpy as np
 from tqdm.auto import tqdm
 import polars as pl
 
-from gpac.ode import integrate_odes, plot, plot_given_values
+@dataclass(frozen=True)
+class Specie:
+    """
+    Represents species in a chemical reaction network. In general these are not created directly,
+    but rather via the [`species`](gpac.crn.species) function, 
+    which creates a tuple of [`Specie`](gpac.crn.Specie) objects.
+    """
 
+    name: str
+    """
+    Name of the species. This is used in two ways: when plotting, this name is used 
+    in the legend, and when using the `dependent_symbols` parameter in the functions
+    [`plot_crn`](gpac.crn.plot_crn) and [`plot_gillespie`](gpac.crn.plot_gillespie), 
+    this name is used to identify the species, since dependent symbols need to be specified
+    as sympy.Symbol objects defined as functions of other sympy.Symbol objects.
+    The way to connect that to the species is to make two objects, one Specie and one Symbol,
+    with the same name. See the 
+    [example notebook](https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb)
+    for an example of how this is done.
+    """
+
+    def __add__(self, other: Specie | Expression) -> Expression:
+        if isinstance(other, Expression):
+            return other + Expression([self])
+        elif isinstance(other, Specie):
+            return Expression([self]) + Expression([other])
+
+        raise NotImplementedError()
+
+    __radd__ = __add__
+
+    def __rshift__(self, other: Specie | Expression) -> Reaction:
+        return Reaction(self, other)
+
+    def __rrshift__(self, other: Specie | Expression) -> Reaction:
+        return Reaction(other, self)
+
+    def __or__(self, other: Specie | Expression) -> Reaction:
+        return Reaction(self, other, reversible=True)
+
+    def __mul__(self, other: int) -> Expression:
+        if isinstance(other, int):
+            return other * Expression([self])
+        else:
+            raise NotImplementedError()
+
+    def __rmul__(self, other: int) -> Expression:
+        if isinstance(other, int):
+            return other * Expression([self])
+        else:
+            raise NotImplementedError()
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, Specie):
+            return NotImplemented
+        return self.name < other.name
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Specie):
+            return NotImplemented
+        return self.name == other.name
+
+    __req__ = __eq__
+
+
+from gpac.ode import integrate_odes, plot, plot_given_values, Number, ValOde
+
+KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol, str)
+ConfigCrn: TypeAlias = dict[KeyConfigCrn, Number]
 
 def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     r"""
-    Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s),
-    or a single [`Specie`](gpac.crn.Specie) object.
+    Create a tuple of [`Specie`](gpac.crn.Specie) (Single species [`Expression`](gpac.crn.Expression)'s).
 
-    The return type is tuple[Specie, ...] to avoid mypy warnings in the more common case of multiple species.
-    You can use `# type: ignore` to silence the mypy warning for a single species.
+    The return type is tuple[Specie, ...], even if only a single species is found. So the return value 
+    always needs to be assigned to a tuple of variables, e.g., `x, = species('X')`.
 
     Examples
     --------
@@ -95,8 +164,10 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     rxn = x + y >> z + w
     ```
 
+    Note 
+
     ```py
-    x = species('X')
+    x, = species('X')
     rxn = x >> 2*x
     ```
 
@@ -109,7 +180,7 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     Returns
     -------
     :
-        tuple of [`Specie`](gpac.crn.Specie) objects, or a single [`Specie`](gpac.crn.Specie) object.
+        tuple of [`Specie`](gpac.crn.Specie) objects
     """
     species_list: list[str]
     if isinstance(sp, str):
@@ -122,10 +193,7 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     if len(species_list) != len(set(species_list)):
         raise ValueError(f'species_list {species_list} cannot contain duplicates.')
 
-    if len(species_list) > 1:
-        return tuple(Specie(specie) for specie in species_list)
-    else:
-        return Specie(species_list[0])
+    return tuple(Specie(specie) for specie in species_list)
 
 
 def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
@@ -227,8 +295,8 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     return odes
 
 
-def _normalize_crn_initial_values(initial_values: dict[Specie | sympy.Symbol | str, float]) \
-        -> dict[sympy.Symbol, float]:
+def _normalize_crn_initial_values(initial_values: ConfigCrn) \
+        -> dict[sympy.Symbol, Number]:
     normalized_initial_values = {}
     for symbol, conc in initial_values.items():
         if isinstance(symbol, Specie):
@@ -241,10 +309,10 @@ def _normalize_crn_initial_values(initial_values: dict[Specie | sympy.Symbol | s
 
 def integrate_crn_odes(
         rxns: Iterable[Reaction],
-        initial_values: dict[Specie, float],
-        t_eval: Iterable[float] | None = None,
+        initial_values: ConfigCrn,
+        t_eval: Iterable[Number] | None = None,
         *,
-        t_span: tuple[float, float] | None = None,
+        t_span: tuple[Number, Number] | None = None,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
         events: Callable | Iterable[Callable] | None = None,
@@ -277,10 +345,10 @@ def integrate_crn_odes(
         See [`integrate_odes`](gpac.ode.integrate_odes) for details about this parameter.
     """
     odes = crn_to_odes(rxns)
-    initial_values = _normalize_crn_initial_values(initial_values)
+    initial_values_normalized = _normalize_crn_initial_values(initial_values)
     return integrate_odes(
         odes,
-        initial_values=initial_values,
+        initial_values=initial_values_normalized,
         t_eval=t_eval,
         t_span=t_span,
         method=method,
@@ -291,36 +359,109 @@ def integrate_crn_odes(
         **options
     )
 
+@overload
+def plot_crn(
+        rxns: Iterable[Reaction],
+        initial_values: ConfigCrn,
+        t_eval: Iterable[Number] | None = ...,
+        *,
+        t_span: tuple[Number, Number] | None = ...,
+        resets: dict[Number, ConfigCrn] | None = ...,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
+        figure_size: tuple[Number, Number] = ...,
+        latex_legend: bool = ...,
+        symbols_to_plot: Iterable[sympy.Symbol] |
+                         Iterable[Sequence[sympy.Symbol]] |
+                         str |
+                         re.Pattern |
+                         Iterable[re.Pattern] |
+                         None = ...,
+        show: bool = ...,
+        legend: dict[sympy.Symbol, str] | None = ...,
+        method: str | OdeSolver = ...,
+        dense_output: bool = ...,
+        events: Callable | Iterable[Callable] | None = ...,
+        vectorized: bool = ...,
+        return_ode_result: Literal[True],
+        args: tuple | None = ...,
+        loc: str | tuple[Number, Number] = ...,
+        warn_change_dpi: bool = ...,
+        **options,
+) -> OdeResult: ...
+
+
+@overload
+def plot_crn(
+        rxns: Iterable[Reaction],
+        initial_values: ConfigCrn,
+        t_eval: Iterable[Number] | None = ...,
+        *,
+        t_span: tuple[Number, Number] | None = ...,
+        resets: dict[Number, ConfigCrn] | None = ...,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
+        figure_size: tuple[Number, Number] = ...,
+        latex_legend: bool = False,
+        symbols_to_plot: Iterable[sympy.Symbol] |
+                         Iterable[Sequence[sympy.Symbol]] |
+                         str |
+                         re.Pattern |
+                         Iterable[re.Pattern] |
+                         None = ...,
+        show: bool = ...,
+        legend: dict[sympy.Symbol, str] | None = ...,
+        method: str | OdeSolver = ...,
+        dense_output: bool = ...,
+        events: Callable | Iterable[Callable] | None = ...,
+        vectorized: bool = ...,
+        return_ode_result: Literal[False] = ...,
+        args: tuple | None = ...,
+        loc: str | tuple[Number, Number] = ...,
+        warn_change_dpi: bool = ...,
+        **options,
+) -> None: ...
+
+
+def test_mypy_plot_crn():
+    """
+    Test mypy type checking.
+    """
+    a, b = species('A B')
+    rxns = [
+        a+b >> 2*b,
+    ]
+    inits = {a: 99, b: 1}
+    t_eval = np.linspace(0, 30, 100)
+    plot_crn(rxns, inits, t_eval)
+
 
 def plot_crn(
         rxns: Iterable[Reaction],
-        initial_values: dict[Specie, float],
-        t_eval: Iterable[float] | None = None,
+        initial_values: ConfigCrn,
+        t_eval: Iterable[Number] | None = None,
         *,
-        t_span: tuple[float, float] | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, float]] | None = None,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-        figure_size: tuple[float, float] = (10, 3),
+        t_span: tuple[Number, Number] | None = None,
+        resets: dict[Number, ConfigCrn] | None = None,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
+        figure_size: tuple[Number, Number] = (10, 3),
         latex_legend: bool = False,
-        symbols_to_plot:
-        Iterable[sympy.Symbol | str] |
-        Iterable[Iterable[sympy.Symbol | str]] |
-        str |
-        re.Pattern |
-        Iterable[re.Pattern]
-        | None = None,
+        symbols_to_plot: Iterable[sympy.Symbol] |
+                         Iterable[Sequence[sympy.Symbol]] |
+                         str |
+                         re.Pattern |
+                         Iterable[re.Pattern] |
+                         None = None,
         show: bool = False,
-        legend: dict[sympy.Symbol | str, str] | None = None,
+        legend: dict[sympy.Symbol, str] | None = None,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
         events: Callable | Iterable[Callable] | None = None,
         vectorized: bool = False,
         return_ode_result: bool = False,
         args: tuple | None = None,
-        loc: str | tuple[float, float] = 'best',
+        loc: str | tuple[Number, Number] = 'best',
         warn_change_dpi: bool = False,
         **options,
-) -> OdeResult:
+) -> OdeResult | None:
     r"""
     Plot the ODEs derived from to the given set of chemical reactions.
     This calls [`plot`][gpac.ode.plot] with the ODEs derived from the given reactions via
@@ -384,14 +525,16 @@ def plot_crn(
         if `return_ode_result` is True. See [`integrate_odes`](gpac.ode.integrate_odes) for details about this parameter.
     """
     odes = crn_to_odes(rxns)
-    initial_values = _normalize_crn_initial_values(initial_values)
+    initial_values_normalized = _normalize_crn_initial_values(initial_values)
     return plot(
         odes,
-        initial_values=initial_values,
+        initial_values=initial_values_normalized,
         t_eval=t_eval,
         resets=resets,
         t_span=t_span,
-        dependent_symbols=dependent_symbols,
+        # I don't understand why there's a type warning on the next line; 
+        # `dependent_symbols` is the same type in each function
+        dependent_symbols=dependent_symbols, #type: ignore
         figure_size=figure_size,
         latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
@@ -606,19 +749,21 @@ def _run_rebop_with_resets(
         for specie_name, counts in total_results.data_vars.items():
             final_count = int(counts.data[-1])
             config[specie_name] = final_count
+    
+    assert total_results is not None
 
     return total_results
 
 
 def rebop_sample_future_configurations(
         rxns: Iterable[Reaction],
-        initial_counts: dict[Specie, int],
+        initial_counts: ConfigCrn,
         tmax: float,
         trials: int,
         *,
         vol: float | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        resets: dict[float, ConfigCrn] | None = None,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
         seed: int | None = None,
 ) -> pl.DataFrame:
     """
@@ -649,10 +794,9 @@ def rebop_sample_future_configurations(
     # it is possible to give a RNG to rebop, but here I'm being lazy and just using the parameter
     # seed to generate random seeds to give to rebop_crn_counts
     rng = np.random.default_rng(seed)
-    samples = []
     for _ in tqdm(range(trials)):
     # for _ in range(trials):
-        seed_generated = rng.integers(0, sys.maxsize)
+        seed_generated = int(rng.integers(0, sys.maxsize))
         dataset = rebop_crn_counts(
             rxns,
             initial_counts,
@@ -672,13 +816,13 @@ def rebop_sample_future_configurations(
 
 def rebop_crn_counts(
         rxns: Iterable[Reaction],
-        initial_counts: dict[Specie, int],
-        tmax: float,
+        initial_counts: ConfigCrn,
+        tmax: Number,
         *,
         nb_steps: int = 0,
-        vol: float | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
+        vol: Number | None = None,
+        resets: dict[Number, ConfigCrn] | None = None,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
         seed: int | None = None,
 ) -> xarray.Dataset:
     r"""
@@ -727,7 +871,7 @@ def rebop_crn_counts(
         and by the key `"time"` to get the times at which the counts were recorded.
     """
     if vol is None:
-        vol = sum(initial_counts.values())
+        vol = cast(Number, sum(initial_counts.values()))
 
     crn = rb.Gillespie()
     for rxn in rxns:
@@ -775,85 +919,59 @@ def rebop_crn_counts(
 @overload
 def plot_gillespie(
         rxns: Iterable[Reaction],
-        initial_counts: dict[Specie, int],
-        tmax: float,
+        initial_counts: ConfigCrn,
+        tmax: Number,
         *,
-        nb_steps: int = 0,
-        seed: int | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-        figure_size: tuple[float, float] = (10, 3),
-        latex_legend: bool = False,
-        symbols_to_plot: Iterable[sympy.Symbol | str] |
-                         Iterable[Iterable[sympy.Symbol | str]] |
+        nb_steps: int = ...,
+        seed: int | None = ...,
+        resets: dict[Number, ConfigCrn] | None = ...,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
+        figure_size: tuple[Number, Number] = ...,
+        latex_legend: bool = ...,
+        symbols_to_plot: Iterable[sympy.Symbol] |
+                         Iterable[Sequence[sympy.Symbol]] |
                          str |
                          re.Pattern |
                          Iterable[re.Pattern] |
-                         None = None,
-        legend: dict[sympy.Symbol | str, str] | None = None,
-        show: bool = False,
+                         None = ...,
+        legend: dict[sympy.Symbol, str] | None = ...,
+        show: bool = ...,
         return_simulation_result: Literal[True],
-        loc: str | tuple[float, float] = 'best',
-        warn_change_dpi: bool = False,
-        vol: float | None = None,
+        loc: str | tuple[Number, Number] = ...,
+        warn_change_dpi: bool = ...,
+        vol: Number | None = ...,
         **options: dict[str, object],
 ) -> xarray.Dataset: ...
+
 
 @overload
 def plot_gillespie(
         rxns: Iterable[Reaction],
-        initial_counts: dict[Specie, int],
-        tmax: float,
+        initial_counts: ConfigCrn,
+        tmax: Number,
         *,
-        nb_steps: int = 0,
-        seed: int | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-        figure_size: tuple[float, float] = (10, 3),
-        latex_legend: bool = False,
-        symbols_to_plot: Iterable[sympy.Symbol | str] |
-                         Iterable[Iterable[sympy.Symbol | str]] |
+        nb_steps: int = ...,
+        seed: int | None = ...,
+        resets: dict[Number, ConfigCrn] | None = ...,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
+        figure_size: tuple[Number, Number] = ...,
+        latex_legend: bool = ...,
+        symbols_to_plot: Iterable[sympy.Symbol] |
+                         Iterable[Sequence[sympy.Symbol]] |
                          str |
                          re.Pattern |
                          Iterable[re.Pattern] |
-                         None = None,
-        legend: dict[sympy.Symbol | str, str] | None = None,
-        show: bool = False,
-        return_simulation_result: Literal[False],
-        loc: str | tuple[float, float] = 'best',
-        warn_change_dpi: bool = False,
-        vol: float | None = None,
+                         None = ...,
+        legend: dict[sympy.Symbol, str] | None = ...,
+        show: bool = ...,
+        return_simulation_result: Literal[False] = ...,
+        loc: str | tuple[Number, Number] = ...,
+        warn_change_dpi: bool = ...,
+        vol: Number | None = ...,
         **options: dict[str, object],
 ) -> None: ...
 
-@overload
-def plot_gillespie(
-    rxns: Iterable[Reaction],
-    initial_counts: dict[Specie, int],
-    tmax: float,
-    *,
-    nb_steps: int = 0,
-    seed: int | None = None,
-    resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
-    dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-    figure_size: tuple[float, float] = (10, 3),
-    latex_legend: bool = False,
-    symbols_to_plot: Iterable[sympy.Symbol | str] |
-                     Iterable[Iterable[sympy.Symbol | str]] |
-                     str |
-                     re.Pattern |
-                     Iterable[re.Pattern] |
-                     None = None,
-    legend: dict[sympy.Symbol | str, str] | None = None,
-    show: bool = False,
-    return_simulation_result: bool = False,
-    loc: str | tuple[float, float] = 'best',
-    warn_change_dpi: bool = False,
-    vol: float | None = None,
-    **options: dict[str, object],
-) -> None: ...
-
-def test_mypy():
+def test_mypy_plot_gillespie():
     """
     Test mypy type checking.
     """
@@ -867,27 +985,27 @@ def test_mypy():
 
 def plot_gillespie(
         rxns: Iterable[Reaction],
-        initial_counts: dict[Specie, int],
-        tmax: float,
+        initial_counts: ConfigCrn,
+        tmax: Number,
         *,
         nb_steps: int = 0,
         seed: int | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, int]] | None = None,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-        figure_size: tuple[float, float] = (10, 3),
+        resets: dict[Number, ConfigCrn] | None = None,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
+        figure_size: tuple[Number, Number] = (10, 3),
         latex_legend: bool = False,
-        symbols_to_plot: Iterable[sympy.Symbol | str] |
-                         Iterable[Iterable[sympy.Symbol | str]] |
+        symbols_to_plot: Iterable[sympy.Symbol] |
+                         Iterable[Sequence[sympy.Symbol]] |
                          str |
                          re.Pattern |
                          Iterable[re.Pattern] |
                          None = None,
-        legend: dict[sympy.Symbol | str, str] | None = None,
+        legend: dict[sympy.Symbol, str] | None = None,
         show: bool = False,
         return_simulation_result: bool = False,
-        loc: str | tuple[float, float] = 'best',
+        loc: str | tuple[Number, Number] = 'best',
         warn_change_dpi: bool = False,
-        vol: float | None = None,
+        vol: Number | None = None,
         **options: dict[str, object],
 ) -> xarray.Dataset | None:
     r"""
@@ -949,7 +1067,7 @@ def plot_gillespie(
         dependent_symbols=dependent_symbols,
     )
     times = rb_result['time']
-    result = {str(name): rb_result[name] for name in rb_result if name != 'time'}
+    result = {sympy.Symbol(str(name)): rb_result[name] for name in rb_result if name != 'time'}
     plot_given_values(
         times=times,
         result=result,
@@ -996,74 +1114,6 @@ def replace_reversible_rxns(rxns: Iterable[Reaction]) -> list[Reaction]:
                                    k=rxn.rate_constant_reverse, reversible=False)
             new_rxns.extend([forward_rxn, reverse_rxn])
     return new_rxns
-
-
-@dataclass(frozen=True)
-class Specie:
-    """
-    Represents species in a chemical reaction network. In general these are not created directly,
-    but rather via the [`species`](gpac.crn.species) function, 
-    which creates a tuple of [`Specie`](gpac.crn.Specie) objects.
-    """
-
-    name: str
-    """
-    Name of the species. This is used in two ways: when plotting, this name is used 
-    in the legend, and when using the `dependent_symbols` parameter in the functions
-    [`plot_crn`](gpac.crn.plot_crn) and [`plot_gillespie`](gpac.crn.plot_gillespie), 
-    this name is used to identify the species, since dependent symbols need to be specified
-    as sympy.Symbol objects defined as functions of other sympy.Symbol objects.
-    The way to connect that to the species is to make two objects, one Specie and one Symbol,
-    with the same name. See the 
-    [example notebook](https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb)
-    for an example of how this is done.
-    """
-
-    def __add__(self, other: Specie | Expression) -> Expression:
-        if isinstance(other, Expression):
-            return other + Expression([self])
-        elif isinstance(other, Specie):
-            return Expression([self]) + Expression([other])
-
-        raise NotImplementedError()
-
-    __radd__ = __add__
-
-    def __rshift__(self, other: Specie | Expression) -> Reaction:
-        return Reaction(self, other)
-
-    def __rrshift__(self, other: Specie | Expression) -> Reaction:
-        return Reaction(other, self)
-
-    def __or__(self, other: Specie | Expression) -> Reaction:
-        return Reaction(self, other, reversible=True)
-
-    def __mul__(self, other: int) -> Expression:
-        if isinstance(other, int):
-            return other * Expression([self])
-        else:
-            raise NotImplementedError()
-
-    def __rmul__(self, other: int) -> Expression:
-        if isinstance(other, int):
-            return other * Expression([self])
-        else:
-            raise NotImplementedError()
-
-    def __str__(self) -> str:
-        return self.name
-
-    def __lt__(self, other: object) -> bool:
-        if not isinstance(other, Specie):
-            return NotImplemented
-        return self.name < other.name
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Specie):
-            return NotImplemented
-        return self.name == other.name
-
-    __req__ = __eq__
 
 
 @dataclass(frozen=True)
@@ -1381,16 +1431,18 @@ class Reaction:
         reactant_coeff = reactants.species.count(specie)
         product_coeff = products.species.count(specie)
         net_produced = product_coeff - reactant_coeff
-        reactants_ode = sympy.Integer(1)
+        reactants_ode = sympy.sympify(sympy.Integer(1))
         for reactant in reactants.get_species():
             reactant_term = sympy.Symbol(reactant.name) ** reactants.species.count(reactant)
             reactants_ode *= reactant_term
 
-        inhibitors_ode = sympy.Integer(1)
+        inhibitors_ode = sympy.sympify(sympy.Integer(1))
         for inhibitor, inhibitor_constant in zip(inhibitors, self.inhibitor_constants):
             inh = sympy.Symbol(inhibitor.name)
 
-            den = 1 + inhibitor_constant * inh if inhibitor_constant != 1.0 else 1 + inh
+            den = 1 + sympy.sympify(inhibitor_constant) * inh \
+                if inhibitor_constant != 1.0 else \
+                    sympy.sympify(1) + inh
             inhibitor_term = 1 / den
 
             # inhibitor_term = inhibitor_constant * sympy.exp(-inh) \

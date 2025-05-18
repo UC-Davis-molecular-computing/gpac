@@ -8,7 +8,7 @@ docs = [
 
 [project]
 name = "gpac"
-version = "1.0.16"
+version = "1.0.17"
 description = "A Python package for extracting and processing grant data from AggieEnterprise spreadsheets."
 authors = [
     { name="Dave Doty", email="doty@ucdavis.edu" }
@@ -25,10 +25,12 @@ dependencies = [
     "xarray>=2025",
     "tqdm>=4",
     "polars>=1",
+    "ipywidgets>=8",
+    "ipykernel>=6",
 ]
 
 [project.urls]
-Homepage = "https://github.com/dave-doty/aggie-unterprise"
-Issues = "https://github.com/dave-doty/aggie-unterprise/issues"
-API = "https://aggie-unterprise.readthedocs.io/"
+Homepage = "https://github.com/UC-Davis-molecular-computing/gpac"
+Issues = "https://github.com/UC-Davis-molecular-computing/gpac/issues"
+API = "https://gpac.readthedocs.io/"
 

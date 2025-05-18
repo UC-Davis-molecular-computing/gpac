@@ -3,7 +3,7 @@ This module has ODE-only functions, mainly [integrate_odes][gpac.ode.integrate_o
 """
 
 import re
-from typing import Iterable, Callable, Any, Literal, TypeAlias, cast
+from typing import Iterable, Callable, Any, Literal, Sequence, TypeAlias, cast, TypeVar
 
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
@@ -13,14 +13,49 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import xarray
 
+ValOde = TypeVar("ValOde", sympy.Expr, float, int)
+Number = TypeVar("Number", float, int)
+Config: TypeAlias = dict[sympy.Symbol, Number]
+
+def symbols(names: str | Iterable[str], *, cls=sympy.Symbol, **args) -> tuple[sympy.Symbol, ...]:
+    """
+    A more strongly-typed wrapper for `sympy.symbols`. Unlike `sympy.symbols`, this
+    always returns a tuple of symbols, even if `names` is a single string or a list
+    of strings.
+
+    Parameters
+    ----------
+    names:
+        A string or list of strings representing the names of the symbols to create.
+        If a string, it can be a single name or a comma-separated list of names.
+        If a list, it can be a list of strings or a list of tuples of strings.
+
+    cls:
+        I don't know, but sympy.symbols has this parameter. It seems you can make the
+        type of objects returned by another class than sympy.Symbol, but I don't
+        know why you would want to do that.
+
+    args:
+        Additional arguments to pass to `sympy.symbols`.
+    """
+    result = sympy.symbols(names, cls=cls, **args)
+    if isinstance(result, sympy.Symbol):
+        return (result,)
+    else:
+        assert isinstance(result, Sequence)
+        assert len(result) > 0
+        assert isinstance(result[0], sympy.Symbol)
+        return tuple(result)
+
+
 def integrate_odes(
-        odes: dict[sympy.Symbol | str, sympy.Expr | str | float | int],
-        initial_values: dict[sympy.Symbol | str, float],
-        t_eval: Iterable[float] | None = None,
+        odes: dict[sympy.Symbol, ValOde],
+        initial_values: Config,
+        t_eval: Iterable[Number] | None = None,
         *,
-        t_span: tuple[float, float] | None = None,
-        dependent_symbols: Iterable[sympy.Expr | str] = (),
-        resets: dict[float, dict[sympy.Symbol | str, float | int]] | None = None,
+        t_span: tuple[Number, Number] | None = None,
+        dependent_symbols: Iterable[ValOde] = (),
+        resets: dict[Number, Config] | None = None,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
         events: Callable | Iterable[Callable] | None = None,
@@ -453,6 +488,7 @@ def _solve_ivp_with_resets(
     # Integrate each segment
     current_y = y0.copy()
 
+    segment_sol = None
     for i, ((t_start, t_end), segment_t_eval) in enumerate(zip(segments, t_eval_segments)):
         # Solve for this segment
         segment_sol = solve_ivp(
@@ -497,6 +533,8 @@ def _solve_ivp_with_resets(
                 idx = symbol_to_idx[symbol]
                 current_y[idx] = new_value
 
+    assert segment_sol is not None
+
     # Combine all results
     combined_t = np.concatenate(all_t)
     combined_y = np.hstack(all_y)
@@ -517,7 +555,7 @@ def _solve_ivp_with_resets(
 
     # Handle dense output if requested
     if dense_output:
-        from scipy.integrate._ivp.common import DenseOutput
+        from scipy.integrate import DenseOutput
 
         class CombinedDenseOutput(DenseOutput):
             def __init__(self, ts, ys):
@@ -552,23 +590,22 @@ def _solve_ivp_with_resets(
 
 
 def plot(
-        odes: dict[sympy.Symbol | str, sympy.Expr | str | float | int],
-        initial_values: dict[sympy.Symbol | str, float | int],
-        t_eval: Iterable[float] | None = None,
+        odes: dict[sympy.Symbol, ValOde],
+        initial_values: Config,
+        t_eval: Iterable[Number] | None = None,
         *,
-        t_span: tuple[float, float] | None = None,
-        resets: dict[float, dict[sympy.Symbol | str, float | int]] | None = None,
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-        figure_size: tuple[float, float] = (10, 3),
+        t_span: tuple[Number, Number] | None = None,
+        resets: dict[Number, Config] | None = None,
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
+        figure_size: tuple[Number, Number] = (10, 3),
         latex_legend: bool = False,
-        symbols_to_plot:
-        Iterable[sympy.Symbol | str] |
-        Iterable[Iterable[sympy.Symbol | str]] |
-        str |
-        re.Pattern |
-        Iterable[re.Pattern]
-        | None = None,
-        legend: dict[sympy.Symbol | str, str] | None = None,
+        symbols_to_plot: Iterable[sympy.Symbol] |
+                         Iterable[Sequence[sympy.Symbol]] |
+                         str |
+                         re.Pattern |
+                         Iterable[re.Pattern] |
+                         None = None,
+        legend: dict[sympy.Symbol, str] | None = None,
         show: bool = False,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
@@ -689,7 +726,7 @@ def plot(
 
     symbols = tuple(odes.keys()) + (() if dependent_symbols is None else tuple(dependent_symbols.keys()))
     assert len(symbols) == len(sol.y)
-    result = {str(symbol): y for symbol, y in zip(symbols, sol.y)}
+    result = {symbol: y for symbol, y in zip(symbols, sol.y)}
     times = sol.t
     plot_given_values(
         times=times,
@@ -709,26 +746,26 @@ def plot(
 
 
 # This is used to share plotting code between data returned from scipy.integrate.solve_ivp and that
-# returned from gillespy2.Model.run(). This is not intended to be called by the user, but we make it public
+# returned from rebop. This is not intended to be called by the user, but we make it public
 # so it's accessible from the crn module.
 def plot_given_values(
         *,
         times: np.ndarray | xarray.DataArray,
-        result: dict[str, np.ndarray | xarray.DataArray],
+        result: dict[sympy.Symbol, np.ndarray] | dict[sympy.Symbol, xarray.DataArray],
         source: Literal['ode', 'ssa'],
-        dependent_symbols: dict[sympy.Symbol | str, sympy.Expr | str] | None = None,
-        figure_size: tuple[float, float] = (10, 3),
+        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
+        figure_size: tuple[Number, Number] = (10, 3),
         latex_legend: bool = False,
         symbols_to_plot:
-        Iterable[sympy.Symbol | str] |
-        Iterable[Iterable[sympy.Symbol | str]] |
-        str |
-        re.Pattern |
-        Iterable[re.Pattern] | None
-        = None,
-        legend: dict[sympy.Symbol | str, str] | None = None,
+            Iterable[sympy.Symbol] |
+            Iterable[Sequence[sympy.Symbol]] |
+            str |
+            re.Pattern |
+            Iterable[re.Pattern] | None
+            = None,
+        legend: dict[sympy.Symbol, str] | None = None,
         show: bool = False,
-        loc: str | tuple[float, float] = 'best',
+        loc: str | tuple[Number, Number] = 'best',
         warn_change_dpi: bool = False,
         **options,
 ) -> None:
@@ -740,87 +777,100 @@ def plot_given_values(
             print(f"matplotlib.pylab.rcParams['figure.dpi'] was {rcParams['figure.dpi']}; setting it to 96")
         rcParams['figure.dpi'] = 96
 
-    # normalize symbols_to_plot to be a frozenset of strings (names of symbols)
-    dependent_symbols_tuple = tuple(dependent_symbols.keys()) if dependent_symbols is not None else ()
-    if symbols_to_plot is None:
-        symbols_given = tuple(result.keys())
-        symbols_to_plot = tuple(symbols_given) + dependent_symbols_tuple
-    elif isinstance(symbols_to_plot, (str, re.Pattern)):
+    # partially normalize symbols_to_plot to be tuple of something (Symbol, Iterable[Symbol], or re.Pattern)
+    dependent_symbols_list = list(dependent_symbols.keys()) if dependent_symbols is not None else []
+    symbols_to_plot_list: list[sympy.Symbol] | list[Sequence[sympy.Symbol]] | list[re.Pattern]
+    if symbols_to_plot is None: # after symbols_to_plot_list will be list[Symbol]
+        symbols_given = list(result.keys())
+        symbols_to_plot_list = symbols_given + dependent_symbols_list
+    elif isinstance(symbols_to_plot, (str, re.Pattern)): # after symbols_to_plot_list will be list[Symbol]
         pattern = symbols_to_plot if isinstance(symbols_to_plot, re.Pattern) else re.compile(symbols_to_plot)
-        symbols_to_plot = [symbol for symbol in result.keys() if pattern.match(symbol)]
-
+        symbols_to_plot_list = list(symbol for symbol in result.keys() if pattern.match(symbol.name))
+    else: # after symbols_to_plot_tuple will be tuple[Symbol, ...] | tuple[Sequence[Symbol], ...] | tuple[re.Pattern, ...]
+        symbols_to_plot_list = list(symbols_to_plot) # type: ignore
+    
     empty = True
-    for _ in symbols_to_plot:
+    for _ in symbols_to_plot_list:
         empty = False
         break
     if empty:
         raise ValueError("symbols_to_plot cannot be empty")
 
-    # if symbols_to_plot is an Iterable of Iterables of strings or symbols, make a separate subplot for each
+    # if symbols_to_plot is an Iterable[Sequence[Symbol]] or Iterable[Pattern], make a separate subplot for each
     multiple_subplots = False
-    for symbol in symbols_to_plot:
+    for symbol in symbols_to_plot_list:
         from gpac import Specie
-        if not isinstance(symbol, (sympy.Symbol, Specie, str)):
+        if not isinstance(symbol, sympy.Symbol):
             multiple_subplots = True
             break
 
+    # normalize symbols_to_plot_list_list to be list[list[Symbol]]
+    assert isinstance(symbols_to_plot_list, list)
+    symbols_to_plot_list_list: list[list[sympy.Symbol]]
     if multiple_subplots:
-        new_symbols_to_plot = []
-        assert not isinstance(symbols_to_plot, (str, re.Pattern))
-        for symbol_group in symbols_to_plot:
+        new_symbols_to_plot: list[list[sympy.Symbol]] = []
+        for symbol_group in symbols_to_plot_list:
+            assert isinstance(symbol_group, (Sequence, re.Pattern))
             if isinstance(symbol_group, re.Pattern):
-                symbol_group = [symbol for symbol in result.keys() if symbol_group.match(symbol)]
+                symbol_group = [symbol for symbol in result.keys() if symbol_group.match(symbol.name)]
             else:
                 try:
-                    _ = iter(symbol_group)
+                    symbol_group[0] # type: ignore
                 except TypeError as te:
-                    raise ValueError(f"expected elements of symbols_to_plot to be iterable, but got "
+                    raise ValueError(f"expected elements of symbols_to_plot to be nonempty iterable, but got "
                                      f"'{symbol_group}', which is of type {type(symbol_group)}") from te
-                symbol_group = [str(symbol) for symbol in symbol_group]
+                assert isinstance(symbol_group, Sequence)
+                symbol_group = list(symbol_group)
+            assert isinstance(symbol_group, list)
             new_symbols_to_plot.append(symbol_group)
-        symbols_to_plot = new_symbols_to_plot
-        for symbol_group in symbols_to_plot:
+        symbols_to_plot_list_list = list(new_symbols_to_plot)
+        for symbol_group in symbols_to_plot_list_list:
+            assert isinstance(symbol_group, list)
             if len(symbol_group) == 0:
                 raise ValueError(f"Each group of symbols to plot must be non-empty, "
                                  f"but symbols_to_plot = {symbols_to_plot}")
     else:
-        symbols_to_plot = [[str(symbol) for symbol in symbols_to_plot]]
+        symbols_to_plot_list = cast(list[sympy.Symbol], symbols_to_plot_list)
+        assert isinstance(symbols_to_plot_list[0], sympy.Symbol)
+        symbols_to_plot_list_list = [symbols_to_plot_list]
+
+    # now symbols_to_plot_tuple should be list[list[Symbol]]
 
     # check that symbols all appear as keys in result
-    all_symbols_to_plot_set = frozenset(str(symbol) for symbol_group in symbols_to_plot for symbol in symbol_group)
+    all_symbols_to_plot_set = frozenset(str(symbol) 
+                                        for symbol_group in symbols_to_plot_list_list 
+                                        for symbol in symbol_group)
     symbols_of_results_set = frozenset(str(symbol) for symbol in result.keys())
-    dependent_symbols_set = frozenset(str(symbol) for symbol in dependent_symbols_tuple)
+    dependent_symbols_set = frozenset(str(symbol) for symbol in dependent_symbols_list)
     symbols_of_odes_and_dependent_symbols = symbols_of_results_set | dependent_symbols_set
     diff = all_symbols_to_plot_set - symbols_of_odes_and_dependent_symbols
     if len(diff) > 0:
-        source = 'ODEs' if source == 'ode' else 'reactions'
+        source_print = 'ODEs' if source == 'ode' else 'reactions'
         raise ValueError(f"\nsymbols_to_plot contains symbols that are not in odes or dependent symbols: "
                          f"{comma_separated(diff)}"
-                         f"\nSymbols in {source}:                                       "
+                         f"\nSymbols in {source_print}:                                       "
                          f"{comma_separated(symbols_of_results_set)}"
                          f"\nDependent symbols:                                     "
-                         f"{comma_separated(dependent_symbols_tuple)}")
+                         f"{comma_separated(dependent_symbols_list)}")
 
     figure(figsize=figure_size)
 
     colors = plt.rcParams["axes.prop_cycle"]()
-    num_subplots = len(symbols_to_plot)
-    for idx, symbol_group in enumerate(symbols_to_plot):
+    num_subplots = len(symbols_to_plot_list_list)
+    for idx, symbol_group in enumerate(symbols_to_plot_list_list):
         if num_subplots > 1:
             plt.subplot(num_subplots, 1, idx + 1)
 
         for symbol in symbol_group:
             symbol_name = str(symbol)
-            assert symbol_name in result.keys()
-            y = result[symbol_name]
+            assert symbol in result.keys()
+            y = result[symbol]
             assert len(y) == len(times)
             color = next(colors)["color"]
             if symbol in legend:
                 symbol_name = legend[symbol]
-            if symbol_name in legend:
-                symbol_name = legend[symbol_name]
-            if isinstance(symbol, str) and  sympy.Symbol(symbol) in legend:
-                symbol_name = legend[sympy.Symbol(symbol)]
+            # if isinstance(symbol, str) and sympy.Symbol(symbol) in legend:
+            #     symbol_name = legend[sympy.Symbol(symbol)]
             if latex_legend:
                 if symbol_name[0] == '$' or symbol_name[-1] == '$':
                     if not symbol_name[0] == '$' and symbol_name[-1] == '$':
