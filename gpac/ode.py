@@ -21,24 +21,27 @@ Config: TypeAlias = dict[sympy.Symbol, Number]
 
 def symbols(names: str | Iterable[str], *, cls=sympy.Symbol, **args) -> tuple[sympy.Symbol, ...]:
     """
-    A more strongly-typed wrapper for `sympy.symbols`. Unlike `sympy.symbols`, this
-    always returns a tuple of symbols, even if `names` is a single string or a list
-    of strings.
+    A strongly-typed wrapper for 
+    [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
+    Unlike `sympy.symbols`, this always returns a tuple of symbols, 
+    even if `names` represents only a single symbol. That means we can declare
+    the return type unconditionally as `tuple[sympy.Symbol, ...]` instead of `Any` as `sympy.symbols` does.
 
     Parameters
     ----------
     names:
-        A string or list of strings representing the names of the symbols to create.
-        If a string, it can be a single name or a comma-separated list of names.
-        If a list, it can be a list of strings or a list of tuples of strings.
+        A string or iterable of strings representing the names of the symbols to create.
+        See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
 
     cls:
         I don't know, but sympy.symbols has this parameter. It seems you can make the
         type of objects returned by another class than sympy.Symbol, but I don't
         know why you would want to do that.
+        See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
 
     args:
         Additional arguments to pass to `sympy.symbols`.
+        See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
     """
     result = sympy.symbols(names, cls=cls, **args)
     if isinstance(result, sympy.Symbol):
