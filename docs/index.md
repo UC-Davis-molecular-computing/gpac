@@ -13,6 +13,8 @@ and [here](https://arxiv.org/abs/1805.05729).
 
 It also has support for a very common model governed by polynomial ODEs, that of continuous mass-action
 [chemical reaction networks](https://en.wikipedia.org/wiki/Chemical_reaction_network_theory#Overview).
+(And despite having nothing to do with GPAC or ODEs, it also can simulate discrete CRNs; 
+see the functions `plot_gillespie` and `rebop_crn_counts`.)
 
 GPACs are typically defined by a circuit with gates that can add, multiply, introduce constants, and
 integrate an input with respect to time. The most elegant way to specify a GPAC is by defining a set of

@@ -657,9 +657,6 @@ def find_all_species(rxns: Iterable[Reaction]) -> tuple[Specie, ...]:
 #     return gp_results
 
 def test_rebop_reset():
-    """
-    Test the rebop reset functionality.
-    """
     a, b = species('A B')
     rxns = [
         a+b >> 2*b,
@@ -972,9 +969,6 @@ def plot_gillespie(
 ) -> None: ...
 
 def test_mypy_plot_gillespie():
-    """
-    Test mypy type checking.
-    """
     a, b = species('A B')
     rxns = [
         a+b >> 2*b,
