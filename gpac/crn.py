@@ -97,8 +97,8 @@ class Specie:
             return other + Expression([self])
         elif isinstance(other, Specie):
             return Expression([self]) + Expression([other])
-
-        raise NotImplementedError()
+        else:
+            raise NotImplementedError()
 
     __radd__ = __add__
 
