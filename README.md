@@ -152,4 +152,7 @@ See [notebook.ipynb](notebook.ipynb) for more examples.
 Although they appear similar, a `Specie` object (such as `x` and `y` returned from the `gpac.species` function above) is different from a `sympy.Symbol` object. The `Specie` object is intended to help specify reactions using the notation above with the symbols `+`, `>>`, and `|` (as well as the `k` and `r` functions for specifying non-unit rate constants, see example [notebook](notebook.ipynb)). However, any of the following objects can be a key in the `initial_values` parameter to `plot_crn` and `integrate_crn_odes`: `Specie`, `sympy.Symbol`, or `str`. 
 
 #### Discrete chemical reaction networks
-Going off-topic from the name of the package, gpac also supports discrete CRN simulation, using the blazingly fast package [rebop](https://pypi.org/project/rebop/) that implements the [Gillespie algorithm](https://en.wikipedia.org/wiki/Gillespie_algorithm). See the functions [`plot_gillespie`](https://gpac.readthedocs.io/en/latest/#crn.plot_gillespie) and [`rebop_crn_counts`](https://gpac.readthedocs.io/en/latest/#crn.rebop_crn_counts).
+Going off-topic from the name of the package, gpac also supports discrete CRN simulation, using the blazingly fast package [rebop](https://pypi.org/project/rebop/) that implements the [Gillespie algorithm](https://en.wikipedia.org/wiki/Gillespie_algorithm). See the functions 
+[`plot_gillespie`](https://gpac.readthedocs.io/en/latest/#crn.plot_gillespie), 
+[`rebop_crn_counts`](https://gpac.readthedocs.io/en/latest/#crn.rebop_crn_counts), and
+[`rebop_sample_future_configurations`](https://gpac.readthedocs.io/en/latest/#crn.rebop_sample_future_configurations).
