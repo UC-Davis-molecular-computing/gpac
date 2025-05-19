@@ -59,8 +59,9 @@ error trying to declare a `resets` dict with `int` keys such as
 `resets = {1: {a: 4.5}, 2: {b: 6.5}}`.
 """
 
+
 def test_reset():
-    a, b = sympy.symbols('A B')
+    a, b = sympy.symbols("A B")
     odes = {
         a: b * a,
         b: -a,
@@ -299,7 +300,7 @@ def integrate_odes(
             raise ValueError("Must specify either t_eval or t_span")
         else:
             t_span = (t_eval[0], t_eval[-1])
-    
+
     # normalize initial values dict to use symbols as keys
     inits = {
         sympy.Symbol(symbol) if isinstance(symbol, str) else symbol: value
@@ -381,7 +382,7 @@ def integrate_odes(
                 if symbol not in symbol_to_idx:
                     raise ValueError(f"Symbol {symbol} not found in odes")
         solution = _solve_ivp_with_resets(
-            resets=resets_copy,  
+            resets=resets_copy,
             symbol_to_idx=symbol_to_idx,
             fun=ode_func_vector,
             t_span=t_span,  # type:ignore
@@ -561,7 +562,7 @@ def plot(
     dependent_symbols_expressions = (
         tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
     )
-    
+
     sol = integrate_odes(
         odes=odes,
         inits=inits,
