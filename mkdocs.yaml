@@ -24,8 +24,6 @@ plugins:
         python:
           options:
             show_overloads: false
-            rendering:
-              line_length: 100
             members_order: source
             signature_crossrefs: true
             show_if_no_docstring: false
@@ -35,6 +33,8 @@ plugins:
             show_symbol_type_heading: true
             docstring_style: numpy
             show_source: true
+            # line_length default is 60, a bit short; 90 seems reasonable on my laptop
+            line_length: 90
 
 #plugins:
 #  - search

@@ -590,7 +590,7 @@ def plot(
         result=result,
         source="ode",
         dependent_symbols=dependent_symbols,
-        figure_size=figsize,
+        figsize=figsize,
         latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
@@ -876,7 +876,7 @@ def plot_given_values(
     result: dict[sympy.Symbol, np.ndarray] | dict[sympy.Symbol, xarray.DataArray],
     source: Literal["ode", "ssa"],
     dependent_symbols: Mapping[sympy.Symbol, ValOde] | None = None,
-    figure_size: tuple[float, float] = default_figsize,
+    figsize: tuple[float, float] = default_figsize,
     latex_legend: bool = False,
     symbols_to_plot: (
         Iterable[sympy.Symbol]
@@ -1010,7 +1010,7 @@ def plot_given_values(
             f"{comma_separated(dependent_symbols_list)}"
         )
 
-    figure(figsize=figure_size)
+    figure(figsize=figsize)
 
     colors = plt.rcParams["axes.prop_cycle"]()
     num_subplots = len(symbols_to_plot_list_list)
