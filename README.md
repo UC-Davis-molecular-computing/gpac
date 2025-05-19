@@ -116,7 +116,7 @@ There are also functions
 [`plot_crn`](https://gpac.readthedocs.io/en/latest/#gpac.crn.plot_crn), 
 which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function [`crn_to_odes`](https://gpac.readthedocs.io/en/latest/#gpac.crn.crn_to_odes), which converts chemical reactions into ODEs.
 
-Reactions are constructed using operations on `Specie` objects returned from the function [`species`](https://gpac.readthedocs.io/en/latest/#gpac.crn.species):
+Reactions are constructed using operations on [`Specie`](https://gpac.readthedocs.io/en/latest/#gpac.crn.Specie) objects returned from the function [`species`](https://gpac.readthedocs.io/en/latest/#gpac.crn.species):
 
 ```python
 # plot solution to ODEs of this CRN that computes f(x) = x^2, using the gpac.crn module
@@ -136,7 +136,7 @@ gpac.plot_crn(rxns, initial_values, t_eval=t_eval, figure_size=(20,4))
 
 See [notebook.ipynb](notebook.ipynb) for more examples.
 
-Although they appear similar, a `Specie` object (such as `x` and `y` returned from the `gpac.species` function above) is different from a `sympy.Symbol` object. The `Specie` object is intended to help specify reactions using the notation above with the symbols `+`, `>>`, and `|` (as well as the `k` and `r` functions for specifying non-unit rate constants, see example [notebook](notebook.ipynb)). However, any of the following objects can be a key in the `initial_values` parameter to `plot_crn` and `integrate_crn_odes`: `Specie`, `sympy.Symbol`, or `str`. 
+Although they appear similar, a `Specie` object (such as `x` and `y` returned from the `gpac.species` function above) is different from a `sympy.Symbol` object. The `Specie` object is intended to help specify reactions using the notation above with the symbols `+`, `>>`, and `|` (as well as the `k` and `r` functions for specifying non-unit rate constants, see example [notebook](notebook.ipynb)). However, either [`Specie`](https://gpac.readthedocs.io/en/latest/#gpac.crn.Specie) or [`sympy.Symbol`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.Symbol) objects can be a key in the `inits` parameter to [`plot_crn`](https://gpac.readthedocs.io/en/latest/#gpac.crn.plot_crn) and [`integrate_crn_odes`](https://gpac.readthedocs.io/en/latest/#gpac.crn.integrate_crn_odes). 
 
 #### Discrete chemical reaction networks
 Going off-topic from the name of the package, gpac also supports discrete CRN simulation, using the blazingly fast package [rebop](https://pypi.org/project/rebop/) that implements the [Gillespie algorithm](https://en.wikipedia.org/wiki/Gillespie_algorithm). See the functions 
