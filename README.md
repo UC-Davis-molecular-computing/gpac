@@ -1,6 +1,7 @@
 # gpac Python package
 
-
+This document is intended to be read on [github.com](https://github.com/UC-Davis-molecular-computing/gpac?tab=readme-ov-file#readme); 
+some relative links below will not work on other sites such as PyPI.
 
 ## Table of contents
 
