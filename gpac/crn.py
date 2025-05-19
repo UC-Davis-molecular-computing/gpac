@@ -314,6 +314,7 @@ def integrate_crn_odes(
         t_eval: Iterable[float] | None = None,
         *,
         t_span: tuple[float, float] | None = None,
+        resets: Mapping[Number, ConfigCrn] | None = None,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
         events: Callable | Iterable[Callable] | None = None,
@@ -343,6 +344,34 @@ def integrate_crn_odes(
     t_span:
         See [`integrate_odes`][gpac.ode.integrate_odes].
 
+    resets:
+        If specified, this is a dict mapping times to "configurations" (i.e., dict mapping species to concentrations).
+        The configurations are used to set the concentrations of the species manually during the ODE integration
+        at specific times.
+        Any species not appearing as keys in `resets` are left at their current values.
+        The OdeResult returned (the one returned by `solve_ivp` in scipy) will have two additional fields:
+        `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
+        corresponding to the times when the resets were applied.
+        Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
+
+    method:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    dense_output:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    events:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    vectorized:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    args:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    options:
+        See [`integrate_odes`][gpac.ode.integrate_odes].
+
     Returns
     -------
     :
@@ -351,11 +380,27 @@ def integrate_crn_odes(
     """
     odes = crn_to_odes(rxns)
     inits_normalized = _normalize_crn_inits(inits)
+
+    # convert from species to sympy symbols in resets
+    resets_symbols: dict[Number, dict[sympy.Symbol, float]] | None
+    if resets is not None:
+        resets_symbols = {}
+        for time, reset in resets.items():
+            reset_symbols = {}
+            for specie, conc in reset.items():
+                assert isinstance(specie, Specie)
+                symbol = sympy.Symbol(specie.name)
+                reset_symbols[symbol] = conc
+            resets_symbols[time] = reset_symbols
+    else:
+        resets_symbols = None
+    
     return integrate_odes(
         odes,
         inits=inits_normalized,
         t_eval=t_eval,
         t_span=t_span,
+        resets=resets_symbols,
         method=method,
         dense_output=dense_output,
         events=events,
@@ -439,7 +484,6 @@ def test_mypy_plot_crn():
 def plot_crn(
         rxns: Iterable[Reaction],
         inits: ConfigCrn,
-        # inits: Mapping[KeyConfigCrn, float],
         t_eval: Iterable[float] | None = None,
         *,
         t_span: tuple[float, float] | None = None,
@@ -516,10 +560,44 @@ def plot_crn(
 
     Parameters
     ----------
+
+    rxns:
+        See [`integrate_crn_odes`](gpac.crn.integrate_crn_odes).
+
+    inits:
+        See [`integrate_crn_odes`](gpac.crn.integrate_crn_odes).
+
+    t_eval:
+        See [`integrate_odes`][gpac.ode.integrate_odes].
+
+    t_span:
+        See [`integrate_odes`][gpac.ode.integrate_odes].
+    
+    resets:
+        See [`integrate_crn_odes`](gpac.crn.integrate_crn_odes).
+
     dependent_symbols:
         dict mapping each symbol to an expression that defines its value in terms of other symbols.
         Note that these are not [`Specie`](gpac.crn.Specie) objects as in the parameter `rxns`, but sympy symbols.
         Symbols used in the expressions must have the same name as [`Specie`](gpac.crn.Specie) objects in `rxns`.
+
+    method:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    dense_output:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    events:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    vectorized:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    args:
+        See [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
+
+    options:
+        See [`integrate_odes`][gpac.ode.integrate_odes].
 
     Returns
     -------
@@ -836,7 +914,7 @@ def rebop_crn_counts(
         list of [`Reaction`](gpac.crn.Reaction)'s comprising the chemical reaction network.
         See documentation for [`Reaction`](gpac.crn.Reaction) for details on how to specify reactions.
 
-    initial_counts:
+    inits:
         dict mapping each species to its initial integer count.
         Note that unlike the parameter `inits` in [`integrate_odes`](gpac.ode.integrate_odes),
         keys in this dict must be [`Specie`](gpac.crn.Specie) objects, not strings or sympy symbols.
@@ -1019,7 +1097,7 @@ def plot_gillespie(
     ----------
     rxns: the reactions of the CRN
 
-    initial_counts: initial (integer) counts of each species
+    inits: initial (integer) counts of each species
 
     vol: volume of the system (reactions with k ractants have their rate divided by vol^(k-1))
 

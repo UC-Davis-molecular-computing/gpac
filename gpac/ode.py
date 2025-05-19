@@ -248,7 +248,7 @@ def integrate_odes(
         functions such as [`plot_crn`][gpac.crn.plot_crn], the names are used to label the plot.
 
     resets:
-        If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
+        If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols to values).
         The configurations are used to set the values of the symbols manually during the ODE integration
         at specific times.
         Any symbols not appearing as keys in `resets` are left at their current values.
