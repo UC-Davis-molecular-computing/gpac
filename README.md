@@ -17,9 +17,7 @@ some relative links below will not work on other sites such as PyPI.
 ## Overview
 This is a Python package for simulating General-Purpose Analog Computers as defined and studied by Claude Shannon. It's primarily a front-end to [scipy](https://scipy.org/) and [sympy](https://www.sympy.org/) making it easier to specify systems of ODEs, numerically integrate them, and plot their solutions. It also has support for a very common model governed by polynomial ODEs: continuous mass-action [chemical reaction networks](https://en.wikipedia.org/wiki/Chemical_reaction_network_theory#Overview). (And despite having nothing to do with GPAC or ODEs, it also can simulate discrete CRNs; see [Chemical reaction networks](#chemical-reaction-networks) section below.)
 
-This is ostensibly what [pyodesys](https://github.com/bjodah/pyodesys) does as well, and that package is much more powerful and configurable than gpac. The purpose of gpac is primarily to be simpler to use for common cases of ODEs, at the cost of being less expressive. For example, gpac has some functions ([`plot`](https://gpac.readthedocs.io/en/latest/#ode.plot) and [`plot_crn`](https://gpac.readthedocs.io/en/latest/#crn.plot_crn)) to do plotting in matplotlib, which is easier than manually getting the ODE data through [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#ode.integrate_odes) and passing it along to the matplotlib plot function. This is possible if you want to have more control over how things are plotted than is possible with the gpac plotting functions; however in most cases you can configure what you need in `plot` and `plot_crn` either by passing keyword arguments (which are passed along to the matplotlib plot function), or by calling functions in matplotlib.pyplot (e.g., [`yscale`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.yscale.html)) after calling gpac's `plot` or `pyplot`.
-
-**Note:** Some of the relative links below are intended to be used only on the GitHub page for this project: https://github.com/UC-Davis-molecular-computing/gpac#readme  They will not work if you are reading this document on PyPI, for example.
+This is ostensibly what [pyodesys](https://github.com/bjodah/pyodesys) does as well, and that package is much more powerful and configurable than gpac. The purpose of gpac is primarily to be simpler to use for common cases of ODEs, at the cost of being less expressive. For example, gpac has some functions ([`plot`](https://gpac.readthedocs.io/en/latest/#gpac.ode.plot) and [`plot_crn`](https://gpac.readthedocs.io/en/latest/#gpac.crn.plot_crn)) to do plotting in matplotlib, which is easier than manually getting the ODE data through [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#gpac.ode.integrate_odes) and passing it along to the matplotlib plot function. This is possible if you want to have more control over how things are plotted than is possible with the gpac plotting functions; however in most cases you can configure what you need in `plot` and `plot_crn` either by passing keyword arguments (which are passed along to the matplotlib plot function), or by calling functions in matplotlib.pyplot (e.g., [`yscale`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.yscale.html)) after calling gpac's `plot` or `pyplot`.
 
 ## API
 The API for the package is here: https://gpac.readthedocs.io/
@@ -39,7 +37,7 @@ B. **git:** The other option is to clone the git repo. You may need to install `
       git clone https://github.com/UC-Davis-molecular-computing/gpac.git
       ```
 
-   2. Install the Python package by changing to the directory where the nuad repository is stored localled and type `pip install -e .` This should install the needed dependencies. An advantage of this approach is that, if there are features available on some branch of the github repo (typically the [dev branch](https://github.com/UC-Davis-molecular-computing/nuad/tree/dev)) that are not yet available in the latest version of nuad, you can check out the branch via `git checkout dev`, and those new features will be available. After doing this you should be able to import the gpac package in your Python scripts/Jupyter notebooks with `import gpac`. Try testing this out in the Python interpreter:
+   2. Install the Python package by changing to the directory where the gpac repository is stored localled and type `pip install -e .` This should install the needed dependencies. After doing this you should be able to import the gpac package in your Python scripts/Jupyter notebooks with `import gpac`. Try testing this out in the Python interpreter:
        ```python
        $ python
        Python 3.9.12 (main, Apr  4 2022, 05:22:27) [MSC v.1916 64 bit (AMD64)] :: Anaconda, Inc. on win32
@@ -52,15 +50,15 @@ B. **git:** The other option is to clone the git repo. You may need to install `
 See more examples in the Jupyter notebook [notebook.ipynb](notebook.ipynb).
 
 ### Plotting ODEs
-ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or for convenience you can also use Python strings, or if the derivative is constant, a Python `int` or `float`).
+ODEs are specified by creating [sympy](https://www.sympy.org/) symbols and expressions (or if you like, Python strings), represented as a Python dict `odes` mapping each variable---a single sympy symbol or Python string---to an expression representing its time derivative, represented as a sympy expression composed of sympy symbols (or if the derivative is constant, a Python `int` or `float`).
 
 Every symbol that appears in any of the expressions *must* also be a key in this dict.
 
-The initial values are specified as a Python dict `initial_values` mapping variables (again, sympy symbols or strings) to their initial values (floats). If you leave out a symbol as a key to `initial_values`, it is assumed to have initial value 0.
+The initial values are specified as a Python dict `inits` mapping variables (again, sympy symbols or strings) to their initial values (floats). If you leave out a symbol as a key to `inits`, it is assumed to have initial value 0.
 
 Finally, you can specify the times at which to solve for the ODEs as an iterable of floats `t_eval`. (This is optional; if not specified it uses the time values 0.0, 0.01, 0.02, 0.03, ..., 0.98, 0.99, 1.0)
 
-Remaining parameters are optional (see below for examples of them). See API documentation for [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#ode.integrate_odes) and [`plot`](https://gpac.readthedocs.io/en/latest/#ode.plot) for more details.
+Remaining parameters are optional (see below for examples of them). See API documentation for [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#gpac.ode.integrate_odes) and [`plot`](https://gpac.readthedocs.io/en/latest/#gpac.ode.plot) for more details.
 
 ```python
 import sympy
@@ -77,35 +75,21 @@ odes = {            # represents ODEs:
     b: -b*c + a*b,  # d/dt b(t) = -b(t)*c(t) + a(t)*b(t)
     c: -c*a + b*c,  # d/dt c(t) = -c(t)*a(t) + b(t)*c(t)
 }
-initial_values = {
+inits = {
     a: 10,
     b: 1,
     c: 1,
 }
 t_eval = np.linspace(0, 5, 200)
 
-gpac.plot(odes, initial_values, t_eval=t_eval, figure_size=(12,3), symbols_to_plot=[a,c])
+gpac.plot(odes, inits, t_eval=t_eval, symbols_to_plot=[a,c])
 ```
 
 ![](images/rps-a-c.png)
 
-The function [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols) returns `Any`
-because the return type varies depending greatly on the parameter types.
-For convenience, gpac provides a strongly-typed wrapper around `sympy.symbols`, which always returns a 
-`tuple[sympy.Symbol, ...]`. Since `Any` is dynamically typed, in most circumstances this should not cause mypy errors,
-but in case you would like to have more mypy help, calling the gpac wrapper will ensure mypy can infer the
-types as `sympy.Symbol`:
-
-```python
-import sympy
-import gpac
-a = sympy.symbols('a') # mypy infers type of a is Any
-b, = gpac.symbols('b') # mypy infers type of x is sympy.Symbol; note that we need 
-                       #   to unpack the length-1 tuple, unlike with sympy.symbols
-```
 
 ### Getting trajectory data of ODEs
-If you want the data itself from the ODE numerical integration (without plotting it), you can call [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#ode.integrate_odes) (replace the call to [`plot`](https://gpac.readthedocs.io/en/latest/#ode.plot) above with the following code).
+If you want the data itself from the ODE numerical integration (without plotting it), you can call [`integrate_odes`](https://gpac.readthedocs.io/en/latest/#gpac.ode.integrate_odes) (replace the call to [`plot`](https://gpac.readthedocs.io/en/latest/#gpac.ode.plot) above with the following code).
 
 ```python
 t_eval = np.linspace(0, 1, 5)
@@ -127,9 +111,12 @@ The value `solution` returned by `integrate_odes` is the same object returned fr
 
 
 ### Chemical reaction networks
-There are also functions [`integrate_crn_odes`](https://gpac.readthedocs.io/en/latest/#crn.integrate_crn_odes) and [`plot_crn`](https://gpac.readthedocs.io/en/latest/#crn.plot_crn), which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function [`crn_to_odes`](https://gpac.readthedocs.io/en/latest/#crn.crn_to_odes), which converts chemical reactions into ODEs.
+There are also functions 
+[`integrate_crn_odes`](https://gpac.readthedocs.io/en/latest/#gpac.crn.integrate_crn_odes) and 
+[`plot_crn`](https://gpac.readthedocs.io/en/latest/#gpac.crn.plot_crn), 
+which take as input a description of a set of chemical reactions, derives their ODEs, then integrates/plots them. They both use the function [`crn_to_odes`](https://gpac.readthedocs.io/en/latest/#gpac.crn.crn_to_odes), which converts chemical reactions into ODEs.
 
-Reactions are constructed using operations on `Specie` objects returned from the function [`species`](https://gpac.readthedocs.io/en/latest/#crn.species):
+Reactions are constructed using operations on `Specie` objects returned from the function [`species`](https://gpac.readthedocs.io/en/latest/#gpac.crn.species):
 
 ```python
 # plot solution to ODEs of this CRN that computes f(x) = x^2, using the gpac.crn module
@@ -153,6 +140,6 @@ Although they appear similar, a `Specie` object (such as `x` and `y` returned fr
 
 #### Discrete chemical reaction networks
 Going off-topic from the name of the package, gpac also supports discrete CRN simulation, using the blazingly fast package [rebop](https://pypi.org/project/rebop/) that implements the [Gillespie algorithm](https://en.wikipedia.org/wiki/Gillespie_algorithm). See the functions 
-[`plot_gillespie`](https://gpac.readthedocs.io/en/latest/#crn.plot_gillespie), 
-[`rebop_crn_counts`](https://gpac.readthedocs.io/en/latest/#crn.rebop_crn_counts), and
-[`rebop_sample_future_configurations`](https://gpac.readthedocs.io/en/latest/#crn.rebop_sample_future_configurations).
+[`plot_gillespie`](https://gpac.readthedocs.io/en/latest/#gpac.crn.plot_gillespie), 
+[`rebop_crn_counts`](https://gpac.readthedocs.io/en/latest/#gpac.crn.rebop_crn_counts), and
+[`rebop_sample_future_configurations`](https://gpac.readthedocs.io/en/latest/#gpac.crn.rebop_sample_future_configurations).
