@@ -17,7 +17,10 @@ $$
 we can write
 
 ```py
-a, b, u = species('A B U')
+import gpac
+import numpy as np
+
+a, b, u = gpac.species('A B U')
 rxns = [
     a+b >> 2*u,
     a+u >> 2*a,
@@ -41,7 +44,7 @@ explains how reactions are converted into ODEs by each of these functions.
 Also supported are inhibitors, which can be added to reactions using the method [`Reaction.i`][gpac.crn.Reaction.i]:
 
 ```py
-a, b, u, i = species('A B U I')
+a, b, u, i = gpac.species('A B U I')
 rxn = (a+b | 2*u).i(i, 100)
 ```
 
@@ -49,6 +52,12 @@ which represents the reaction $A+B \to 2U$ with inhibitor $I$ and inhibitor cons
 Currently the inhibitor is modeled using a first-order Hill function, i.e., its contribution to the
 reaction rate is to divide by $1 + i \cdot I$, where $i$ is the inhibitor constant.
 So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [I])$.
+
+There is also support for simulating discrete chemical reaction networks using the Gillespie algorithm.
+See the functions 
+[`plot_gillespie`][gpac.crn.plot_gillespie],
+[`rebop_crn_counts`][gpac.crn.rebop_crn_counts], and
+[`rebop_sample_future_configurations`][gpac.crn.rebop_sample_future_configurations].
 """
 
 from __future__ import annotations
