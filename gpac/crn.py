@@ -99,9 +99,6 @@ from gpac.ode import (
     Number,
 )
 
-KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol)
-ConfigCrn: TypeAlias = Mapping[KeyConfigCrn, float]
-
 
 @dataclass(frozen=True)
 class Specie:
@@ -169,6 +166,18 @@ class Specie:
         return self.name == other.name
 
     __req__ = __eq__
+
+KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol)
+"""
+A type variable representing the key type of the dictionary used to represent
+configurations of CRNs. Typically this is a [`Specie`][gpac.crn.Specie] object,
+but it can also be a sympy Symbol, for instance when using the `dependent_symbols`
+parameter in the functions [`plot_crn`][gpac.crn.plot_crn] and
+[`plot_gillespie`][gpac.crn.plot_gillespie], since dependent symbols do not represent
+species, but rather functions of concentrations of some species.
+"""
+
+ConfigCrn: TypeAlias = Mapping[Specie, float]
 
 
 def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
@@ -668,11 +677,23 @@ def plot_crn(
     """
     odes = crn_to_odes(rxns)
     inits_normalized = _normalize_crn_inits(inits)
+
+    resets_symbols: dict[Number, dict[sympy.Symbol, float]] | None = None 
+    if resets is not None:
+        resets_symbols = {}
+        for time, reset in resets.items():
+            reset_symbols = {}
+            for specie, conc in reset.items():
+                assert isinstance(specie, Specie)
+                symbol = sympy.Symbol(specie.name)
+                reset_symbols[symbol] = conc
+            resets_symbols[time] = reset_symbols
+    
     return plot(
         odes,
         inits=inits_normalized,
         t_eval=t_eval,
-        resets=resets,
+        resets=resets_symbols,
         t_span=t_span,
         # I don't understand why there's a type warning on the next line;
         # `dependent_symbols` is the same type in each function
