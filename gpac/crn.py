@@ -54,7 +54,7 @@ So for the reaction defined above, its rate is $[A] \cdot [B] / (1 + 100 \cdot [
 from __future__ import annotations
 
 import math
-from typing import Iterable, Callable, Literal, Sequence, TypeAlias, cast, overload, TypeVar
+from typing import Iterable, Callable, Literal, Sequence, TypeAlias, cast, overload, TypeVar, Mapping
 from collections import defaultdict
 import copy
 from dataclasses import dataclass, field
@@ -70,6 +70,11 @@ import xarray as xr
 import numpy as np
 from tqdm.auto import tqdm
 import polars as pl
+
+from gpac.ode import integrate_odes, plot, plot_given_values, ValOde, default_figsize, Number
+
+KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol)
+ConfigCrn: TypeAlias = Mapping[KeyConfigCrn, float]
 
 @dataclass(frozen=True)
 class Specie:
@@ -138,11 +143,6 @@ class Specie:
 
     __req__ = __eq__
 
-
-from gpac.ode import integrate_odes, plot, plot_given_values, Number, ValOde, default_figsize
-
-KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol, str)
-ConfigCrn: TypeAlias = dict[KeyConfigCrn, Number]
 
 def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     r"""
@@ -297,7 +297,7 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
 
 
 def _normalize_crn_inits(inits: ConfigCrn) \
-        -> dict[sympy.Symbol, Number]:
+        -> dict[sympy.Symbol, float]:
     normalized_inits = {}
     for symbol, conc in inits.items():
         if isinstance(symbol, Specie):
@@ -311,9 +311,9 @@ def _normalize_crn_inits(inits: ConfigCrn) \
 def integrate_crn_odes(
         rxns: Iterable[Reaction],
         inits: ConfigCrn,
-        t_eval: Iterable[Number] | None = None,
+        t_eval: Iterable[float] | None = None,
         *,
-        t_span: tuple[Number, Number] | None = None,
+        t_span: tuple[float, float] | None = None,
         method: str | OdeSolver = 'RK45',
         dense_output: bool = False,
         events: Callable | Iterable[Callable] | None = None,
@@ -368,12 +368,12 @@ def integrate_crn_odes(
 def plot_crn(
         rxns: Iterable[Reaction],
         inits: ConfigCrn,
-        t_eval: Iterable[Number] | None = ...,
+        t_eval: Iterable[float] | None = ...,
         *,
-        t_span: tuple[Number, Number] | None = ...,
-        resets: dict[Number, ConfigCrn] | None = ...,
+        t_span: tuple[float, float] | None = ...,
+        resets: Mapping[Number, ConfigCrn] | None = ...,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
-        figure_size: tuple[Number, Number] = ...,
+        figure_size: tuple[float, float] = ...,
         latex_legend: bool = ...,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -389,7 +389,7 @@ def plot_crn(
         vectorized: bool = ...,
         return_ode_result: Literal[True],
         args: tuple | None = ...,
-        loc: str | tuple[Number, Number] = ...,
+        loc: str | tuple[float, float] = ...,
         warn_change_dpi: bool = ...,
         **options,
 ) -> OdeResult: ...
@@ -399,12 +399,12 @@ def plot_crn(
 def plot_crn(
         rxns: Iterable[Reaction],
         inits: ConfigCrn,
-        t_eval: Iterable[Number] | None = ...,
+        t_eval: Iterable[float] | None = ...,
         *,
-        t_span: tuple[Number, Number] | None = ...,
-        resets: dict[Number, ConfigCrn] | None = ...,
+        t_span: tuple[float, float] | None = ...,
+        resets: Mapping[Number, ConfigCrn] | None = ...,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
-        figure_size: tuple[Number, Number] = ...,
+        figure_size: tuple[float, float] = ...,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -420,7 +420,7 @@ def plot_crn(
         vectorized: bool = ...,
         return_ode_result: Literal[False] = ...,
         args: tuple | None = ...,
-        loc: str | tuple[Number, Number] = ...,
+        loc: str | tuple[float, float] = ...,
         warn_change_dpi: bool = ...,
         **options,
 ) -> None: ...
@@ -439,12 +439,13 @@ def test_mypy_plot_crn():
 def plot_crn(
         rxns: Iterable[Reaction],
         inits: ConfigCrn,
-        t_eval: Iterable[Number] | None = None,
+        # inits: Mapping[KeyConfigCrn, float],
+        t_eval: Iterable[float] | None = None,
         *,
-        t_span: tuple[Number, Number] | None = None,
-        resets: dict[Number, ConfigCrn] | None = None,
+        t_span: tuple[float, float] | None = None,
+        resets: Mapping[Number, ConfigCrn] | None = None,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = default_figsize,
+        figure_size: tuple[float, float] = default_figsize,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -460,7 +461,7 @@ def plot_crn(
         vectorized: bool = False,
         return_ode_result: bool = False,
         args: tuple | None = None,
-        loc: str | tuple[Number, Number] = 'best',
+        loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
         **options,
 ) -> OdeResult | None:
@@ -671,7 +672,7 @@ def test_rebop_reset():
         20: {a: 100},
     }
     plot_gillespie(rxns, initial_counts, tmax, nb_steps=nb_steps, resets=resets, show=True)
-    # plot_gillespie(rxns, initial_counts, tmax, nb_steps=nb_steps, show=True)
+    
 
 def _run_rebop_with_resets(
         resets: dict[float, dict[str, int]],
@@ -756,12 +757,12 @@ def _run_rebop_with_resets(
 
 def rebop_sample_future_configurations(
         rxns: Iterable[Reaction],
-        initial_counts: ConfigCrn,
+        inits: Mapping[KeyConfigCrn, int],
         tmax: float,
         trials: int,
         *,
         vol: float | None = None,
-        resets: dict[float, ConfigCrn] | None = None,
+        resets: Mapping[Number, Mapping[KeyConfigCrn, int]] | None = None,
         dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
         seed: int | None = None,
 ) -> pl.DataFrame:
@@ -798,7 +799,7 @@ def rebop_sample_future_configurations(
         seed_generated = int(rng.integers(0, sys.maxsize))
         dataset = rebop_crn_counts(
             rxns,
-            initial_counts,
+            inits,
             tmax,
             nb_steps=1,
             vol=vol,
@@ -815,13 +816,13 @@ def rebop_sample_future_configurations(
 
 def rebop_crn_counts(
         rxns: Iterable[Reaction],
-        initial_counts: ConfigCrn,
-        tmax: Number,
+        inits: Mapping[KeyConfigCrn, int],
+        tmax: float,
         *,
         nb_steps: int = 0,
-        vol: Number | None = None,
-        resets: dict[Number, ConfigCrn] | None = None,
-        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
+        vol: float | None = None,
+        resets: Mapping[Number, Mapping[KeyConfigCrn, int]] | None = None,
+        dependent_symbols: Mapping[sympy.Symbol, ValOde] | None = None,
         seed: int | None = None,
 ) -> xarray.Dataset:
     r"""
@@ -870,7 +871,7 @@ def rebop_crn_counts(
         and by the key `"time"` to get the times at which the counts were recorded.
     """
     if vol is None:
-        vol = cast(Number, sum(initial_counts.values()))
+        vol = cast(float, sum(inits.values()))
 
     crn = rb.Gillespie()
     for rxn in rxns:
@@ -882,12 +883,13 @@ def rebop_crn_counts(
             rate_rev = rxn.rate_constant_reverse / vol ** (len(products) - 1)
             crn.add_reaction(rate_rev, products, reactants)
 
-    initial_counts_str = {specie.name: count for specie, count in initial_counts.items()}
+    initial_counts_str = {specie.name: count for specie, count in inits.items()}
     if resets is None:
         rb_results = crn.run(init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, rng=seed)
     else:
         # normalize resets to have strings as keys
         resets_normalized: dict[float, dict[str, int]] = {
+        # resets_normalized = {
             time: {str(specie): count for specie, count in counts.items()}
             for time, counts in resets.items()
         }
@@ -918,14 +920,14 @@ def rebop_crn_counts(
 @overload
 def plot_gillespie(
         rxns: Iterable[Reaction],
-        initial_counts: ConfigCrn,
-        tmax: Number,
+        inits: Mapping[KeyConfigCrn, int],
+        tmax: float,
         *,
         nb_steps: int = ...,
         seed: int | None = ...,
-        resets: dict[Number, ConfigCrn] | None = ...,
-        dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
-        figure_size: tuple[Number, Number] = ...,
+        resets: Mapping[Number, Mapping[KeyConfigCrn, int]] | None = ...,
+        dependent_symbols: Mapping[sympy.Symbol, ValOde] | None = ...,
+        figure_size: tuple[float, float] = ...,
         latex_legend: bool = ...,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -936,9 +938,9 @@ def plot_gillespie(
         legend: dict[sympy.Symbol, str] | None = ...,
         show: bool = ...,
         return_simulation_result: Literal[True],
-        loc: str | tuple[Number, Number] = ...,
+        loc: str | tuple[float, float] = ...,
         warn_change_dpi: bool = ...,
-        vol: Number | None = ...,
+        vol: float | None = ...,
         **options: dict[str, object],
 ) -> xarray.Dataset: ...
 
@@ -946,14 +948,14 @@ def plot_gillespie(
 @overload
 def plot_gillespie(
         rxns: Iterable[Reaction],
-        initial_counts: ConfigCrn,
-        tmax: Number,
+        inits: Mapping[KeyConfigCrn, int],
+        tmax: float,
         *,
         nb_steps: int = ...,
         seed: int | None = ...,
-        resets: dict[Number, ConfigCrn] | None = ...,
-        dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
-        figure_size: tuple[Number, Number] = ...,
+        resets: Mapping[Number, Mapping[KeyConfigCrn, int]] | None = ...,
+        dependent_symbols: Mapping[sympy.Symbol, ValOde] | None = ...,
+        figure_size: tuple[float, float] = ...,
         latex_legend: bool = ...,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -964,9 +966,9 @@ def plot_gillespie(
         legend: dict[sympy.Symbol, str] | None = ...,
         show: bool = ...,
         return_simulation_result: Literal[False] = ...,
-        loc: str | tuple[Number, Number] = ...,
+        loc: str | tuple[float, float] = ...,
         warn_change_dpi: bool = ...,
-        vol: Number | None = ...,
+        vol: float | None = ...,
         **options: dict[str, object],
 ) -> None: ...
 
@@ -981,14 +983,14 @@ def test_mypy_plot_gillespie():
 
 def plot_gillespie(
         rxns: Iterable[Reaction],
-        initial_counts: ConfigCrn,
-        tmax: Number,
+        inits: Mapping[KeyConfigCrn, int],
+        tmax: float,
         *,
         nb_steps: int = 0,
         seed: int | None = None,
-        resets: dict[Number, ConfigCrn] | None = None,
-        dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-        figure_size: tuple[Number, Number] = default_figsize,
+        resets: Mapping[Number, Mapping[KeyConfigCrn, int]] | None = None,
+        dependent_symbols: Mapping[sympy.Symbol, ValOde] | None = None,
+        figure_size: tuple[float, float] = default_figsize,
         latex_legend: bool = False,
         symbols_to_plot: Iterable[sympy.Symbol] |
                          Iterable[Sequence[sympy.Symbol]] |
@@ -999,9 +1001,9 @@ def plot_gillespie(
         legend: dict[sympy.Symbol, str] | None = None,
         show: bool = False,
         return_simulation_result: bool = False,
-        loc: str | tuple[Number, Number] = 'best',
+        loc: str | tuple[float, float] = 'best',
         warn_change_dpi: bool = False,
-        vol: Number | None = None,
+        vol: float | None = None,
         **options: dict[str, object],
 ) -> xarray.Dataset | None:
     r"""
@@ -1054,7 +1056,7 @@ def plot_gillespie(
     """
     rb_result = rebop_crn_counts(
         rxns=rxns,
-        initial_counts=initial_counts,
+        inits=inits,
         tmax=tmax,
         nb_steps=nb_steps,
         seed=seed,

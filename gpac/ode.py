@@ -6,7 +6,18 @@ This module has ODE-only functions, mainly
 from __future__ import annotations
 
 import re
-from typing import Iterable, Callable, Any, Literal, Sequence, TypeAlias, cast, TypeVar
+from typing import (
+    Iterable,
+    Callable,
+    Literal,
+    Sequence,
+    TypeAlias,
+    cast,
+    TypeVar,
+    Mapping,
+    Any,
+)
+
 
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
@@ -29,21 +40,7 @@ this avoids the user having to wrap the constant 1 in a sympy expression via
 [`sympy.sympify(1)`](https://docs.sympy.org/latest/modules/core.html#sympy.core.sympify.sympify).
 """
 
-Number = TypeVar("Number", float, int)
-"""
-A type variable representing a number that can be a `float` or `int`. For some reason
-mypy does not supply such a type, instead declaring that `int` is a subtype of `float`
-and recommending to declare a type as `float` when one wants to allow an `int` or a `float`.
-However, this fails when using collections since they are ["invariant in their 
-generic type"](https://mypy.readthedocs.io/en/stable/common_issues.html#invariance-vs-covariance) 
-(jargon for "*`list[int]` is not a subtype of `list[float]` even though `int` is a subtype of `float`*").
-If we declared, for example, that the `inits` parameter in [`integrate_odes`][gpac.ode.integrate_odes]
-is of type `dict[sympy.Symbol, float]`, then mypy reports an error if the dict is declared
-`inits = {a: 1, b: 2}` rather than `inits = {a: 1.0, b: 2.0}`. This type variable
-allows ints to be used in collections without mypy errors.
-"""
-
-Config: TypeAlias = dict[sympy.Symbol, Number]
+Config: TypeAlias = Mapping[sympy.Symbol, float]
 """
 Type alias for a configuration, such as the `inits` parameter of 
 [`integrate_odes`][gpac.ode.integrate_odes] and [`plot`][gpac.ode.plot]
@@ -51,15 +48,40 @@ representing the initial configuration of the system.
 It is a dict mapping each variable to its value.
 """
 
+Number = TypeVar("Number", int, float)
+"""
+Type variable representing a number, either an int or a float.
+This is required to avoid some type hint errors due to the fact that
+`Mapping` is invariant in its key type, so for the `resets` parameter
+of some functions, we declare it to be type `Mapping[Number, Config]`
+rather than `Mapping[float, Config]`, which would cause a type checker
+error trying to declare a `resets` dict with `int` keys such as 
+`resets = {1: {a: 4.5}, 2: {b: 6.5}}`.
+"""
+
+def test_reset():
+    a, b = sympy.symbols('A B')
+    odes = {
+        a: b * a,
+        b: -a,
+    }
+    inits = {a: 99, b: 1}
+    t_eval = [0, 1, 2, 3, 4, 5, 30]
+    resets = {
+        10: {a: 100},
+        20: {a: 100},
+    }
+    integrate_odes(odes, inits, t_eval, resets=resets)
+
 
 def integrate_odes(
-    odes: dict[sympy.Symbol, ValOde],
+    odes: Mapping[sympy.Symbol, ValOde],
     inits: Config,
-    t_eval: Iterable[Number] | None = None,
+    t_eval: Iterable[float] | None = None,
     *,
-    t_span: tuple[Number, Number] | None = None,
+    t_span: tuple[float, float] | None = None,
     dependent_symbols: Iterable[ValOde] = (),
-    resets: dict[Number, Config] | None = None,
+    resets: Mapping[Number, Config] | None = None,
     method: str | OdeSolver = "RK45",
     dense_output: bool = False,
     events: Callable | Iterable[Callable] | None = None,
@@ -272,11 +294,12 @@ def integrate_odes(
         if not np.all(np.diff(t_eval) >= 0):
             raise ValueError("t_eval must be sorted in increasing order")
 
-    if t_eval is None and t_span is None:
-        raise ValueError("Must specify either t_eval or t_span")
-    elif t_eval is not None and t_span is None:
-        t_span = (t_eval[0], t_eval[-1])
-
+    if t_span is None:
+        if t_eval is None:
+            raise ValueError("Must specify either t_eval or t_span")
+        else:
+            t_span = (t_eval[0], t_eval[-1])
+    
     # normalize initial values dict to use symbols as keys
     inits = {
         sympy.Symbol(symbol) if isinstance(symbol, str) else symbol: value
@@ -346,7 +369,10 @@ def integrate_odes(
         )
     else:
         symbol_to_idx = {symbol: i for i, symbol in enumerate(independent_symbols)}
-        for reset in resets.values():
+        # defensively copy resets to avoid modifying the original dict,
+        # and because we declared it as Mapping, not MutableMapping
+        resets_copy = {float(k): dict(v) for k, v in resets.items()}
+        for reset in resets_copy.values():
             for symbol, value in reset.items():
                 if isinstance(symbol, str):
                     del reset[symbol]
@@ -355,7 +381,7 @@ def integrate_odes(
                 if symbol not in symbol_to_idx:
                     raise ValueError(f"Symbol {symbol} not found in odes")
         solution = _solve_ivp_with_resets(
-            resets=resets,  # type:ignore
+            resets=resets_copy,  
             symbol_to_idx=symbol_to_idx,
             fun=ode_func_vector,
             t_span=t_span,  # type:ignore
@@ -397,12 +423,12 @@ Default figure size for matplotlib plotting functions such as
 def plot(
     odes: dict[sympy.Symbol, ValOde],
     inits: Config,
-    t_eval: Iterable[Number] | None = None,
+    t_eval: Iterable[float] | None = None,
     *,
-    t_span: tuple[Number, Number] | None = None,
-    resets: dict[Number, Config] | None = None,
+    t_span: tuple[float, float] | None = None,
+    resets: Mapping[Number, Config] | None = None,
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-    figsize: tuple[Number, Number] = default_figsize,
+    figsize: tuple[float, float] = default_figsize,
     latex_legend: bool = False,
     symbols_to_plot: (
         Iterable[sympy.Symbol]
@@ -535,7 +561,7 @@ def plot(
     dependent_symbols_expressions = (
         tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
     )
-
+    
     sol = integrate_odes(
         odes=odes,
         inits=inits,
@@ -576,48 +602,43 @@ def plot(
     return sol if return_ode_result else None
 
 
-def symbols(
-    names: str | Iterable[str], *, cls=sympy.Symbol, **args
-) -> tuple[sympy.Symbol, ...]:
-    """
-    A strongly-typed wrapper for
-    [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
-    Unlike `sympy.symbols`, this always returns a tuple of symbols,
-    even if `names` represents only a single symbol. That means we can declare
-    the return type unconditionally as `tuple[sympy.Symbol, ...]` instead of `Any` as `sympy.symbols` does.
+# def symbols(
+#     names: str | Iterable[str], *, cls=sympy.Symbol, **args
+# ) -> tuple[sympy.Symbol, ...]:
+#     """
+#     A strongly-typed wrapper for
+#     [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
+#     Unlike `sympy.symbols`, this always returns a tuple of symbols,
+#     even if `names` represents only a single symbol. That means we can declare
+#     the return type unconditionally as `tuple[sympy.Symbol, ...]` instead of `Any` as `sympy.symbols` does.
 
-    This means that, for instance, if you write `x,y = gpac.symbols('x y')`, then mypy will
-    know that `x` and `y` are both of type `sympy.Symbol`.
+#     This means that, for instance, if you write `x,y = gpac.symbols('x y')`, then mypy will
+#     know that `x` and `y` are both of type `sympy.Symbol`.
 
-    Parameters
-    ----------
-    names:
-        A string or iterable of strings representing the names of the symbols to create.
-        See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
+#     Parameters
+#     ----------
+#     names:
+#         A string or iterable of strings representing the names of the symbols to create.
+#         See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
 
-    cls:
-        I don't know, but sympy.symbols has this parameter. It seems you can make the
-        type of objects returned by another class than sympy.Symbol, but I don't
-        know why you would want to do that.
-        See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
+#     cls:
+#         I don't know, but sympy.symbols has this parameter. It seems you can make the
+#         type of objects returned by another class than sympy.Symbol, but I don't
+#         know why you would want to do that.
+#         See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
 
-    args:
-        Additional arguments to pass to `sympy.symbols`.
-        See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
-    """
-    result = sympy.symbols(names, cls=cls, **args)
-    if isinstance(result, sympy.Symbol):
-        return (result,)
-    else:
-        assert isinstance(result, Sequence)
-        assert len(result) > 0
-        assert isinstance(result[0], sympy.Symbol)
-        return tuple(result)
-
-
-import numpy as np
-from scipy.integrate import solve_ivp
-from typing import Callable, Iterable, Any
+#     args:
+#         Additional arguments to pass to `sympy.symbols`.
+#         See [`sympy.symbols`](https://docs.sympy.org/latest/modules/core.html#sympy.core.symbol.symbols).
+#     """
+#     result = sympy.symbols(names, cls=cls, **args)
+#     if isinstance(result, sympy.Symbol):
+#         return (result,)
+#     else:
+#         assert isinstance(result, Sequence)
+#         assert len(result) > 0
+#         assert isinstance(result[0], sympy.Symbol)
+#         return tuple(result)
 
 
 def _solve_ivp_with_resets(
@@ -854,8 +875,8 @@ def plot_given_values(
     times: np.ndarray | xarray.DataArray,
     result: dict[sympy.Symbol, np.ndarray] | dict[sympy.Symbol, xarray.DataArray],
     source: Literal["ode", "ssa"],
-    dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
-    figure_size: tuple[Number, Number] = default_figsize,
+    dependent_symbols: Mapping[sympy.Symbol, ValOde] | None = None,
+    figure_size: tuple[float, float] = default_figsize,
     latex_legend: bool = False,
     symbols_to_plot: (
         Iterable[sympy.Symbol]
@@ -867,7 +888,7 @@ def plot_given_values(
     ) = None,
     legend: dict[sympy.Symbol, str] | None = None,
     show: bool = False,
-    loc: str | tuple[Number, Number] = "best",
+    loc: str | tuple[float, float] = "best",
     warn_change_dpi: bool = False,
     **options,
 ) -> None:
@@ -1095,4 +1116,4 @@ def display_odes(odes: dict[sympy.Symbol, ValOde]) -> None:
 
 
 if __name__ == "__main__":
-    bubble()
+    test_reset()
