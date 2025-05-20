@@ -524,6 +524,85 @@ def test_mypy_plot_crn():
     plot_crn(rxns, inits, t_eval)
 
 
+def test_plot_crn():
+    # "Composition" of strongly computable functions
+    import sympy
+    import gpac
+    import numpy as np
+
+    # computes x_1 + x_2 if x_1 > x_2
+    # computes min(x_1,x_2) otherwise
+
+    rcSlow = 10
+    rcFast = 300
+
+    y1hat, y2hat, y, x1, x2 = gpac.species(r'Y1hat Y2hat Y X1 X2')
+
+    # CRN for majority
+    a, b, c, t, f = gpac.species(r'A B C T F')
+    rxnsMajority = [
+        (a + f >> a + t),
+        (b + t >> b + f),
+        (a + b >> gpac.empty),
+        (c + t >> c + f),
+        (c + c + c >> gpac.empty)
+    ]
+
+    # CRN for y1 = i_1 - i_2
+    i_1, i_2, y1 = gpac.species(r'I1 I2 Y1')
+    rxnsAdd = [
+        (i_1 >> y1),
+        (i_2 + y1 + y >> gpac.empty),
+    ]
+
+    # CRN for y2 = min(v,w)
+    v, w, y2 = gpac.species(r'V W Y2')
+    rxnsMin = [
+        (v + w >> y2)
+    ]
+
+    rxnsCompose = [
+        (x1 >> v + i_1 + a),
+        (x2 >> w + i_2 + b),  # copy input
+        (t + y1 >> t + y1hat + y).k(rcSlow),
+        (f + y2 >> f + y2hat + y).k(rcFast),
+        (t + y2hat + y >> t + y2).k(rcSlow),
+        (f + y1hat + y >> f + y1).k(rcFast)
+    ]
+
+    rxnsAll = [
+        (a + f >> a + t),
+        (b + t >> b + f),
+        (a + b >> gpac.empty),
+        (c + t >> c + f),
+        (c + c + c >> gpac.empty),  # maj
+        (i_1 >> y1),  # x_1 + x_2
+        (i_2 >> y1),
+        (v + w >> y2),  # min (x, w)
+        (x1 >> v + i_1 + a),
+        (x2 >> w + i_2 + b),  # copy input
+        (t + y1 >> t + y1hat + y).k(rcSlow),
+        (f + y2 >> f + y2hat + y).k(rcFast),
+        (t + y2hat + y >> t + y2).k(rcSlow),
+        (f + y1hat + y >> f + y1).k(rcFast)
+    ]
+
+    # sumY1,sumY2,Y1HAT,Y2HAT,Y1,Y2 = sympy.symbols(r'$Y_1+\hat{Y}_1$ $Y_2+\hat{Y}_2$ $\hat{Y}_1$ $\hat{Y}_2$ $Y_1$ $Y_2$')
+    sumY1, sumY2, Y1HAT, Y2HAT, Y1, Y2 = sympy.symbols(r'Y1plusY1hat Y2plusY2hat Y1hat Y2hat Y1 Y2')
+
+    dependent_symbols = {
+        sumY1: Y1 + Y1HAT,
+        sumY2: Y2 + Y2HAT,
+    }
+
+    initial_values = {x1: 4, x2: 2, c: 1, t: 1}
+    t_eval = np.linspace(0, 5000, 1000)
+    # print(gpac.integrate_crn_odes(rxnsAll,initial_values=initial_values,t_eval=t_eval))
+    # plot trajectory of concentrations
+    gpac.plot_crn(rxnsAll, initial_values, t_eval=t_eval, method='Radau', figsize=(12, 6),
+                  symbols_to_plot=[y, sumY1, sumY2],
+                  dependent_symbols=dependent_symbols)
+
 def plot_crn(
     rxns: Iterable[Reaction],
     inits: ConfigCrn,
@@ -2138,4 +2217,4 @@ class Reaction:
 
 
 if __name__ == "__main__":
-    test_rebop_reset()
+    test_plot_crn()

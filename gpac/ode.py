@@ -19,7 +19,7 @@ from typing import (
     overload,
 )
 
-
+import editdistance
 from scipy.integrate._ivp.ivp import OdeResult  # noqa
 import sympy
 from scipy.integrate import solve_ivp, OdeSolver
@@ -312,10 +312,12 @@ def integrate_odes(
     odes_symbols = {}
     symbols_found_in_expressions = set()
     for symbol, expr in odes.items():
-        if isinstance(symbol, str):
-            symbol = sympy.symbols(symbol)
-        if isinstance(expr, (str, int, float)):
+        if not isinstance(symbol, sympy.Symbol):
+            raise ValueError( f"key `{symbol}` in odes is not a sympy Symbol" )
+        if isinstance(expr, (int, float)):
             expr = sympy.sympify(expr)
+        elif not isinstance(expr, sympy.Expr):
+            raise ValueError( f"value `{expr}` in odes is not a sympy Expr; it is a {type(expr)}" )
         symbols_found_in_expressions.update(expr.free_symbols)
         odes_symbols[symbol] = expr
 
@@ -398,6 +400,26 @@ def integrate_odes(
         )
 
     if dependent_symbols != ():
+        # check that symbols used in dependent_symbols are in the odes dict
+        for expr in dependent_symbols:
+            if isinstance(expr, (int, float)):
+                expr = sympy.sympify(expr)
+            assert isinstance(expr, sympy.Expr)
+            for symbol in expr.free_symbols:
+                if symbol not in odes.keys():
+                    valid_key_names = [str(sym) for sym in odes.keys()]
+                    suggestions = []
+                    for valid_key_name in valid_key_names:
+                        if editdistance.eval(str(symbol), valid_key_name) <= 2:
+                            suggestions.append(valid_key_name)
+                    raise ValueError(
+                        f"Symbol `{symbol}` referenced in dependent_symbols expression `{expr}` "
+                        f"is not in odes dict as a key. Perhaps you meant one of {", ".join(suggestions)}?\n"
+                        f'Ensure that each symbol referenced is the name of a symbol '
+                        f'appearing as a key in the odes dict:\n'
+                        f'{", ".join(valid_key_names)}'
+                    )
+
         dependent_funcs = [
             sympy.lambdify(independent_symbols, func) for func in dependent_symbols
         ]
@@ -408,6 +430,7 @@ def integrate_odes(
             # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
             # the vectors as separate arguments to the function func
             dep_vals_row = func(*indp_vals)
+            print(f'{dep_vals_row=}')
             dep_vals[i] = dep_vals_row
         solution.y = np.vstack((solution.y, dep_vals))
 
@@ -1193,4 +1216,4 @@ def display_odes(odes: dict[sympy.Symbol, ValOde]) -> None:
 
 
 if __name__ == "__main__":
-    test_reset()
+    pass
