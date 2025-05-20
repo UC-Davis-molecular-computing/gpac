@@ -16,6 +16,7 @@ from typing import (
     TypeVar,
     Mapping,
     Any,
+    overload,
 )
 
 
@@ -420,6 +421,72 @@ Default figure size for matplotlib plotting functions such as
 [`plot`][gpac.ode.plot] and [`plot_crn`][gpac.crn.plot_crn].
 """
 
+@overload
+def plot(
+    odes: dict[sympy.Symbol, ValOde],
+    inits: Config,
+    t_eval: Iterable[float] | None = ...,
+    *,
+    t_span: tuple[float, float] | None = ...,
+    resets: Mapping[Number, Config] | None = ...,
+    dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
+    figsize: tuple[float, float] = ...,
+    symbols_to_plot: (
+        Iterable[sympy.Symbol]
+        | Iterable[Sequence[sympy.Symbol]]
+        | str
+        | re.Pattern
+        | Iterable[re.Pattern]
+        | None
+    ) = ...,
+    legend: dict[sympy.Symbol, str] | None = ...,
+    latex_legend: bool = ...,
+    omit_legend: bool = ...,
+    show: bool = ...,
+    method: str | OdeSolver = ...,
+    dense_output: bool = ...,
+    events: Callable | Iterable[Callable] | None = ...,
+    vectorized: bool = ...,
+    return_ode_result: Literal[True],
+    args: tuple | None = ...,
+    loc: str | tuple[float, float] = ...,
+    warn_change_dpi: bool = ...,
+    **options,
+) -> OdeResult: ...
+
+
+@overload
+def plot(
+    odes: dict[sympy.Symbol, ValOde],
+    inits: Config,
+    t_eval: Iterable[float] | None = ...,
+    *,
+    t_span: tuple[float, float] | None = ...,
+    resets: Mapping[Number, Config] | None = ...,
+    dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
+    figsize: tuple[float, float] = ...,
+    symbols_to_plot: (
+        Iterable[sympy.Symbol]
+        | Iterable[Sequence[sympy.Symbol]]
+        | str
+        | re.Pattern
+        | Iterable[re.Pattern]
+        | None
+    ) = ...,
+    legend: dict[sympy.Symbol, str] | None = ...,
+    latex_legend: bool = ...,
+    omit_legend: bool = ...,
+    show: bool = ...,
+    method: str | OdeSolver = ...,
+    dense_output: bool = ...,
+    events: Callable | Iterable[Callable] | None = ...,
+    vectorized: bool = ...,
+    return_ode_result: Literal[False] = ...,
+    args: tuple | None = ...,
+    loc: str | tuple[float, float] = ...,
+    warn_change_dpi: bool = ...,
+    **options,
+) -> None: ...
 
 def plot(
     odes: dict[sympy.Symbol, ValOde],
@@ -430,7 +497,6 @@ def plot(
     resets: Mapping[Number, Config] | None = None,
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
     figsize: tuple[float, float] = default_figsize,
-    latex_legend: bool = False,
     symbols_to_plot: (
         Iterable[sympy.Symbol]
         | Iterable[Sequence[sympy.Symbol]]
@@ -440,6 +506,8 @@ def plot(
         | None
     ) = None,
     legend: dict[sympy.Symbol, str] | None = None,
+    latex_legend: bool = False,
+    omit_legend: bool = False,
     show: bool = False,
     method: str | OdeSolver = "RK45",
     dense_output: bool = False,
@@ -512,6 +580,10 @@ def plot(
         instead of the original name of the symbol. This can be useful for example to include LaTeX,
         mapping a symbol with a name like `'xt'` to a string like `r'$x_t$'`.
 
+    omit_legend:
+        If True, do not show the legend at all. Raises exception if true and `legend` is specified
+        or `latex_legend` is also true.
+
     show:
         whether to call ``matplotlib.pyplot.show()`` after creating the plot;
         If False, this helps the user to call other functions
@@ -556,9 +628,10 @@ def plot(
         solution to the ODEs, same as object returned by
         [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
     """
-    if legend is None:
-        legend = {}
-
+    if omit_legend:
+        assert legend is None
+        assert not latex_legend
+    
     dependent_symbols_expressions = (
         tuple(dependent_symbols.values()) if dependent_symbols is not None else ()
     )
@@ -595,6 +668,7 @@ def plot(
         latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
+        omit_legend=omit_legend,
         show=show,
         loc=loc,
         warn_change_dpi=warn_change_dpi,
@@ -876,9 +950,8 @@ def plot_given_values(
     times: np.ndarray | xarray.DataArray,
     result: dict[sympy.Symbol, np.ndarray] | dict[sympy.Symbol, xarray.DataArray],
     source: Literal["ode", "ssa"],
-    dependent_symbols: Mapping[sympy.Symbol, ValOde] | None = None,
-    figsize: tuple[float, float] = default_figsize,
-    latex_legend: bool = False,
+    dependent_symbols: Mapping[sympy.Symbol, ValOde] | None,
+    figsize: tuple[float, float],
     symbols_to_plot: (
         Iterable[sympy.Symbol]
         | Iterable[Sequence[sympy.Symbol]]
@@ -886,11 +959,13 @@ def plot_given_values(
         | re.Pattern
         | Iterable[re.Pattern]
         | None
-    ) = None,
-    legend: dict[sympy.Symbol, str] | None = None,
-    show: bool = False,
-    loc: str | tuple[float, float] = "best",
-    warn_change_dpi: bool = False,
+    ),
+    legend: dict[sympy.Symbol, str] | None,
+    latex_legend: bool,
+    omit_legend: bool,
+    show: bool,
+    loc: str | tuple[float, float],
+    warn_change_dpi: bool,
     **options,
 ) -> None:
     if legend is None:
@@ -1040,7 +1115,8 @@ def plot_given_values(
                     symbol_name = f"${symbol_name}$"
             plt.plot(times, y, label=symbol_name, color=color, **options)
 
-        plt.legend(loc=loc)
+        if not omit_legend:
+            plt.legend(loc=loc)
 
     plt.xlabel("time")
 

@@ -455,7 +455,6 @@ def plot_crn(
     resets: Mapping[Number, ConfigCrn] | None = ...,
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
     figsize: tuple[float, float] = ...,
-    latex_legend: bool = ...,
     symbols_to_plot: (
         Iterable[sympy.Symbol]
         | Iterable[Sequence[sympy.Symbol]]
@@ -466,6 +465,8 @@ def plot_crn(
     ) = ...,
     show: bool = ...,
     legend: dict[sympy.Symbol, str] | None = ...,
+    latex_legend: bool = ...,
+    omit_legend: bool = ...,
     method: str | OdeSolver = ...,
     dense_output: bool = ...,
     events: Callable | Iterable[Callable] | None = ...,
@@ -488,7 +489,6 @@ def plot_crn(
     resets: Mapping[Number, ConfigCrn] | None = ...,
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
     figsize: tuple[float, float] = ...,
-    latex_legend: bool = False,
     symbols_to_plot: (
         Iterable[sympy.Symbol]
         | Iterable[Sequence[sympy.Symbol]]
@@ -499,6 +499,8 @@ def plot_crn(
     ) = ...,
     show: bool = ...,
     legend: dict[sympy.Symbol, str] | None = ...,
+    latex_legend: bool = ...,
+    omit_legend: bool = ...,
     method: str | OdeSolver = ...,
     dense_output: bool = ...,
     events: Callable | Iterable[Callable] | None = ...,
@@ -530,7 +532,6 @@ def plot_crn(
     resets: Mapping[Number, ConfigCrn] | None = None,
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
     figsize: tuple[float, float] = default_figsize,
-    latex_legend: bool = False,
     symbols_to_plot: (
         Iterable[sympy.Symbol]
         | Iterable[Sequence[sympy.Symbol]]
@@ -541,6 +542,8 @@ def plot_crn(
     ) = None,
     show: bool = False,
     legend: dict[sympy.Symbol, str] | None = None,
+    latex_legend: bool = False,
+    omit_legend: bool = False,
     method: str | OdeSolver = "RK45",
     dense_output: bool = False,
     events: Callable | Iterable[Callable] | None = None,
@@ -643,15 +646,18 @@ def plot_crn(
     figsize:
         See [`plot`][gpac.ode.plot].
 
-    latex_legend:
-        See [`plot`][gpac.ode.plot].
-
     symbols_to_plot:
         See [`plot`][gpac.ode.plot], and similarly to `dependent_symbols`, these must be sympy.Symbol
         objects with the same name as either [`Specie`][gpac.crn.Specie] objects in `rxns`,
         or the keys in `dependent_symbols`, as opposed to using [`Specie`][gpac.crn.Specie] objects directly.
 
     legend:
+        See [`plot`][gpac.ode.plot].
+
+    latex_legend:
+        See [`plot`][gpac.ode.plot].
+
+    omit_legend:
         See [`plot`][gpac.ode.plot].
 
     show:
@@ -702,12 +708,14 @@ def plot_crn(
         latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
+        omit_legend=omit_legend,
         show=show,
         method=method,
         dense_output=dense_output,
         events=events,
         vectorized=vectorized,
-        return_ode_result=return_ode_result,
+        # For some reason the next line thinks return_ode_result is Literal[False] instead of bool
+        return_ode_result=return_ode_result, # type: ignore
         args=args,
         loc=loc,
         warn_change_dpi=warn_change_dpi,
@@ -1081,6 +1089,7 @@ def plot_gillespie(
         | None
     ) = ...,
     legend: dict[sympy.Symbol, str] | None = ...,
+    omit_legend: bool = ...,
     show: bool = ...,
     return_simulation_result: Literal[True],
     loc: str | tuple[float, float] = ...,
@@ -1111,6 +1120,7 @@ def plot_gillespie(
         | None
     ) = ...,
     legend: dict[sympy.Symbol, str] | None = ...,
+    omit_legend: bool = ...,
     show: bool = ...,
     return_simulation_result: Literal[False] = ...,
     loc: str | tuple[float, float] = ...,
@@ -1150,6 +1160,7 @@ def plot_gillespie(
         | None
     ) = None,
     legend: dict[sympy.Symbol, str] | None = None,
+    omit_legend: bool = False,
     show: bool = False,
     return_simulation_result: bool = False,
     loc: str | tuple[float, float] = "best",
@@ -1208,6 +1219,9 @@ def plot_gillespie(
 
     legend:
         See [`plot`][gpac.ode.plot].
+        
+    omit_legend:
+        See [`plot`][gpac.ode.plot].
 
     show:
         See [`plot`][gpac.ode.plot].
@@ -1250,6 +1264,7 @@ def plot_gillespie(
         latex_legend=latex_legend,
         symbols_to_plot=symbols_to_plot,
         legend=legend,
+        omit_legend=omit_legend,
         show=show,
         loc=loc,
         warn_change_dpi=warn_change_dpi,
