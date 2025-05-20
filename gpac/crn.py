@@ -167,6 +167,7 @@ class Specie:
 
     __req__ = __eq__
 
+
 KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol)
 """
 A type variable representing the key type of the dictionary used to represent
@@ -456,8 +457,8 @@ def plot_crn(
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
     figsize: tuple[float, float] = ...,
     symbols_to_plot: (
-        Iterable[sympy.Symbol]
-        | Iterable[Sequence[sympy.Symbol]]
+        Iterable[sympy.Symbol | Specie]
+        | Iterable[Sequence[sympy.Symbol | Specie]]
         | str
         | re.Pattern
         | Iterable[re.Pattern]
@@ -490,8 +491,8 @@ def plot_crn(
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = ...,
     figsize: tuple[float, float] = ...,
     symbols_to_plot: (
-        Iterable[sympy.Symbol]
-        | Iterable[Sequence[sympy.Symbol]]
+        Iterable[sympy.Symbol | Specie]
+        | Iterable[Sequence[sympy.Symbol | Specie]]
         | str
         | re.Pattern
         | Iterable[re.Pattern]
@@ -533,8 +534,8 @@ def plot_crn(
     dependent_symbols: dict[sympy.Symbol, ValOde] | None = None,
     figsize: tuple[float, float] = default_figsize,
     symbols_to_plot: (
-        Iterable[sympy.Symbol]
-        | Iterable[Sequence[sympy.Symbol]]
+        Iterable[sympy.Symbol | Specie]
+        | Iterable[Sequence[sympy.Symbol | Specie]]
         | str
         | re.Pattern
         | Iterable[re.Pattern]
@@ -647,9 +648,9 @@ def plot_crn(
         See [`plot`][gpac.ode.plot].
 
     symbols_to_plot:
-        See [`plot`][gpac.ode.plot], and similarly to `dependent_symbols`, these must be sympy.Symbol
-        objects with the same name as either [`Specie`][gpac.crn.Specie] objects in `rxns`,
-        or the keys in `dependent_symbols`, as opposed to using [`Specie`][gpac.crn.Specie] objects directly.
+        See [`plot`][gpac.ode.plot]. However, one can also use [`Specie`][gpac.crn.Specie] objects directly,
+        which are converted to `sympy.Symbol` objects with the same name before being passed to
+        [`plot`][gpac.ode.plot].
 
     legend:
         See [`plot`][gpac.ode.plot].
@@ -684,7 +685,7 @@ def plot_crn(
     odes = crn_to_odes(rxns)
     inits_normalized = _normalize_crn_inits(inits)
 
-    resets_symbols: dict[Number, dict[sympy.Symbol, float]] | None = None 
+    resets_symbols: dict[Number, dict[sympy.Symbol, float]] | None = None
     if resets is not None:
         resets_symbols = {}
         for time, reset in resets.items():
@@ -694,7 +695,9 @@ def plot_crn(
                 symbol = sympy.Symbol(specie.name)
                 reset_symbols[symbol] = conc
             resets_symbols[time] = reset_symbols
-    
+
+    symbols_to_plot_no_species = convert_species_to_symbols(symbols_to_plot)
+
     return plot(
         odes,
         inits=inits_normalized,
@@ -706,7 +709,7 @@ def plot_crn(
         dependent_symbols=dependent_symbols,  # type: ignore
         figsize=figsize,
         latex_legend=latex_legend,
-        symbols_to_plot=symbols_to_plot,
+        symbols_to_plot=symbols_to_plot_no_species,
         legend=legend,
         omit_legend=omit_legend,
         show=show,
@@ -715,12 +718,80 @@ def plot_crn(
         events=events,
         vectorized=vectorized,
         # For some reason the next line thinks return_ode_result is Literal[False] instead of bool
-        return_ode_result=return_ode_result, # type: ignore
+        return_ode_result=return_ode_result,  # type: ignore
         args=args,
         loc=loc,
         warn_change_dpi=warn_change_dpi,
         **options,
     )
+
+
+def convert_species_to_symbols(
+    symbols_to_plot: (
+        Iterable[sympy.Symbol | Specie]
+        | Iterable[Sequence[sympy.Symbol | Specie]]
+        | str
+        | re.Pattern
+        | Iterable[re.Pattern]
+        | None
+    ),
+) -> (
+    list[sympy.Symbol]
+    | list[Sequence[sympy.Symbol]]
+    | str
+    | re.Pattern
+    | list[re.Pattern]
+    | None
+):
+    # convert Specie objects in symbols_to_plot to sympy.Symbol objects
+    symbols_to_plot_no_species: (
+        list[sympy.Symbol]
+        | list[Sequence[sympy.Symbol]]
+        | str
+        | re.Pattern
+        | list[re.Pattern]
+        | None
+    )
+    if symbols_to_plot is None or isinstance(symbols_to_plot, (str, re.Pattern)):
+        symbols_to_plot_no_species = symbols_to_plot
+    else:
+        # type narrowed to
+        # - Iterable[Symbol | Specie]
+        # - Iterable[Sequence[Symbol | Specie]]
+        # - Iterable[Pattern]
+        # symbols_to_plot is an Iterable of something; make a list and populate it with
+        # elements of symbols_to_plot, replacing any Specie objects with sympy.Symbols
+        symbols_to_plot_no_species: (
+            list[sympy.Symbol]
+            | list[Sequence[sympy.Symbol]]
+            | str
+            | re.Pattern
+            | list[re.Pattern]
+            | None
+        ) = []
+        assert not isinstance(symbols_to_plot_no_species, (str, re.Pattern))
+        assert symbols_to_plot_no_species is not None
+        first_elt = next(iter(symbols_to_plot))
+        if isinstance(first_elt, (Specie, sympy.Symbol)):
+            for elt in symbols_to_plot:
+                assert isinstance(elt, (Specie, sympy.Symbol))
+                if isinstance(elt, Specie):
+                    symbol = sympy.Symbol(elt.name)
+                    symbols_to_plot_no_species.append(symbol)
+        else:
+            for elt in symbols_to_plot:
+                assert not isinstance(elt, (Specie, sympy.Symbol))
+                if isinstance(elt, Sequence):
+                    nested_list: list[sympy.Symbol] = []
+                    for sub_elt in elt:
+                        if isinstance(sub_elt, Specie):
+                            symbol = sympy.Symbol(sub_elt.name)
+                            nested_list.append(symbol)
+                        else:
+                            nested_list.append(sub_elt)
+                    symbols_to_plot_no_species.append(nested_list)  # type: ignore
+
+    return symbols_to_plot_no_species
 
 
 def find_all_species(rxns: Iterable[Reaction]) -> tuple[Specie, ...]:
@@ -1152,8 +1223,8 @@ def plot_gillespie(
     figsize: tuple[float, float] = default_figsize,
     latex_legend: bool = False,
     symbols_to_plot: (
-        Iterable[sympy.Symbol]
-        | Iterable[Sequence[sympy.Symbol]]
+        Iterable[sympy.Symbol | Specie]
+        | Iterable[Sequence[sympy.Symbol | Specie]]
         | str
         | re.Pattern
         | Iterable[re.Pattern]
@@ -1191,10 +1262,10 @@ def plot_gillespie(
     tmax:
         See [`rebop_crn_counts`][gpac.crn.rebop_crn_counts].
 
-    nb_steps: 
+    nb_steps:
         See [`rebop_crn_counts`][gpac.crn.rebop_crn_counts].
 
-    return_simulation_result: 
+    return_simulation_result:
         Whether to return the simulation result; if True, the result of the simulation
         is returned, but the default behavior is not to do this, so that if the last line of a notebook cell
         is a call to `plot_gillespie`, the result is not printed to the output, only the plot is shown.
@@ -1210,7 +1281,7 @@ def plot_gillespie(
 
     figsize:
         See [`plot`][gpac.ode.plot].
-    
+
     latex_legend:
         See [`plot`][gpac.ode.plot].
 
@@ -1219,7 +1290,7 @@ def plot_gillespie(
 
     legend:
         See [`plot`][gpac.ode.plot].
-        
+
     omit_legend:
         See [`plot`][gpac.ode.plot].
 
@@ -1255,6 +1326,9 @@ def plot_gillespie(
     result = {
         sympy.Symbol(str(name)): rb_result[name] for name in rb_result if name != "time"
     }
+
+    symbols_to_plot_no_species = convert_species_to_symbols(symbols_to_plot)
+
     plot_given_values(
         times=times,
         result=result,
@@ -1262,7 +1336,7 @@ def plot_gillespie(
         dependent_symbols=dependent_symbols,
         figsize=figsize,
         latex_legend=latex_legend,
-        symbols_to_plot=symbols_to_plot,
+        symbols_to_plot=symbols_to_plot_no_species,
         legend=legend,
         omit_legend=omit_legend,
         show=show,
@@ -1315,7 +1389,7 @@ def rebop_sample_future_configurations(
 
     seed:
         This seed is used to generate random seeds for the rebop package, with a different seed
-        used during each trial to give to See [`rebop_crn_counts`][gpac.crn.rebop_crn_counts]. 
+        used during each trial to give to See [`rebop_crn_counts`][gpac.crn.rebop_crn_counts].
         (Otherwise, we'd just be sampling the same run over and over again.)
         If not specified, a random seed is generated.
 
