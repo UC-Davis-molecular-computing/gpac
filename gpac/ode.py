@@ -430,7 +430,6 @@ def integrate_odes(
             # convert 2D numpy array to list of 1D arrays so we can use Python's * operator to distribute
             # the vectors as separate arguments to the function func
             dep_vals_row = func(*indp_vals)
-            print(f'{dep_vals_row=}')
             dep_vals[i] = dep_vals_row
         solution.y = np.vstack((solution.y, dep_vals))
 
