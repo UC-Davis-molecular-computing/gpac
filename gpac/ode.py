@@ -237,8 +237,8 @@ def integrate_odes(
         that are functions of the other symbols that are keys in `odes`.
         These values are added to the end of the 2D array field `sol.y` in the object `sol`
         returned by `solve_ivp`, in the order in which they appear in `dependent_variables`.
-        For an example, see the example notebook
-        https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb.
+        For an example, see the 
+        [example notebook](https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb).
         Note that this is a different type than the `dependent_symbols` parameter in
         [`plot`][gpac.ode.plot], which is a dict mapping sympy Symbols to sympy expressions.
         In other words in this function, the dependent symbols have no "names", only positions,
@@ -597,8 +597,8 @@ def plot(
     dependent_symbols:
         dict mapping symbols (or strings) to sympy expressions (or strings) representing variables
         that are functions of the other variables that are keys in `odes`.
-        For an example, see the example notebook
-        <https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb>.
+        For an example, see the [example notebook]
+        (https://github.com/UC-Davis-molecular-computing/gpac/blob/main/notebook.ipynb).
         Note that this is a different type than the `dependent_symbols` parameter in
         [`integrate_odes`][gpac.ode.integrate_odes], which is an Iterable of sympy expressions.
 
