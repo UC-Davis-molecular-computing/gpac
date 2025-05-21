@@ -1002,27 +1002,22 @@ def plot_given_values(
         rcParams["figure.dpi"] = 96
     if rcParams["font.size"] == 10.0:
         # don't update if it's equal to a non-default value; that might mean the user set it to that value
-        print(f'updating figure font size from {rcParams["font.size"]} to 14')
+        # print(f'updating figure font size from {rcParams["font.size"]} to 14')
         rcParams.update({"font.size": 14})
 
     # partially normalize symbols_to_plot to be tuple of something (Symbol, Iterable[Symbol], or re.Pattern)
-    dependent_symbols_list = (
-        list(dependent_symbols.keys()) if dependent_symbols is not None else []
-    )
-    symbols_to_plot_list: (
-        list[sympy.Symbol] | list[Sequence[sympy.Symbol]] | list[re.Pattern]
-    )
+    dependent_symbols_list = list(dependent_symbols.keys()) if dependent_symbols is not None else []
+
+    symbols_to_plot_list: list[sympy.Symbol] | list[Sequence[sympy.Symbol]] | list[re.Pattern]
+
     if symbols_to_plot is None:  # after symbols_to_plot_list will be list[Symbol]
         symbols_given = list(result.keys())
         symbols_to_plot_list = symbols_given + dependent_symbols_list
-    elif isinstance(
-        symbols_to_plot, (str, re.Pattern)
-    ):  # after symbols_to_plot_list will be list[Symbol]
-        pattern = (
-            symbols_to_plot
-            if isinstance(symbols_to_plot, re.Pattern)
+    elif isinstance(symbols_to_plot, (str, re.Pattern)):
+        # after symbols_to_plot_list will be list[Symbol]
+        pattern = symbols_to_plot \
+            if isinstance(symbols_to_plot, re.Pattern) \
             else re.compile(symbols_to_plot)
-        )
         symbols_to_plot_list = list(
             symbol for symbol in result.keys() if pattern.match(symbol.name)
         )

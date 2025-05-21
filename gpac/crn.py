@@ -536,7 +536,7 @@ def test_plot_crn():
     rcSlow = 10
     rcFast = 300
 
-    y1hat, y2hat, y, x1, x2 = gpac.species(r'Y1hat Y2hat Y X1 X2')
+    y1hat, y2hat, y, x1, x2 = gpac.species(r'\hat{Y}_1 \hat{Y}_2 Y X_1 X_2')
 
     # CRN for majority
     a, b, c, t, f = gpac.species(r'A B C T F')
@@ -549,14 +549,14 @@ def test_plot_crn():
     ]
 
     # CRN for y1 = i_1 - i_2
-    i_1, i_2, y1 = gpac.species(r'I1 I2 Y1')
+    i_1, i_2, y1 = gpac.species(r'I_1 I_2 Y_1')
     rxnsAdd = [
         (i_1 >> y1),
         (i_2 + y1 + y >> gpac.empty),
     ]
 
     # CRN for y2 = min(v,w)
-    v, w, y2 = gpac.species(r'V W Y2')
+    v, w, y2 = gpac.species(r'V W Y_2')
     rxnsMin = [
         (v + w >> y2)
     ]
@@ -587,8 +587,8 @@ def test_plot_crn():
         (f + y1hat + y >> f + y1).k(rcFast)
     ]
 
-    # sumY1,sumY2,Y1HAT,Y2HAT,Y1,Y2 = sympy.symbols(r'$Y_1+\hat{Y}_1$ $Y_2+\hat{Y}_2$ $\hat{Y}_1$ $\hat{Y}_2$ $Y_1$ $Y_2$')
-    sumY1, sumY2, Y1HAT, Y2HAT, Y1, Y2 = sympy.symbols(r'Y1plusY1hat Y2plusY2hat Y1hat Y2hat Y1 Y2')
+    sumY1, sumY2, Y1HAT, Y2HAT, Y1, Y2 = sympy.symbols(r'Y_1+\hat{Y}_1 Y_2+\hat{Y}_2 \hat{Y}_1 \hat{Y}_2 Y_1 Y_2')
+    # sumY1,sumY2,Y1HAT,Y2HAT,Y1,Y2 = sympy.symbols(r'Y1plusY1hat Y2plusY2hat Y1hat Y2hat Y1 Y2')
 
     dependent_symbols = {
         sumY1: Y1 + Y1HAT,
@@ -601,6 +601,7 @@ def test_plot_crn():
     # plot trajectory of concentrations
     gpac.plot_crn(rxnsAll, initial_values, t_eval=t_eval, method='Radau', figsize=(12, 6),
                   symbols_to_plot=[y, sumY1, sumY2],
+                  latex_legend=True,
                   dependent_symbols=dependent_symbols)
 
 def plot_crn(
@@ -857,6 +858,8 @@ def convert_species_to_symbols(
                 if isinstance(elt, Specie):
                     symbol = sympy.Symbol(elt.name)
                     symbols_to_plot_no_species.append(symbol)
+                else:
+                    symbols_to_plot_no_species.append(elt)
         else:
             for elt in symbols_to_plot:
                 assert not isinstance(elt, (Specie, sympy.Symbol))
