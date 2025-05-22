@@ -414,7 +414,7 @@ def integrate_odes(
                             suggestions.append(valid_key_name)
                     raise ValueError(
                         f"Symbol `{symbol}` referenced in dependent_symbols expression `{expr}` "
-                        f"is not in odes dict as a key. Perhaps you meant one of {", ".join(suggestions)}?\n"
+                        f"is not in odes dict as a key. Perhaps you meant one of {', '.join(suggestions)}?\n"
                         f'Ensure that each symbol referenced is the name of a symbol '
                         f'appearing as a key in the odes dict:\n'
                         f'{", ".join(valid_key_names)}'
