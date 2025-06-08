@@ -8,3 +8,4 @@ tqdm
 polars
 ipywidgets
 ipykernel
+editdistance
