@@ -1138,13 +1138,10 @@ def rebop_crn_counts(
 
     resets:
         If specified, this is a dict mapping times to "configurations" (i.e., dict mapping symbols/str to values).
-        The configurations are used to set the values of the symbols manually during the ODE integration
+        The configurations are used to set the values of the symbols manually during the CRN simulation
         at specific times.
         Any symbols not appearing as keys in `resets` are left at their current values.
-        The OdeResult returned (the one returned by `solve_ivp` in scipy) will have two additional fields:
-        `reset_times` and `reset_indices`, which are lists of the times and indices in `sol.t`
-        corresponding to the times when the resets were applied.
-        Raises a ValueError if any time lies outside the integration interval, or if `resets` is empty.
+        Raises a ValueError if any time lies outside the simulation interval, or if `resets` is empty.
 
     dependent_symbols:
         See [`integrate_crn_odes`][gpac.crn.integrate_crn_odes], except that values must be integers,
