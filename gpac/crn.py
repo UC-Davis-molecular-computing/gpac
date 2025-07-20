@@ -595,11 +595,11 @@ def test_plot_crn():
         sumY2: Y2 + Y2HAT,
     }
 
-    initial_values = {x1: 4, x2: 2, c: 1, t: 1}
+    inits = {x1: 4, x2: 2, c: 1, t: 1}
     t_eval = np.linspace(0, 5000, 1000)
     # print(gpac.integrate_crn_odes(rxnsAll,initial_values=initial_values,t_eval=t_eval))
     # plot trajectory of concentrations
-    gpac.plot_crn(rxnsAll, initial_values, t_eval=t_eval, method='Radau', figsize=(12, 6),
+    gpac.plot_crn(rxnsAll, inits, t_eval=t_eval, method='Radau', figsize=(12, 6),
                   symbols_to_plot=[y, sumY1, sumY2],
                   latex_legend=True,
                   dependent_symbols=dependent_symbols)
