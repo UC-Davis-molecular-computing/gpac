@@ -84,7 +84,7 @@ import sys
 # import xarray  # Made lazy - only used in CRN simulation functions
 # from scipy.integrate import OdeSolver  # Made lazy - only used in type annotations
 # from scipy.integrate._ivp.ivp import OdeResult  # Made lazy - only used in type annotations
-import sympy
+# import sympy  # Made lazy - attempt to optimize ~384ms import time
 # Lazy imports - only loaded when actually used at runtime
 if TYPE_CHECKING:
     import rebop as rb
@@ -92,6 +92,7 @@ if TYPE_CHECKING:
     from scipy.integrate import OdeSolver
     from scipy.integrate._ivp.ivp import OdeResult
     import polars as pl
+    import sympy
 import numpy as np
 from tqdm.auto import tqdm
 # import polars as pl  # Made lazy - only used in rebop_sample_future_configurations
@@ -174,7 +175,7 @@ class Specie:
     __req__ = __eq__
 
 
-KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, sympy.Symbol)
+KeyConfigCrn = TypeVar("KeyConfigCrn", Specie, "sympy.Symbol")
 """
 A type variable representing the key type of the dictionary used to represent
 configurations of CRNs. Typically this is a [`Specie`][gpac.crn.Specie] object,
@@ -320,6 +321,8 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
         (this is essentially what the functions [`integrate_crn_odes`][gpac.crn.integrate_crn_odes] 
         and [`plot_crn`][gpac.crn.plot_crn] do.
     """
+    import sympy  # Lazy import
+    
     # map each symbol to list of reactions in which it appears
     specie_to_rxn: dict[Specie, list[Reaction]] = defaultdict(list)
     for rxn in rxns:

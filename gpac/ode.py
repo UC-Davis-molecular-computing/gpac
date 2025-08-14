@@ -22,18 +22,20 @@ from typing import (
 
 import editdistance
 # from scipy.integrate._ivp.ivp import OdeResult  # Made lazy - only used in type annotations
-import sympy
+# import sympy  # Made lazy - attempt to optimize ~384ms import time
 # Lazy imports - only loaded when actually used at runtime
 if TYPE_CHECKING:
     from scipy.integrate import OdeSolver
     from scipy.integrate._ivp.ivp import OdeResult
+    import sympy
+
 import numpy as np
 # import matplotlib.pyplot as plt  # Made lazy - only used in plotting functions
 # from matplotlib.pyplot import figure  # Made lazy - only used in plotting functions
 # import xarray  # Made lazy - only used in plot_given_values
 
 
-ValOde = TypeVar("ValOde", sympy.Expr, float, int)
+ValOde = TypeVar("ValOde", "sympy.Expr", float, int)
 """
 A type variable representing a value that can be a sympy expression, float, or int.
 This represents the type of the values in the `odes` dict passed to
@@ -45,7 +47,7 @@ this avoids the user having to wrap the constant 1 in a sympy expression via
 [`sympy.sympify(1)`](https://docs.sympy.org/latest/modules/core.html#sympy.core.sympify.sympify).
 """
 
-Config: TypeAlias = Mapping[sympy.Symbol, float]
+Config: TypeAlias = Mapping["sympy.Symbol", float]
 """
 Type alias for a configuration, such as the `inits` parameter of 
 [`integrate_odes`][gpac.ode.integrate_odes] and [`plot`][gpac.ode.plot]
@@ -295,6 +297,8 @@ def integrate_odes(
         solution to the ODEs, same as object returned by
         [`solve_ivp`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
     """
+    import sympy  # Lazy import
+    
     if t_eval is not None:
         t_eval = np.array(t_eval)
         if not np.all(np.diff(t_eval) >= 0):
