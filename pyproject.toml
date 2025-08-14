@@ -1,10 +1,8 @@
 [project]
 name = "gpac"
-version = "1.1.7"
+version = "1.1.8"
 description = "A Python package for plotting differential equation trajectories, and dealing with chemical reaction networks."
-authors = [
-    { name="Dave Doty", email="doty@ucdavis.edu" }
-]
+authors = [{ name = "Dave Doty", email = "doty@ucdavis.edu" }]
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -34,6 +32,4 @@ docs = [
     "mkdocs-material>=9.1.0",
     "pymdown-extensions",
 ]
-dev = [
-    "black",
-]
+dev = ["black"]
