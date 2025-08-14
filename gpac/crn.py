@@ -73,6 +73,7 @@ from typing import (
     overload,
     TypeVar,
     Mapping,
+    TYPE_CHECKING,
 )
 from collections import defaultdict
 import copy
@@ -80,15 +81,20 @@ from dataclasses import dataclass, field
 import re
 import sys
 
-import xarray
-from scipy.integrate import OdeSolver
-from scipy.integrate._ivp.ivp import OdeResult  # noqa
+# import xarray  # Made lazy - only used in CRN simulation functions
+# from scipy.integrate import OdeSolver  # Made lazy - only used in type annotations
+# from scipy.integrate._ivp.ivp import OdeResult  # Made lazy - only used in type annotations
 import sympy
-import rebop as rb
-import xarray as xr
+# Lazy imports - only loaded when actually used at runtime
+if TYPE_CHECKING:
+    import rebop as rb
+    import xarray
+    from scipy.integrate import OdeSolver
+    from scipy.integrate._ivp.ivp import OdeResult
+    import polars as pl
 import numpy as np
 from tqdm.auto import tqdm
-import polars as pl
+# import polars as pl  # Made lazy - only used in rebop_sample_future_configurations
 
 from gpac.ode import (
     integrate_odes,
@@ -1079,6 +1085,7 @@ def _run_rebop_with_resets(
             )
             # total_results_trimmed = total_results.isel(time=slice(0, -1))
             # total_results = xr.concat([total_results_trimmed, latest_results_adjusted], dim="time")
+            import xarray as xr  # Lazy import
             total_results = xr.concat(
                 [total_results, latest_results_adjusted], dim="time"
             )
@@ -1161,6 +1168,7 @@ def rebop_crn_counts(
     if vol is None:
         vol = cast(float, sum(inits.values()))
 
+    import rebop as rb  # Lazy import
     crn = rb.Gillespie()
     for rxn in rxns:
         reactants = [specie.name for specie in rxn.reactants.species]
@@ -1508,6 +1516,7 @@ def rebop_sample_future_configurations(
         sp.name: np.array(sampled_configs_as_list[sp], dtype=np.uint)
         for sp in all_species
     }
+    import polars as pl  # Lazy import
     df = pl.DataFrame(sampled_configs)
     return df
 

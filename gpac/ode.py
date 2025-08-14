@@ -17,16 +17,20 @@ from typing import (
     Mapping,
     Any,
     overload,
+    TYPE_CHECKING,
 )
 
 import editdistance
-from scipy.integrate._ivp.ivp import OdeResult  # noqa
+# from scipy.integrate._ivp.ivp import OdeResult  # Made lazy - only used in type annotations
 import sympy
-from scipy.integrate import solve_ivp, OdeSolver
+# Lazy imports - only loaded when actually used at runtime
+if TYPE_CHECKING:
+    from scipy.integrate import OdeSolver
+    from scipy.integrate._ivp.ivp import OdeResult
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import figure
-import xarray
+# import matplotlib.pyplot as plt  # Made lazy - only used in plotting functions
+# from matplotlib.pyplot import figure  # Made lazy - only used in plotting functions
+# import xarray  # Made lazy - only used in plot_given_values
 
 
 ValOde = TypeVar("ValOde", sympy.Expr, float, int)
@@ -359,6 +363,7 @@ def integrate_odes(
     ]
 
     if resets is None:
+        from scipy.integrate import solve_ivp  # Lazy import
         solution = solve_ivp(
             fun=ode_func_vector,
             t_span=t_span,
@@ -859,6 +864,7 @@ def _solve_ivp_with_resets(
         t_eval_segments = [None] * len(segments)
 
     # Integrate each segment
+    from scipy.integrate import solve_ivp  # Lazy import
     current_y = y0.copy()
 
     segment_sol = None
@@ -992,7 +998,10 @@ def plot_given_values(
 ) -> None:
     if legend is None:
         legend = {}
+    # Lazy imports for matplotlib
     from matplotlib.pylab import rcParams
+    import matplotlib.pyplot as plt
+    from matplotlib.pyplot import figure
 
     if rcParams["figure.dpi"] != 96:
         if warn_change_dpi:
