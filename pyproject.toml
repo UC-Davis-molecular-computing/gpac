@@ -1,6 +1,6 @@
 [project]
 name = "gpac"
-version = "1.1.8"
+version = "1.1.9"
 description = "A Python package for plotting differential equation trajectories, and dealing with chemical reaction networks."
 authors = [{ name = "Dave Doty", email = "doty@ucdavis.edu" }]
 readme = "README.md"
