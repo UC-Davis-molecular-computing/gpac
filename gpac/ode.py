@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from scipy.integrate import OdeSolver
     from scipy.integrate._ivp.ivp import OdeResult
     import sympy
+    import xarray
 
 import numpy as np
 # import matplotlib.pyplot as plt  # Made lazy - only used in plotting functions
@@ -68,6 +69,7 @@ error trying to declare a `resets` dict with `int` keys such as
 
 
 def test_reset():
+    import sympy
     a, b = sympy.symbols("A B")
     odes = {
         a: b * a,
@@ -1006,6 +1008,7 @@ def plot_given_values(
     from matplotlib.pylab import rcParams
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import figure
+    import sympy
 
     if rcParams["figure.dpi"] != 96:
         if warn_change_dpi:
@@ -1208,6 +1211,7 @@ def display_odes(odes: dict[sympy.Symbol, ValOde]) -> None:
         e.g., ``{'a': '-a*b + c*a'}``.
     """
     from IPython.display import display, Math
+    import sympy
 
     for symbol, expr in odes.items():
         # normalize so symbol is a sympy Symbol and expr is a sympy Expression

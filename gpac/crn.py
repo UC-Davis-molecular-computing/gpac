@@ -343,6 +343,7 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
 
 
 def _normalize_crn_inits(inits: ConfigCrn) -> dict[sympy.Symbol, float]:
+    import sympy
     normalized_inits = {}
     for symbol, conc in inits.items():
         if isinstance(symbol, Specie):
@@ -423,6 +424,7 @@ def integrate_crn_odes(
         The result of the integration.
         See [`integrate_odes`][gpac.ode.integrate_odes] for details about this parameter.
     """
+    import sympy
     odes = crn_to_odes(rxns)
     inits_normalized = _normalize_crn_inits(inits)
 
@@ -771,6 +773,7 @@ def plot_crn(
         None, or the result of the integration, which is the same as the result of [`integrate_odes`][gpac.ode.integrate_odes]
         if `return_ode_result` is True. See [`integrate_odes`][gpac.ode.integrate_odes] for details about this parameter.
     """
+    import sympy
     odes = crn_to_odes(rxns)
     inits_normalized = _normalize_crn_inits(inits)
 
@@ -832,6 +835,7 @@ def convert_species_to_symbols(
     | list[re.Pattern]
     | None
 ):
+    import sympy
     # convert Specie objects in symbols_to_plot to sympy.Symbol objects
     symbols_to_plot_no_species: (
         list[sympy.Symbol]
@@ -1168,6 +1172,7 @@ def rebop_crn_counts(
         It can be indexed by species name to get the counts,
         and by the key `"time"` to get the times at which the counts were recorded.
     """
+    import sympy
     if vol is None:
         vol = cast(float, sum(inits.values()))
 
@@ -1402,6 +1407,7 @@ def plot_gillespie(
         The result of the simulation, which is the same as the result of
         [`rebop_crn_counts`][gpac.crn.rebop_crn_counts].
     """
+    import sympy
     rb_result = rebop_crn_counts(
         rxns=rxns,
         inits=inits,
@@ -1871,6 +1877,7 @@ class Reaction:
             the ODE for B is $-k \cdot A \cdot B$,
             and the ODE for C is $2 \cdot k \cdot A \cdot B$.
         """
+        import sympy
         if reverse and not self.reversible:
             raise ValueError(
                 f"reaction {self} is not reversible, so `reverse` parameter must be False"
