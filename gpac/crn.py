@@ -876,15 +876,18 @@ def convert_species_to_symbols(
         else:
             for elt in symbols_to_plot:
                 assert not isinstance(elt, (Specie, sympy.Symbol))
+                nested_list: list[sympy.Symbol] = []
                 if isinstance(elt, Sequence):
-                    nested_list: list[sympy.Symbol] = []
                     for sub_elt in elt:
                         if isinstance(sub_elt, Specie):
                             symbol = sympy.Symbol(sub_elt.name)
                             nested_list.append(symbol)
                         else:
                             nested_list.append(sub_elt)
-                    symbols_to_plot_no_species.append(nested_list)  # type: ignore
+                else:
+                    assert isinstance(elt, re.Pattern)
+                    nested_list = elt
+                symbols_to_plot_no_species.append(nested_list)  # type: ignore       
 
     return symbols_to_plot_no_species
 
