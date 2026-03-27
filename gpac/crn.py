@@ -240,7 +240,9 @@ def species(sp: str | Iterable[str]) -> tuple[Specie, ...]:
     return tuple(Specie(specie) for specie in species_list)
 
 
-def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
+def crn_to_odes(
+    rxns: Iterable[Reaction], species_listed_first: Iterable[Specie] = ()
+) -> dict[sympy.Symbol, sympy.Expr]:
     r"""
     Given a set of chemical reactions, return the corresponding ODEs.
 
@@ -308,6 +310,18 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
     rxns: list of [`Reaction`'s][gpac.crn.Reaction] comprising the chemical reaction network.
           See documentation for [`Reaction`'s][gpac.crn.Reaction] for details on how to specify reactions.
 
+    species_listed_first: an iterable of species that should be listed first in the returned dict.
+        If not specified, species are put into the ODEs in the order they are encountered in the reactions.
+        For instance, the reactions X+Y --> A+B and A+X --> L+K would order the species as X, Y, A, B, L, K.
+        But if `species_listed_first` is [K,Y], then the order would be K, Y, X, A, B,
+        i.e., first listing the species in `species_listed_first` in the order they are given, 
+        and then listing the rest of the species in the order they are encountered in the reactions.
+        This is useful in combination with `integrate_odes`, since the species trajectories in the returned 
+        `OdeResult` are ordered according to the order of the species in the dict of ODEs given to `integrate_odes`,
+        so for instance if there are only a two species you care about analyzing, you can list them in
+        `species_listed_first` and then access `result.y[0]` and `result.y[1]` to get their trajectories.
+
+
     Returns
     -------
     :
@@ -329,7 +343,11 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
         for specie in rxn.get_species():
             specie_to_rxn[specie].append(rxn)
 
-    odes = {}
+    # prepopulate odes with symbols that should come first in iteration order
+    odes: dict[sympy.Symbol, sympy.Expr] = {
+        sympy.Symbol(specie.name): sympy.sympify(0) for specie in species_listed_first
+    }
+
     for specie, rxns in specie_to_rxn.items():
         ode = sympy.sympify(0)
         for rxn in rxns:
@@ -384,6 +402,15 @@ def integrate_crn_odes(
         dict mapping each species to its initial concentration.
         Note that unlike the parameter `inits` in [`integrate_odes`][gpac.ode.integrate_odes],
         keys in this dict must be [`Specie`][gpac.crn.Specie] objects, not strings or sympy symbols.
+        Also, symbols explicitly listed in inits also influence the order of trajectories in the
+        `OdeResult` returned by this function. So while you can leave out a species with initial
+        concentration 0, a reason to specify this explicitly is to make it simpler to access that species'
+        trajectory in `result.y`, e.g., if `inits` is ``{a:0, b:1, c:0, d:2}``, this specifies that
+        only `b` and `d` have positive initial concentration, an all others are 0. But if `result` is the
+        `OdeResult` returned by this function, then
+        `result.y[0]` corresponds to the trajectory of `a`,
+        `result.y[1]` to `b`, `result.y[2]` to `c`, `result.y[3]` to `d`.
+        The remaining species are listed in the order in which they are encountered in the reactions.
 
     t_eval:
         See [`integrate_odes`][gpac.ode.integrate_odes].
@@ -427,7 +454,7 @@ def integrate_crn_odes(
     """
     import sympy
 
-    odes = crn_to_odes(rxns)
+    odes = crn_to_odes(rxns, inits.keys())
     inits_normalized = _normalize_crn_inits(inits)
 
     # convert from species to sympy symbols in resets
