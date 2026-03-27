@@ -32,4 +32,9 @@ docs = [
     "mkdocs-material>=9.1.0",
     "pymdown-extensions",
 ]
-dev = ["black"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = ["F401"]

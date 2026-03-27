@@ -322,7 +322,7 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
         and [`plot_crn`][gpac.crn.plot_crn] do.
     """
     import sympy  # Lazy import
-    
+
     # map each symbol to list of reactions in which it appears
     specie_to_rxn: dict[Specie, list[Reaction]] = defaultdict(list)
     for rxn in rxns:
@@ -344,6 +344,7 @@ def crn_to_odes(rxns: Iterable[Reaction]) -> dict[sympy.Symbol, sympy.Expr]:
 
 def _normalize_crn_inits(inits: ConfigCrn) -> dict[sympy.Symbol, float]:
     import sympy
+
     normalized_inits = {}
     for symbol, conc in inits.items():
         if isinstance(symbol, Specie):
@@ -425,6 +426,7 @@ def integrate_crn_odes(
         See [`integrate_odes`][gpac.ode.integrate_odes] for details about this parameter.
     """
     import sympy
+
     odes = crn_to_odes(rxns)
     inits_normalized = _normalize_crn_inits(inits)
 
@@ -547,30 +549,28 @@ def test_plot_crn():
     rcSlow = 10
     rcFast = 300
 
-    y1hat, y2hat, y, x1, x2 = gpac.species(r'\hat{Y}_1 \hat{Y}_2 Y X_1 X_2')
+    y1hat, y2hat, y, x1, x2 = gpac.species(r"\hat{Y}_1 \hat{Y}_2 Y X_1 X_2")
 
     # CRN for majority
-    a, b, c, t, f = gpac.species(r'A B C T F')
+    a, b, c, t, f = gpac.species(r"A B C T F")
     rxnsMajority = [
         (a + f >> a + t),
         (b + t >> b + f),
         (a + b >> gpac.empty),
         (c + t >> c + f),
-        (c + c + c >> gpac.empty)
+        (c + c + c >> gpac.empty),
     ]
 
     # CRN for y1 = i_1 - i_2
-    i_1, i_2, y1 = gpac.species(r'I_1 I_2 Y_1')
+    i_1, i_2, y1 = gpac.species(r"I_1 I_2 Y_1")
     rxnsAdd = [
         (i_1 >> y1),
         (i_2 + y1 + y >> gpac.empty),
     ]
 
     # CRN for y2 = min(v,w)
-    v, w, y2 = gpac.species(r'V W Y_2')
-    rxnsMin = [
-        (v + w >> y2)
-    ]
+    v, w, y2 = gpac.species(r"V W Y_2")
+    rxnsMin = [(v + w >> y2)]
 
     rxnsCompose = [
         (x1 >> v + i_1 + a),
@@ -578,7 +578,7 @@ def test_plot_crn():
         (t + y1 >> t + y1hat + y).k(rcSlow),
         (f + y2 >> f + y2hat + y).k(rcFast),
         (t + y2hat + y >> t + y2).k(rcSlow),
-        (f + y1hat + y >> f + y1).k(rcFast)
+        (f + y1hat + y >> f + y1).k(rcFast),
     ]
 
     rxnsAll = [
@@ -595,10 +595,10 @@ def test_plot_crn():
         (t + y1 >> t + y1hat + y).k(rcSlow),
         (f + y2 >> f + y2hat + y).k(rcFast),
         (t + y2hat + y >> t + y2).k(rcSlow),
-        (f + y1hat + y >> f + y1).k(rcFast)
+        (f + y1hat + y >> f + y1).k(rcFast),
     ]
 
-    sumY1, sumY2, Y1HAT, Y2HAT, Y1, Y2 = sympy.symbols(r'Y_1+\hat{Y}_1 Y_2+\hat{Y}_2 \hat{Y}_1 \hat{Y}_2 Y_1 Y_2')
+    sumY1, sumY2, Y1HAT, Y2HAT, Y1, Y2 = sympy.symbols(r"Y_1+\hat{Y}_1 Y_2+\hat{Y}_2 \hat{Y}_1 \hat{Y}_2 Y_1 Y_2")
     # sumY1,sumY2,Y1HAT,Y2HAT,Y1,Y2 = sympy.symbols(r'Y1plusY1hat Y2plusY2hat Y1hat Y2hat Y1 Y2')
 
     dependent_symbols = {
@@ -610,10 +610,17 @@ def test_plot_crn():
     t_eval = np.linspace(0, 5000, 1000)
     # print(gpac.integrate_crn_odes(rxnsAll,initial_values=initial_values,t_eval=t_eval))
     # plot trajectory of concentrations
-    gpac.plot_crn(rxnsAll, inits, t_eval=t_eval, method='Radau', figsize=(12, 6),
-                  symbols_to_plot=[y, sumY1, sumY2],
-                  latex_legend=True,
-                  dependent_symbols=dependent_symbols)
+    gpac.plot_crn(
+        rxnsAll,
+        inits,
+        t_eval=t_eval,
+        method="Radau",
+        figsize=(12, 6),
+        symbols_to_plot=[y, sumY1, sumY2],
+        latex_legend=True,
+        dependent_symbols=dependent_symbols,
+    )
+
 
 def plot_crn(
     rxns: Iterable[Reaction],
@@ -774,6 +781,7 @@ def plot_crn(
         if `return_ode_result` is True. See [`integrate_odes`][gpac.ode.integrate_odes] for details about this parameter.
     """
     import sympy
+
     odes = crn_to_odes(rxns)
     inits_normalized = _normalize_crn_inits(inits)
 
@@ -827,23 +835,12 @@ def convert_species_to_symbols(
         | Iterable[re.Pattern]
         | None
     ),
-) -> (
-    list[sympy.Symbol]
-    | list[Sequence[sympy.Symbol]]
-    | str
-    | re.Pattern
-    | list[re.Pattern]
-    | None
-):
+) -> list[sympy.Symbol] | list[Sequence[sympy.Symbol]] | str | re.Pattern | list[re.Pattern] | None:
     import sympy
+
     # convert Specie objects in symbols_to_plot to sympy.Symbol objects
     symbols_to_plot_no_species: (
-        list[sympy.Symbol]
-        | list[Sequence[sympy.Symbol]]
-        | str
-        | re.Pattern
-        | list[re.Pattern]
-        | None
+        list[sympy.Symbol] | list[Sequence[sympy.Symbol]] | str | re.Pattern | list[re.Pattern] | None
     )
     if symbols_to_plot is None or isinstance(symbols_to_plot, (str, re.Pattern)):
         symbols_to_plot_no_species = symbols_to_plot
@@ -855,12 +852,7 @@ def convert_species_to_symbols(
         # symbols_to_plot is an Iterable of something; make a list and populate it with
         # elements of symbols_to_plot, replacing any Specie objects with sympy.Symbols
         symbols_to_plot_no_species: (
-            list[sympy.Symbol]
-            | list[Sequence[sympy.Symbol]]
-            | str
-            | re.Pattern
-            | list[re.Pattern]
-            | None
+            list[sympy.Symbol] | list[Sequence[sympy.Symbol]] | str | re.Pattern | list[re.Pattern] | None
         ) = []
         assert not isinstance(symbols_to_plot_no_species, (str, re.Pattern))
         assert symbols_to_plot_no_species is not None
@@ -887,7 +879,7 @@ def convert_species_to_symbols(
                 else:
                     assert isinstance(elt, re.Pattern)
                     nested_list = elt
-                symbols_to_plot_no_species.append(nested_list)  # type: ignore       
+                symbols_to_plot_no_species.append(nested_list)  # type: ignore
 
     return symbols_to_plot_no_species
 
@@ -897,10 +889,7 @@ def find_all_species(rxns: Iterable[Reaction]) -> tuple[Specie, ...]:
     all_species_set = set()
     for rxn in rxns:
         if not isinstance(rxn, Reaction):
-            raise TypeError(
-                f"Expected {Reaction}, but got {type(rxn)} "
-                f"(possibly a Reaction type from another package)"
-            )
+            raise TypeError(f"Expected {Reaction}, but got {type(rxn)} (possibly a Reaction type from another package)")
         for specie in rxn.get_species():
             if specie not in all_species_set:
                 all_species.append(specie)
@@ -1011,9 +1000,7 @@ def test_rebop_reset():
         10: {a: 100},
         20: {a: 100},
     }
-    plot_gillespie(
-        rxns, initial_counts, tmax, nb_steps=nb_steps, resets=resets, show=True
-    )
+    plot_gillespie(rxns, initial_counts, tmax, nb_steps=nb_steps, resets=resets, show=True)
 
 
 def _run_rebop_with_resets(
@@ -1029,16 +1016,11 @@ def _run_rebop_with_resets(
 
     for reset_time, reset in resets.items():
         if len(reset) == 0:
-            raise ValueError(
-                f"Each reset dict must be nonempty, "
-                f"but reset time {reset_time} has an empty dict."
-            )
+            raise ValueError(f"Each reset dict must be nonempty, but reset time {reset_time} has an empty dict.")
 
     for reset_time in resets.keys():
         if reset_time <= 0 or reset_time >= tmax:
-            raise ValueError(
-                f"Reset time {reset_time} is outside the simulated time interval [0, {tmax}]"
-            )
+            raise ValueError(f"Reset time {reset_time} is outside the simulated time interval [0, {tmax}]")
 
     reset_times = sorted(resets.keys())
 
@@ -1070,15 +1052,11 @@ def _run_rebop_with_resets(
     config = {}
     rng = np.random.default_rng(seed)
     for (t_start, t_end), reset, nb_steps_fraction in segments_and_resets_and_nbsteps:
-        seed_this_interval = int(
-            rng.integers(0, sys.maxsize)
-        )  # so we don't use the same seed for each interval
+        seed_this_interval = int(rng.integers(0, sys.maxsize))  # so we don't use the same seed for each interval
         tmax = t_end - t_start
         for specie_name, count in reset.items():
             config[specie_name] = count
-        latest_results = crn.run(
-            init=config, tmax=tmax, nb_steps=nb_steps_fraction, rng=seed_this_interval
-        )
+        latest_results = crn.run(init=config, tmax=tmax, nb_steps=nb_steps_fraction, rng=seed_this_interval)
         if total_results is None:
             total_results = latest_results
         else:
@@ -1096,9 +1074,8 @@ def _run_rebop_with_resets(
             # total_results_trimmed = total_results.isel(time=slice(0, -1))
             # total_results = xr.concat([total_results_trimmed, latest_results_adjusted], dim="time")
             import xarray as xr  # Lazy import
-            total_results = xr.concat(
-                [total_results, latest_results_adjusted], dim="time"
-            )
+
+            total_results = xr.concat([total_results, latest_results_adjusted], dim="time")
 
         times = total_results.time.values
         if times[-1] == np.inf:
@@ -1176,10 +1153,12 @@ def rebop_crn_counts(
         and by the key `"time"` to get the times at which the counts were recorded.
     """
     import sympy
+
     if vol is None:
         vol = cast(float, sum(inits.values()))
 
     import rebop as rb  # Lazy import
+
     crn = rb.Gillespie()
     for rxn in rxns:
         reactants = [specie.name for specie in rxn.reactants.species]
@@ -1192,9 +1171,7 @@ def rebop_crn_counts(
 
     initial_counts_str = {specie.name: count for specie, count in inits.items()}
     if resets is None:
-        rb_results = crn.run(
-            init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, rng=seed
-        )
+        rb_results = crn.run(init=initial_counts_str, tmax=tmax, nb_steps=nb_steps, rng=seed)
     else:
         # normalize resets to have strings as keys
         resets_normalized: dict[float, dict[str, int]] = {
@@ -1215,8 +1192,7 @@ def rebop_crn_counts(
     if dependent_symbols is not None:
         independent_symbols = [sympy.Symbol(specie.name) for specie in all_species]
         dependent_funcs = {
-            symbol: sympy.lambdify(independent_symbols, func)
-            for symbol, func in dependent_symbols.items()
+            symbol: sympy.lambdify(independent_symbols, func) for symbol, func in dependent_symbols.items()
         }
 
         indp_vals = []
@@ -1228,9 +1204,7 @@ def rebop_crn_counts(
             # the vectors as separate arguments to the function func
             dep_vals_row = func(*indp_vals)
             dependent_symbol_name = (
-                dependent_symbol.name
-                if isinstance(dependent_symbol, sympy.Symbol)
-                else dependent_symbol
+                dependent_symbol.name if isinstance(dependent_symbol, sympy.Symbol) else dependent_symbol
             )
             rb_results[dependent_symbol_name] = dep_vals_row
 
@@ -1250,12 +1224,7 @@ def plot_gillespie(
     figsize: tuple[float, float] = ...,
     latex_legend: bool = ...,
     symbols_to_plot: (
-        Iterable[sympy.Symbol]
-        | Iterable[Sequence[sympy.Symbol]]
-        | str
-        | re.Pattern
-        | Iterable[re.Pattern]
-        | None
+        Iterable[sympy.Symbol] | Iterable[Sequence[sympy.Symbol]] | str | re.Pattern | Iterable[re.Pattern] | None
     ) = ...,
     legend: dict[sympy.Symbol, str] | None = ...,
     omit_legend: bool = ...,
@@ -1281,12 +1250,7 @@ def plot_gillespie(
     figsize: tuple[float, float] = ...,
     latex_legend: bool = ...,
     symbols_to_plot: (
-        Iterable[sympy.Symbol]
-        | Iterable[Sequence[sympy.Symbol]]
-        | str
-        | re.Pattern
-        | Iterable[re.Pattern]
-        | None
+        Iterable[sympy.Symbol] | Iterable[Sequence[sympy.Symbol]] | str | re.Pattern | Iterable[re.Pattern] | None
     ) = ...,
     legend: dict[sympy.Symbol, str] | None = ...,
     omit_legend: bool = ...,
@@ -1411,6 +1375,7 @@ def plot_gillespie(
         [`rebop_crn_counts`][gpac.crn.rebop_crn_counts].
     """
     import sympy
+
     rb_result = rebop_crn_counts(
         rxns=rxns,
         inits=inits,
@@ -1422,9 +1387,7 @@ def plot_gillespie(
         dependent_symbols=dependent_symbols,
     )
     times = rb_result["time"]
-    result = {
-        sympy.Symbol(str(name)): rb_result[name] for name in rb_result if name != "time"
-    }
+    result = {sympy.Symbol(str(name)): rb_result[name] for name in rb_result if name != "time"}
 
     symbols_to_plot_no_species = convert_species_to_symbols(symbols_to_plot)
 
@@ -1524,18 +1487,14 @@ def rebop_sample_future_configurations(
         )
         for sp in all_species:
             sampled_configs_as_list[sp].append(dataset[sp.name].values[-1])
-    sampled_configs = {
-        sp.name: np.array(sampled_configs_as_list[sp], dtype=np.uint)
-        for sp in all_species
-    }
+    sampled_configs = {sp.name: np.array(sampled_configs_as_list[sp], dtype=np.uint) for sp in all_species}
     import polars as pl  # Lazy import
+
     df = pl.DataFrame(sampled_configs)
     return df
 
 
-SpeciePair: TypeAlias = tuple[
-    "Specie", "Specie"
-]  # forward annotations don't seem to work here
+SpeciePair: TypeAlias = tuple["Specie", "Specie"]  # forward annotations don't seem to work here
 Output: TypeAlias = SpeciePair | dict[SpeciePair, float]
 
 
@@ -1670,9 +1629,7 @@ class Expression:
         """
         return set(self.species)
 
-    def species_counts(
-        self, key_type: Literal["str", "Specie"] = "Specie"
-    ) -> dict[Specie, int]:
+    def species_counts(self, key_type: Literal["str", "Specie"] = "Specie") -> dict[Specie, int]:
         """
         Returns a dictionary mapping each species in this expression to its
         coefficient.
@@ -1881,10 +1838,9 @@ class Reaction:
             and the ODE for C is $2 \cdot k \cdot A \cdot B$.
         """
         import sympy
+
         if reverse and not self.reversible:
-            raise ValueError(
-                f"reaction {self} is not reversible, so `reverse` parameter must be False"
-            )
+            raise ValueError(f"reaction {self} is not reversible, so `reverse` parameter must be False")
 
         if specie not in self.get_species():
             return sympy.Integer(0)
@@ -1903,20 +1859,14 @@ class Reaction:
         net_produced = product_coeff - reactant_coeff
         reactants_ode = sympy.sympify(sympy.Integer(1))
         for reactant in reactants.get_species():
-            reactant_term = sympy.Symbol(reactant.name) ** reactants.species.count(
-                reactant
-            )
+            reactant_term = sympy.Symbol(reactant.name) ** reactants.species.count(reactant)
             reactants_ode *= reactant_term
 
         inhibitors_ode = sympy.sympify(sympy.Integer(1))
         for inhibitor, inhibitor_constant in zip(inhibitors, self.inhibitor_constants):
             inh = sympy.Symbol(inhibitor.name)
 
-            den = (
-                1 + sympy.sympify(inhibitor_constant) * inh
-                if inhibitor_constant != 1.0
-                else sympy.sympify(1) + inh
-            )
+            den = 1 + sympy.sympify(inhibitor_constant) * inh if inhibitor_constant != 1.0 else sympy.sympify(1) + inh
             inhibitor_term = 1 / den
 
             # inhibitor_term = inhibitor_constant * sympy.exp(-inh) \
@@ -1940,11 +1890,7 @@ class Reaction:
 
         # if rate constant is 1.0, avoid the ugly "1.0*" factor in the output
         if len(inhibitors) == 0:
-            ode = (
-                net_produced * reactants_ode
-                if rate_constant == 1.0
-                else net_produced * rate_constant * reactants_ode
-            )
+            ode = net_produced * reactants_ode if rate_constant == 1.0 else net_produced * rate_constant * reactants_ode
         else:
             ode = (
                 net_produced * reactants_ode * inhibitors_ode
@@ -1979,10 +1925,7 @@ class Reaction:
         :
             true if there are two reactants that are the same species
         """
-        return (
-            self.num_reactants() == 2
-            and self.reactants.species[0] == self.reactants.species[1]
-        )
+        return self.num_reactants() == 2 and self.reactants.species[0] == self.reactants.species[1]
 
     def symmetric_products(self) -> bool:
         """
@@ -1991,10 +1934,7 @@ class Reaction:
         :
             true if there are two products that are the same species
         """
-        return (
-            self.num_products() == 2
-            and self.products.species[0] == self.products.species[1]
-        )
+        return self.num_products() == 2 and self.products.species[0] == self.products.species[1]
 
     def num_reactants(self) -> int:
         """
@@ -2145,9 +2085,7 @@ class Reaction:
 
             inhibitor_str = "--" + ",".join(
                 f"{inhibitor.name}{constant_str(constant)}"
-                for inhibitor, constant in zip(
-                    self.inhibitors, self.inhibitor_constants
-                )
+                for inhibitor, constant in zip(self.inhibitors, self.inhibitor_constants)
             )
         else:
             inhibitor_str = ""
