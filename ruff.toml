@@ -1,1 +1,9 @@
 line-length = 120
+
+[lint]
+# F401 (unused import): the library re-exports names for its public API.
+ignore = ["F401"]
+
+[lint.per-file-ignores]
+# F403 (import *): deliberate; __init__.py re-exports everything from ode and crn.
+"gpac/__init__.py" = ["F403"]

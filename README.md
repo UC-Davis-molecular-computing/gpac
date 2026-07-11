@@ -125,7 +125,7 @@ Reactions are constructed using operations on [`Specie`](https://gpac.readthedoc
 x,y = gpac.species('X Y')
 rxns = [
     x+x >> x+x+y,
-    y >> gpac.empty,
+    y >> None,
 ]
 initial_values = {x:5}
 t_eval = np.linspace(0, 5, 100)

@@ -138,14 +138,17 @@ class Specie:
 
     __radd__ = __add__
 
-    def __rshift__(self, other: Specie | Expression) -> Reaction:
+    def __rshift__(self, other: Specie | Expression | None) -> Reaction:
         return Reaction(self, other)
 
-    def __rrshift__(self, other: Specie | Expression) -> Reaction:
+    def __rrshift__(self, other: Specie | Expression | None) -> Reaction:
         return Reaction(other, self)
 
-    def __or__(self, other: Specie | Expression) -> Reaction:
+    def __or__(self, other: Specie | Expression | None) -> Reaction:
         return Reaction(self, other, reversible=True)
+
+    def __ror__(self, other: Specie | Expression | None) -> Reaction:
+        return Reaction(other, self, reversible=True)
 
     def __mul__(self, other: int) -> Expression:
         if isinstance(other, int):
@@ -583,16 +586,16 @@ def test_mypy_plot_crn():
 #     rxnsMajority = [
 #         (a + f >> a + t),
 #         (b + t >> b + f),
-#         (a + b >> gpac.empty),
+#         (a + b >> None),
 #         (c + t >> c + f),
-#         (c + c + c >> gpac.empty),
+#         (c + c + c >> None),
 #     ]
 
 #     # CRN for y1 = i_1 - i_2
 #     i_1, i_2, y1 = gpac.species(r"I_1 I_2 Y_1")
 #     rxnsAdd = [
 #         (i_1 >> y1),
-#         (i_2 + y1 + y >> gpac.empty),
+#         (i_2 + y1 + y >> None),
 #     ]
 
 #     # CRN for y2 = min(v,w)
@@ -611,9 +614,9 @@ def test_mypy_plot_crn():
 #     rxnsAll = [
 #         (a + f >> a + t),
 #         (b + t >> b + f),
-#         (a + b >> gpac.empty),
+#         (a + b >> None),
 #         (c + t >> c + f),
-#         (c + c + c >> gpac.empty),  # maj
+#         (c + c + c >> None),  # maj
 #         (i_1 >> y1),  # x_1 + x_2
 #         (i_2 >> y1),
 #         (v + w >> y2),  # min (x, w)
@@ -714,8 +717,8 @@ def plot_crn(
         Ym >> Ym + Xp,
         Xp >> Xp + Yp,
         Xm >> Xm + Ym,
-        Xp+Xm >> gpac.empty,
-        Yp+Ym >> gpac.empty,
+        Xp+Xm >> None,
+        Yp+Ym >> None,
     ]
     inits = { Xp: 1, Yp: 0 }
     from math import pi
@@ -1665,11 +1668,17 @@ class Expression:
 
     __mul__ = __rmul__
 
-    def __rshift__(self, expr: Specie | Expression) -> Reaction:
+    def __rshift__(self, expr: Specie | Expression | None) -> Reaction:
         return Reaction(self, expr)
 
-    def __or__(self, other: Specie | Expression) -> Reaction:
+    def __rrshift__(self, expr: Specie | Expression | None) -> Reaction:
+        return Reaction(expr, self)
+
+    def __or__(self, other: Specie | Expression | None) -> Reaction:
         return Reaction(self, other, reversible=True)
+
+    def __ror__(self, other: Specie | Expression | None) -> Reaction:
+        return Reaction(other, self, reversible=True)
 
     def __str__(self) -> str:
         if len(self.species) == 0:
@@ -1697,16 +1706,6 @@ class Expression:
             species_counts[key] = species_counts.get(key, 0) + 1
         return species_counts
 
-
-empty = Expression([])
-r"""
-Used for chemical reactions with empty reactant or product lists, e.g., to implement the exponential
-decay reaction $X \to \emptyset$:
-```py
-x = species('X')
-rxn = x >> empty
-```
-"""
 
 avogadro = 6.02214076e23
 
@@ -1769,6 +1768,16 @@ class Reaction:
     ]
     ```
 
+    To specify a reaction with no reactants or no products ($\emptyset$), use `None`,
+    e.g., to implement the exponential decay reaction $X \to \emptyset$
+    or the constant generation reaction $\emptyset \to X$:
+
+    ```py
+    x, = species('X')
+    decay = x >> None
+    generation = None >> x
+    ```
+
     Also supported are inhibitors, which can be added to reactions using the method [`Reaction.i`][gpac.crn.Reaction.i]:
 
     ```py
@@ -1805,8 +1814,8 @@ class Reaction:
 
     def __init__(
         self,
-        reactants: Specie | Expression,
-        products: Specie | Expression,
+        reactants: Specie | Expression | None,
+        products: Specie | Expression | None,
         k: float = 1,
         r: float = 1,
         reversible: bool = False,
@@ -1820,9 +1829,9 @@ class Reaction:
         Parameters
         ----------
         reactants:
-            left side of species in the reaction
+            left side of species in the reaction; `None` means no reactants ($\\emptyset$)
         products:
-            right side of species in the reaction
+            right side of species in the reaction; `None` means no products ($\\emptyset$)
         k:
             Rate constant of forward reaction
         r:
@@ -1830,17 +1839,21 @@ class Reaction:
         reversible:
             Whether reaction is reversible
         """
+        if reactants is None:
+            reactants = Expression([])
+        if products is None:
+            products = Expression([])
         if not (isinstance(reactants, Specie) or isinstance(reactants, Expression)):
             raise ValueError(
                 "Attempted construction of reaction with type of reactants "
-                f"as {type(reactants)}. Type of reactants must be Species "
-                "or Expression"
+                f"as {type(reactants)}. Type of reactants must be Specie, "
+                "Expression, or None"
             )
         if not (isinstance(products, Specie) or isinstance(products, Expression)):
             raise ValueError(
                 "Attempted construction of products with type of products "
-                f"as {type(products)}. Type of products must be Species "
-                "or Expression"
+                f"as {type(products)}. Type of products must be Specie, "
+                "Expression, or None"
             )
 
         if isinstance(reactants, Specie):

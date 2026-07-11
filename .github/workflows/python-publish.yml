@@ -11,6 +11,9 @@ name: Upload Python Package
 on:
   release:
     types: [published]
+  # Allows scripts/test-build.{sh,ps1} to run a build-only test: the
+  # pypi-publish job below is skipped unless the trigger was a release.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,13 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-
+      # No setup-python: the Ubuntu runner image already ships a recent Python 3,
+      # and a pure-Python sdist/wheel build doesn't care which exact version.
       - name: Build release distributions
         run: |
-          # NOTE: put your own distribution build steps here.
           python -m pip install build
           python -m build
 
@@ -40,6 +40,8 @@ jobs:
 
   pypi-publish:
     runs-on: ubuntu-latest
+    # Only publish on actual releases; workflow_dispatch runs are build-only tests.
+    if: github.event_name == 'release'
     needs:
       - release-build
     permissions:
